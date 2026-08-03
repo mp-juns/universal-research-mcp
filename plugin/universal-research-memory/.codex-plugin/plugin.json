@@ -1,0 +1,19 @@
+{
+  "name": "universal-research-memory",
+  "version": "0.1.0+codex.20260803135458",
+  "description": "A standalone, source-grounded research memory MCP and governed operating framework.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Universal Research Memory",
+    "shortDescription": "Retrieve research evidence with approval and provenance controls.",
+    "longDescription": "Universal Research Memory provides independent, source-grounded research retrieval plus explicit approval, provenance, uncertainty, and audit boundaries without sharing a project's runtime database.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use the research workflow: search candidates first, verify source lines for material claims, preserve uncertainty, and do not make unapproved changes."
+  },
+  "mcpServers": "./.mcp.json"
+}

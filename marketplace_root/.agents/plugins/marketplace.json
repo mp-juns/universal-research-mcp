@@ -1,0 +1,20 @@
+{
+  "name": "universal-research-local",
+  "interface": {
+    "displayName": "Universal Research Local"
+  },
+  "plugins": [
+    {
+      "name": "universal-research-memory",
+      "source": {
+        "source": "local",
+        "path": "./plugins/universal-research-memory"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

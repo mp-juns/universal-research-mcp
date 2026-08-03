@@ -1,0 +1,30 @@
+schema_version: pack/1.0
+kind: study_type
+id: research_operations
+version: 1.0
+required_record_kinds:
+  - research_plan
+  - protocol
+  - approval
+  - execution_session
+  - observation
+  - decision
+  - claim
+  - audit_finding
+constraints:
+  - id: explicit_approval_before_execution
+    severity: blocking
+    description: Active execution sessions require explicit approval references.
+  - id: source_grounded_claims
+    severity: blocking
+    description: Supported claims require human-verified source or artifact evidence.
+  - id: preserve_negative_results
+    severity: warning
+    description: Stopped, failed, and inconclusive outcomes must be retained.
+vocabulary:
+  outcome_class:
+    - positive
+    - negative
+    - failed_gate
+    - inconclusive
+    - stopped

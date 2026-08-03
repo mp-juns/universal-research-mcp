@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-memory.local/schema/pack-manifest/1.0",
+  "title": "Study-Type or Domain Pack Manifest",
+  "type": "object",
+  "required": ["schema_version", "kind", "id", "version", "constraints"],
+  "properties": {
+    "schema_version": {"const": "pack/1.0"},
+    "kind": {"enum": ["study_type", "domain"]},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]+$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"},
+    "extends": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "required_record_kinds": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "claim_requirements": {"type": "object"},
+    "constraints": {"type": "array", "items": {"type": "object", "required": ["id", "severity", "description"], "properties": {"id": {"type": "string"}, "severity": {"enum": ["info", "warning", "blocking"]}, "description": {"type": "string"}}, "additionalProperties": false}},
+    "vocabulary": {"type": "object"}
+  },
+  "additionalProperties": false
+}

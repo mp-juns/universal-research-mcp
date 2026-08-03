@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-memory.local/schema/core-record/1.0",
+  "title": "Universal Research Core Record",
+  "type": "object",
+  "required": ["schema_version", "record_id", "record_kind", "occurred_at", "recorded_at", "status", "created_by", "payload"],
+  "properties": {
+    "schema_version": {"const": "core/1.0"},
+    "record_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*_[A-Za-z0-9._-]+$"},
+    "record_kind": {"enum": ["research_plan", "protocol", "approval", "execution_session", "observation", "decision", "claim", "artifact", "amendment", "audit_finding", "contribution", "negative_result", "stopped_work"]},
+    "study_id": {"type": "string", "pattern": "^study_[A-Za-z0-9._-]+$"},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["draft", "proposed", "approved", "active", "completed", "stopped", "rejected", "superseded"]},
+    "created_by": {"$ref": "#/$defs/actor"},
+    "contribution_refs": {"type": "array", "items": {"type": "string", "pattern": "^contrib_"}, "uniqueItems": true},
+    "approval_refs": {"type": "array", "items": {"type": "string", "pattern": "^approval_"}, "uniqueItems": true},
+    "protocol_ref": {"type": "string", "pattern": "^protocol_"},
+    "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}},
+    "source_refs": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "artifact_refs": {"type": "array", "items": {"type": "string", "pattern": "^artifact_"}, "uniqueItems": true},
+    "payload": {"type": "object"}
+  },
+  "$defs": {
+    "actor": {
+      "type": "object",
+      "required": ["actor_id", "actor_type"],
+      "properties": {
+        "actor_id": {"type": "string", "pattern": "^actor_"},
+        "actor_type": {"enum": ["human", "ai", "external_system"]}
+      },
+      "additionalProperties": false
+    },
+    "relation": {
+      "type": "object",
+      "required": ["type", "target_id"],
+      "properties": {
+        "type": {"enum": ["governed_by", "authorized_by", "uses_protocol", "generated_from", "derived_from", "evaluated_on", "supported_by", "refuted_by", "validated_by", "decided_from", "corrects", "supersedes", "requires_review", "contributed_to"]},
+        "target_id": {"type": "string", "minLength": 3}
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["artifact_revision_id", "locator", "verification_status"],
+      "properties": {
+        "artifact_revision_id": {"type": "string", "pattern": "^artifact_.*@sha256:[a-f0-9]{64}$"},
+        "locator": {"type": "object", "minProperties": 1},
+        "verification_status": {"enum": ["unverified", "integrity_verified", "human_verified"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

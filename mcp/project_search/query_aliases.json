@@ -1,0 +1,133 @@
+[
+  {
+    "name": "hybrid8_failure_recovery",
+    "weight": 0.97,
+    "match_all_any": [
+      [
+        "8층",
+        "8 layer",
+        "8-layer",
+        "naive8",
+        "hybrid8",
+        "레이어 축소",
+        "layer reduction",
+        "얕게 만들"
+      ],
+      [
+        "망가",
+        "붕괴",
+        "실패",
+        "원인",
+        "복구",
+        "증류",
+        "distillation",
+        "divergence",
+        "불일치"
+      ]
+    ],
+    "terms": [
+      "Qwen3.5 Hybrid8",
+      "naive 8-layer",
+      "hidden-state divergence",
+      "block boundary",
+      "operator divergence",
+      "head-only negative control",
+      "interface mismatch",
+      "interface distillation",
+      "stable-v2 distillation"
+    ]
+  },
+  {
+    "name": "fraud_r1_model_comparison",
+    "weight": 0.97,
+    "match_all_any": [
+      [
+        "fraud-r1",
+        "외부 사기",
+        "사기 5개 범주",
+        "사기 다섯 범주",
+        "native 5-class"
+      ],
+      [
+        "xlm",
+        "qwen",
+        "비교",
+        "정확도",
+        "macro f1",
+        "클래스 균형",
+        "bootstrap",
+        "불확실성"
+      ]
+    ],
+    "terms": [
+      "Fraud-R1 native 5-class",
+      "XLM-R versus Qwen KD8",
+      "point estimates",
+      "balanced accuracy",
+      "macro F1",
+      "paired source-group bootstrap",
+      "95% confidence interval",
+      "McNemar",
+      "per-class exploratory deltas"
+    ]
+  },
+  {
+    "name": "conditional_depth_research",
+    "weight": 0.94,
+    "match_all_any": [
+      [
+        "conditional depth",
+        "조건부 깊이",
+        "동적 깊이",
+        "중간 종료",
+        "early exit",
+        "multi-exit"
+      ],
+      [
+        "근거",
+        "성능",
+        "구조",
+        "게이트",
+        "분류",
+        "추출"
+      ]
+    ],
+    "terms": [
+      "evidence-first conditional depth",
+      "multi-exit head",
+      "early exit gate",
+      "shared-backbone encoder",
+      "source-group split",
+      "exit calibration"
+    ]
+  },
+  {
+    "name": "no_kv_runtime",
+    "weight": 0.94,
+    "match_all_any": [
+      [
+        "qwen",
+        "hybrid8",
+        "분류기",
+        "classifier"
+      ],
+      [
+        "no-kv",
+        "kv cache",
+        "런타임",
+        "추론 시간",
+        "latency",
+        "속도",
+        "메모리"
+      ]
+    ],
+    "terms": [
+      "Qwen3.5 Hybrid8 Classifier no-KV runtime",
+      "short-input latency",
+      "kernel routing",
+      "fresh-load runtime",
+      "peak RSS",
+      "UNO Q deployment"
+    ]
+  }
+]

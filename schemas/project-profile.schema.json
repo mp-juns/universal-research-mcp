@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-memory.local/schema/project-profile/1.0",
+  "title": "Universal Research Project Profile",
+  "type": "object",
+  "required": ["profile_version", "project", "storage", "adapters", "policy_overlay"],
+  "properties": {
+    "profile_version": {"const": "profile/1.0"},
+    "project": {"type": "object", "required": ["id", "name", "active_packs"], "properties": {"id": {"type": "string", "pattern": "^study_"}, "name": {"type": "string"}, "active_packs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}, "additionalProperties": false},
+    "storage": {"type": "object", "required": ["events_root"], "properties": {"events_root": {"type": "string"}, "derived_index_root": {"type": "string"}}, "additionalProperties": false},
+    "adapters": {"type": "object", "required": ["ledger", "search", "display"], "properties": {"ledger": {"type": "object"}, "search": {"type": "object"}, "display": {"type": "object"}}, "additionalProperties": false},
+    "policy_overlay": {"type": "object", "required": ["approval_required_actions", "reference_sources"], "properties": {"approval_required_actions": {"type": "array", "items": {"type": "string"}}, "reference_sources": {"type": "array", "items": {"type": "object", "required": ["locator", "access"], "properties": {"locator": {"type": "string"}, "access": {"const": "read_only"}}, "additionalProperties": false}}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

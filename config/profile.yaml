@@ -1,0 +1,47 @@
+profile_version: profile/1.0
+
+project:
+  id: study_universal_research_memory
+  name: universal-research-memory
+  active_packs:
+    - study_type/research_operations@1.0
+
+storage:
+  # Canonical records only. SQLite and embeddings are derived adapters.
+  events_root: data/events
+  derived_index_root: data/index
+
+adapters:
+  ledger:
+    kind: jsonl_append_only
+    schema: schemas/core-record.schema.json
+  search:
+    lexical:
+      kind: sqlite_fts5_derived
+      database: data/index/research.sqlite
+    semantic:
+      kind: sqlite_vector_derived
+      database: data/index/semantic.sqlite
+      manifest: data/index/semantic-manifest.json
+  display:
+    kind: markdown_projection
+    plan_view: agents/TODO.md
+    work_log_view: agents/WORK_LOG.md
+    session_view_root: agents/sessions
+
+policy_overlay:
+  approval_required_actions:
+    - command_execution
+    - file_modification
+    - file_copy
+    - package_installation
+    - test_or_build
+    - network
+    - background_or_remote_work
+  reference_sources:
+    - locator: <configure-a-read-only-reference-path>
+      access: read_only
+  separation_rules:
+    - Reference SQLite and embedding indexes are never runtime storage.
+    - Historical results and logs remain outside this project's ledger.
+    - Search results are candidates; source/artifact verification is required for conclusions.

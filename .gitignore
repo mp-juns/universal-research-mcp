@@ -1,0 +1,9 @@
+/.agents/
+/.codex/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/index/*.sqlite
+data/index/*.sqlite-*
+data/index/semantic-manifest.json
+data/index/hf-modules/
