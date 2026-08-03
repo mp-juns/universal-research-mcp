@@ -3,7 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 import unittest
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 
 from core.ledger import validate_core_record, validate_records
 
@@ -53,7 +53,7 @@ class CoreLedgerTests(unittest.TestCase):
     def test_manual_validator_matches_schema_contract_cases(self) -> None:
         schema = json.loads((ROOT / "schemas/core-record.schema.json").read_text(encoding="utf-8"))
         schema_validator = Draft202012Validator(
-            schema, format_checker=Draft202012Validator.FORMAT_CHECKER
+            schema, format_checker=FormatChecker(formats=["date-time"])
         )
         base = json.loads((ROOT / "fixtures/core/valid-core-record.jsonl").read_text(encoding="utf-8"))
         cases: list[tuple[str, dict]] = [("valid", base)]

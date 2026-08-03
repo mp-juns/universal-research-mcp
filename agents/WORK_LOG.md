@@ -380,3 +380,12 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   run the semantic encoder stack.
 - The identical local baseline passed: entry point version `0.1.0`; unittest
   groups 2, 5, 6, 2, 2, 2, 2, and 1 passed; lexical pytest group 6 passed.
+
+### CI compatibility correction
+
+- The first public CI run failed only in the Schema parity fixture: the runner's
+  JSON Schema implementation treated the draft `format` vocabulary differently
+  from the local default checker.
+- The test now supplies an explicit `FormatChecker(formats=["date-time"])`,
+  making date-time assertion independent of validator-default behavior. The
+  focused local Core test passed (5 checks). The next push reruns CI.
