@@ -192,3 +192,21 @@ contract gap with parity coverage, and document a short reproducible start path.
 
 - [x] User-approved local package installation
 - [x] Installed `universal-research-mcp --version` and `--help` verification
+
+## Active task — public CI baseline
+
+### Objective and scope
+
+- Requested by: User, continuing the public-project hardening work.
+- Target: a GitHub Actions workflow that installs the package with its test
+  extras and runs the package/core/read-only-MCP/lexical fixture checks.
+- Success: each public push and pull request has a repeatable baseline without
+  model loading, semantic-index dependencies, remote research execution, or
+  access to any reference project.
+- Excluded: PyPI publishing, secret configuration, deployment, benchmark,
+  semantic encoder tests, and repository data changes.
+
+### Completed
+
+- [x] Python 3.11 GitHub Actions workflow for push and pull-request checks
+- [x] Package entry-point, core, read-only MCP, and lexical fixture baseline

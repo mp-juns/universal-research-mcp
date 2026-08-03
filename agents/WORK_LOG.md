@@ -360,3 +360,23 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   packaging. No runtime dependency was requested through this command, and no
   research project, data, reference project, model, benchmark, daemon, or
   remote research service was touched.
+
+## 2026-08-04 — public CI baseline plan
+
+- Requested by: User, continuing the public-project hardening work.
+- Scope: add a minimal GitHub Actions workflow for package/core/read-only MCP
+  and lexical fixture tests only.
+- Explicitly excluded: registry publishing, secrets, deployment, model loading,
+  semantic encoder dependencies, benchmark, reference project, and research
+  data.
+
+### Results and verification
+
+- Added `.github/workflows/ci.yml` with least-privilege read permissions and a
+  Python 3.11 job on pushes and pull requests.
+- The job installs the project with its test extra, checks the console entry
+  point, then runs contract, core, approval, public-distribution, read-only
+  MCP, MCP E2E, and lexical-index fixtures. It deliberately does not install or
+  run the semantic encoder stack.
+- The identical local baseline passed: entry point version `0.1.0`; unittest
+  groups 2, 5, 6, 2, 2, 2, 2, and 1 passed; lexical pytest group 6 passed.
