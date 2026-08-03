@@ -226,3 +226,17 @@ contract gap with parity coverage, and document a short reproducible start path.
 
 - [x] Declared a separate `semantic` package extra
 - [x] Documented its approval-gated, non-automatic model boundary
+
+## Active task — PyPI Trusted Publishing release
+
+### Objective and scope
+
+- Requested by: User, after confirming PyPI Trusted Publishing setup is complete.
+- Target: a release-only GitHub Actions workflow and the initial `v0.1.0`
+  GitHub Release for the existing `0.1.0` package metadata.
+- Commands: local package-build metadata validation, Git commit/push, then
+  GitHub Release creation and read-only workflow status inspection.
+- Success: release workflow builds a wheel/sdist, checks artifacts, and publishes
+  with GitHub OIDC (`id-token: write`) rather than a repository secret.
+- Excluded: API-token handling, secret files, reference project/data access,
+  model/semantic execution, benchmark, and any MCP write capability.

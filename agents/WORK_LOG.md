@@ -411,3 +411,12 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   and read-only.
 - No extra was installed; no model was downloaded or loaded; no semantic index,
   benchmark, project data, or reference project was touched.
+
+## 2026-08-04 — PyPI Trusted Publishing release plan
+
+- Requested by: User, who confirmed PyPI Trusted Publishing is configured.
+- Plan: add a release-published-only workflow with build artifact verification
+  and PyPI OIDC publishing, push it, then create the initial `v0.1.0` GitHub
+  Release matching package metadata.
+- No token will be read, copied, committed, or printed. The workflow receives
+  only `contents: read` and `id-token: write` permissions.
