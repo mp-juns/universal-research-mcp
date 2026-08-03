@@ -175,3 +175,20 @@ contract gap with parity coverage, and document a short reproducible start path.
 - [x] One-read evidence snapshot before rendering and SHA-256 calculation
 - [x] Malformed JSONL failure fixture
 - [x] 1,000-record derived-index fixture with canonical-input preservation
+
+## Active task — local package installation verification
+
+### Objective and scope
+
+- Requested by: User (explicit continuation after the missing-`uv` report).
+- Command: `python3 -m pip install --user --no-deps .`, followed by the installed
+  console entry point's `--help` and `--version` checks.
+- Success: the existing plugin command `universal-research-mcp` resolves from
+  the local user environment without a network dependency.
+- Excluded: dependency download, reference project, research data/historical
+  logs, server startup, model, benchmark, and remote work.
+
+### Completed
+
+- [x] User-approved local package installation
+- [x] Installed `universal-research-mcp --version` and `--help` verification

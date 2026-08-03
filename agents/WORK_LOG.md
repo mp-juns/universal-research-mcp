@@ -341,3 +341,22 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
 - MCP safety (2) and Core E2E (1) unittest checks passed; lexical/semantic
   builder regression checks passed (22). No warning, project-data mutation,
   reference-project access, network, model, daemon, or benchmark occurred.
+
+## 2026-08-04 — local package installation verification plan
+
+- User explicitly requested continuation after the `uv` availability report.
+- The only environment mutation is a user-local, no-dependency installation of
+  this public package to make the plugin's stable console command available.
+- Verification is limited to `--help` and `--version`; the MCP transport is not
+  started and no research root is read or written.
+
+### Results
+
+- User explicitly approved and completed `python3 -m pip install --user
+  --no-deps .`; the local package installed as `universal-research-mcp 0.1.0`.
+- The console entry point resolved from the user PATH and both `--version`
+  (`0.1.0`) and `--help` passed. It was not used to start MCP transport.
+- The build frontend prepared an isolated local wheel as part of normal
+  packaging. No runtime dependency was requested through this command, and no
+  research project, data, reference project, model, benchmark, daemon, or
+  remote research service was touched.
