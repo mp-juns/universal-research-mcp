@@ -240,3 +240,9 @@ contract gap with parity coverage, and document a short reproducible start path.
   with GitHub OIDC (`id-token: write`) rather than a repository secret.
 - Excluded: API-token handling, secret files, reference project/data access,
   model/semantic execution, benchmark, and any MCP write capability.
+
+### Completed
+
+- [x] Release-published-only OIDC PyPI workflow
+- [x] Initial public `v0.1.0` GitHub Release
+- [x] Build, artifact check, PyPI publish, and digital attestation workflow

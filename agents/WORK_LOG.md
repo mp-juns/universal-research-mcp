@@ -420,3 +420,13 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   Release matching package metadata.
 - No token will be read, copied, committed, or printed. The workflow receives
   only `contents: read` and `id-token: write` permissions.
+
+### Results and verification
+
+- Added the release-published-only PyPI workflow, pushed it, and created the
+  initial public `v0.1.0` GitHub Release.
+- The Trusted Publishing workflow completed successfully: source/wheel artifacts
+  built, `twine check` passed, PyPI publish passed, and digital attestations
+  were generated. No PyPI API token was handled by this workspace.
+- No reference project/data, model, semantic index, benchmark, daemon, or MCP
+  write capability was involved.
