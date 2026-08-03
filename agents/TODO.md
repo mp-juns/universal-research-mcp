@@ -654,3 +654,32 @@ contract gap with parity coverage, and document a short reproducible start path.
 - [x] Commit the reviewed worktree on `agent/codex-only-preview`
 - [x] Push the branch and open draft pull request #1 against `main`
 - [x] Confirm both push and pull-request GitHub CI runs passed
+
+## Active task — merge 0.3.0 and publish to PyPI
+
+### Objective and authority
+
+- Requested and approved by: User.
+- Merge draft pull request #1 into `main`, publish GitHub Release `v0.3.0`,
+  and let the existing OIDC Trusted Publishing workflow upload version 0.3.0
+  to PyPI.
+- Use the exact reviewed PR head and stop if the head moves, CI fails, the
+  release/tag exists, or PyPI already contains version 0.3.0.
+
+### Preflight
+
+- [x] PR #1 is open, draft, mergeable, and clean against `main`
+- [x] Both final-head GitHub CI checks passed
+- [x] Package and plugin versions are 0.3.0
+- [x] GitHub release/tag `v0.3.0` does not exist
+- [x] PyPI version endpoint for 0.3.0 returned 404
+- [x] Release workflow publishes only on a published GitHub Release with OIDC
+
+### Release sequence
+
+- [ ] Push this release authorization record and require CI success
+- [ ] Mark PR #1 ready and squash-merge the exact final head into `main`
+- [ ] Confirm the merged `main` CI result
+- [ ] Create and inspect draft GitHub Release `v0.3.0`
+- [ ] Publish the release and confirm the Trusted Publishing workflow succeeds
+- [ ] Verify PyPI metadata and an isolated installation of version 0.3.0

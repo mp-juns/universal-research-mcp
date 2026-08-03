@@ -975,3 +975,33 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   pull request completed successfully on clean hosted runners.
 - The pull request remains draft; no merge, GitHub Release, or PyPI publication
   was performed.
+
+## 2026-08-04 — main merge and PyPI 0.3.0 release plan
+
+### Ownership and authorization
+
+- Requested and approved by: User.
+- Planned and executed by: Codex.
+- Targets: pull request #1 → `main`, GitHub Release `v0.3.0`, and PyPI project
+  `universal-research-mcp` version 0.3.0 through Trusted Publishing.
+
+### Verified preconditions
+
+- GitHub authentication is active for repository owner `mp-juns`.
+- PR #1 head `77aa00e381c4a1bbde7726d311968be4d15ce93f` is mergeable and clean;
+  both push and pull-request `core-contracts` checks passed.
+- The only existing GitHub Release is `v0.1.0`; `v0.3.0` is unused.
+- The PyPI JSON endpoint for version 0.3.0 returned HTTP 404.
+- `.github/workflows/publish.yml` builds, validates, smoke-tests, and publishes
+  with GitHub OIDC only when a GitHub Release is published.
+
+### Authorized sequence and stop conditions
+
+- Record and push this plan, wait for the exact final PR head CI, mark the PR
+  ready, and squash-merge it into `main` with an expected-head guard.
+- Wait for `main` CI before creating the release. Create `v0.3.0` as a draft,
+  inspect its target and metadata, then publish it once.
+- Stop without retrying publication if CI, artifact validation, Trusted
+  Publishing, or the PyPI version check fails unexpectedly.
+- No model/API inference, benchmark execution, credential reading, reference
+  project access, or canonical research-data write is authorized.
