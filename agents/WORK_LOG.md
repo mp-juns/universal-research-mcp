@@ -177,6 +177,34 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
 - `gh auth status` reports the active GitHub token is invalid. No GitHub or
   remote change was attempted.
 
+## 2026-08-04 — public GitHub publication
+
+### Ownership
+
+- Requested by: User
+- Planned and executed by: Codex
+- Repository: `https://github.com/mp-juns/universal-research-mcp`
+
+### Publication
+
+- Initialized this independent workspace as a new Git repository on `main`.
+- Added a public-release `.gitignore` for workspace-managed directories,
+  caches, Python bytecode, and derived index artifacts.
+- Replaced local absolute paths in public documentation, profile, and example
+  configuration with portable placeholders before committing.
+- Created initial commit `9922b7b` (`Add universal research operations
+  framework`) and pushed it to public `origin/main`.
+- A draft PR was not created because this is the initial commit on the new
+  repository's default branch.
+
+### Verification
+
+- Core, framework, and E2E unittest checks passed (9 tests total).
+- Derived lexical/semantic builder regression checks passed (19 tests total).
+- Research workflow Skill and Codex plugin manifest validation passed.
+- Final branch state after initial push: `main...origin/main` with no pending
+  changes at that point.
+
 ### Unexpected verification handling
 
 - The direct `pytest` launcher did not include the workspace root in import
