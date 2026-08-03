@@ -393,3 +393,12 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   query helper, so the test extra declares it without adding the semantic
   encoder stack. The focused local Core test passed (5 checks). The next push
   reruns CI.
+
+### Final CI outcome
+
+- The corrected public workflow completed successfully: all package install,
+  entry-point, contract, core, approval, read-only MCP, MCP E2E, and lexical
+  fixture steps passed in the GitHub Actions `core-contracts` job.
+- GitHub emitted only a hosted-runner Node.js deprecation notice for the
+  upstream checkout/setup actions; it did not affect the Python workflow or
+  test result.
