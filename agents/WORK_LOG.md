@@ -212,3 +212,56 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   `python3 -m pytest`, which passed. No source or data was changed as a result.
 - The development environment lacks the optional MCP Python runtime. Pure core
   tests therefore do not import MCP transport; no dependency was installed.
+
+## 2026-08-04 — review P0 plan: Core retrieval and approval hardening
+
+### Ownership and scope
+
+- Requested by: User
+- Planned and executed by: Codex
+- Decision: implement only the review's P0 integration and integrity findings;
+  defer package/distribution, license, and full schema-validator parity work.
+
+### Planned changes
+
+- Add a derived-only Core-to-index projection that maps `record_id`,
+  `record_kind`, `source_refs`, and `relations[].target_id` into the existing
+  lexical/semantic document contract without altering canonical JSONL.
+- Resolve Core amendments before indexing, alongside existing legacy correction
+  handling.
+- Require an existing `approval` record that is approved, human-issued, and
+  explicitly scoped before the append helper accepts a record.
+- Have evidence fetch report indexed and current SHA-256 values plus a bounded
+  integrity status.
+
+### Verification plan
+
+- Run the core, framework, Core MCP E2E, lexical-builder, and semantic-builder
+  fixture tests. The tests use temporary directories only and do not create or
+  modify the project ledger or derived indexes.
+
+### Results
+
+- Added `core/indexing.py`; its projection is derived-only and keeps the Core
+  record itself as the `raw_json` authority in SQLite.
+- Both index builders now distinguish Core from legacy input, apply the
+  appropriate append-only correction mechanism, and project Core fields before
+  retrieval indexing.
+- `append_approved_record` now rejects nonexistent, non-approval, non-approved,
+  AI-issued, unscoped, and out-of-scope approval references.
+- `memory_fetch_evidence` now reports `indexed_sha256`, `current_sha256`, and
+  `integrity_status`; `sha256` remains a compatibility alias for the current
+  file hash. Read-only SQLite connections now close explicitly.
+- The E2E fixture uses a Core claim and protocol, verifies the relational
+  projection and raw Core provenance, confirms a matched hash, then mutates its
+  temporary source and confirms `mismatched` status.
+
+### Verification outcomes
+
+- `python3 -m unittest discover -s tests -p 'test_core_ledger.py'`: 4 passed.
+- `python3 -m unittest discover -s tests -p 'test_framework_operations.py'`: 6 passed.
+- `python3 -m unittest discover -s tests -p 'test_research_memory_e2e.py'`: 1 passed.
+- `python3 -m pytest -q tests/test_build_research_ledger_index.py tests/test_build_research_semantic_index.py`: 20 passed.
+- No warnings remained after explicitly closing MCP read-only SQLite
+  connections. No reference-project, canonical-project-ledger, historical-log,
+  network, or daemon operation occurred.

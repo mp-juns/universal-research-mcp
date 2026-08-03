@@ -81,8 +81,11 @@ for the canonical ledger.
   adapters from the universal core.
 - `core/ledger.py` validates core records and existing legacy events without
   writing data.
+- `core/indexing.py` maps `core/1.0` records to the lexical and semantic
+  retrieval projection while preserving the original record as canonical JSON.
 - `mcp/research_memory/` provides local read-only candidate retrieval and
-  evidence fetch. It never exposes direct ledger writes.
+  evidence fetch with indexed-versus-current SHA-256 integrity status. It never
+  exposes direct ledger writes.
 
 ## Codex marketplace
 

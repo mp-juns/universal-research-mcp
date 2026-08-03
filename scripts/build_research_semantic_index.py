@@ -31,6 +31,8 @@ from scripts.research_event_corrections import (
 )
 from scripts.research_reference_corpus import REFERENCE_EVENT_TYPE, build_reference_corpus
 from core.ledger import validate_records
+from core.amendments import resolve_core_amendments
+from core.indexing import index_document, index_document_id, is_core_record
 
 
 SCHEMA_VERSION = "1.0"
@@ -84,10 +86,21 @@ def events_and_fingerprint(events_root: Path) -> tuple[list[dict], str]:
             for issue in validation_issues
         )
         raise ValueError(f"Canonical ledger validation failed: {rendered}")
-    ids = [event["event_id"] for event in events]
+    legacy_events = [event for event in events if not is_core_record(event)]
+    core_events = [event for event in events if is_core_record(event)]
+    resolved_legacy_events, _ = apply_source_range_corrections(legacy_events)
+    resolved_core_events, _ = resolve_core_amendments(core_events)
+    resolved_by_id = {
+        index_document_id(event): event
+        for event in [*resolved_legacy_events, *resolved_core_events]
+    }
+    ids = [index_document_id(event) for event in events]
     if len(ids) != len(set(ids)):
         raise ValueError("Duplicate event_id in JSONL input")
-    events, _ = apply_source_range_corrections(events)
+    events = [
+        index_document(resolved_by_id.get(index_document_id(event), event))
+        for event in events
+    ]
     reference_corpus = build_reference_corpus(events_root.parent)
     events.extend(reference_corpus.events)
     ids = [event["event_id"] for event in events]
@@ -107,8 +120,9 @@ def event_text(event: dict) -> str:
         f"Status: {event.get('status', 'unknown')}",
         f"Summary: {event.get('summary', '')}",
     ]
+    values = event.get("core_payload") if isinstance(event.get("core_payload"), dict) else event
     for key in ("expected", "observed", "interpretation", "uncertainty", "next_actions"):
-        value = event.get(key)
+        value = values.get(key)
         if value:
             rows.append(f"{key}: {json.dumps(value, ensure_ascii=False, sort_keys=True)}")
     return "\n".join(rows)

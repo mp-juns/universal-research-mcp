@@ -9,6 +9,28 @@ from typing import Any
 from core.ledger import ValidationIssue, read_jsonl, validate_core_record
 
 
+def _approval_allows(record: dict[str, Any], approval: dict[str, Any]) -> str | None:
+    if approval.get("record_kind") != "approval":
+        return "referenced record is not an approval"
+    if approval.get("status") != "approved":
+        return "referenced approval is not approved"
+    if (approval.get("created_by") or {}).get("actor_type") != "human":
+        return "approval must be issued by a human actor"
+    scope = (approval.get("payload") or {}).get("scope")
+    if not isinstance(scope, dict):
+        return "approval has no explicit scope"
+    record_ids = scope.get("record_ids", [])
+    study_ids = scope.get("study_ids", [])
+    record_kinds = scope.get("record_kinds", [])
+    if record.get("record_id") in record_ids:
+        return None
+    if record.get("study_id") not in study_ids:
+        return "approval scope does not include the record study"
+    if record.get("record_kind") not in record_kinds:
+        return "approval scope does not include the record kind"
+    return None
+
+
 def validate_commit(record: dict[str, Any], existing_records: list[dict[str, Any]], approval_ref: str) -> list[ValidationIssue]:
     """Validate a proposed core record before an adapter appends it."""
 
@@ -20,6 +42,14 @@ def validate_commit(record: dict[str, Any], existing_records: list[dict[str, Any
         issues.append(ValidationIssue(str(record.get("record_id") or "<unknown>"), "/approval_ref", "explicit approval reference is required"))
     elif approval_ref not in record.get("approval_refs", []):
         issues.append(ValidationIssue(str(record.get("record_id") or "<unknown>"), "/approval_refs", "record must carry the explicit approval reference"))
+    else:
+        approval = next((item for item in existing_records if item.get("record_id") == approval_ref), None)
+        if approval is None:
+            issues.append(ValidationIssue(str(record.get("record_id") or "<unknown>"), "/approval_refs", "referenced approval record does not exist"))
+        else:
+            reason = _approval_allows(record, approval)
+            if reason:
+                issues.append(ValidationIssue(str(record.get("record_id") or "<unknown>"), "/approval_refs", reason))
     if record.get("status") in {"draft", "proposed"}:
         issues.append(ValidationIssue(str(record.get("record_id") or "<unknown>"), "/status", "drafts and proposals cannot be committed to canonical ledger"))
     return issues

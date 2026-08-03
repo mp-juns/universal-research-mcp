@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
@@ -97,7 +98,7 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
         params.append(status)
     params.append(top_k)
     where = " AND " + " AND ".join(filters) if filters else ""
-    with open_readonly(RESEARCH_DB) as db:
+    with closing(open_readonly(RESEARCH_DB)) as db:
         rows = db.execute(
             f"""
             SELECT e.event_id, e.event_type, e.status, e.date, e.summary,
@@ -110,6 +111,17 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
             params,
         ).fetchall()
     return [_result(row, rank, -float(row["bm25_raw"])) for rank, row in enumerate(rows, 1)]
+
+
+def indexed_source_hashes(path: str) -> list[str]:
+    """Return distinct nonempty hashes recorded for a source path in the index."""
+
+    with closing(open_readonly(RESEARCH_DB)) as db:
+        rows = db.execute(
+            "SELECT DISTINCT source_sha256 FROM events WHERE source_path = ? AND source_sha256 IS NOT NULL AND source_sha256 <> ''",
+            (path,),
+        ).fetchall()
+    return sorted(str(row["source_sha256"]) for row in rows)
 
 
 def _recency_key(row: sqlite3.Row) -> float:
@@ -148,7 +160,7 @@ def memory_search_candidates(query: str, top_k: int = 8, mode: Literal["lexical"
 def memory_latest(top_k: int = 5) -> dict[str, Any]:
     """Return latest non-reference records, ordered by recorded event time."""
 
-    with open_readonly(RESEARCH_DB) as db:
+    with closing(open_readonly(RESEARCH_DB)) as db:
         rows = db.execute("SELECT event_id, event_type, status, date, summary, raw_json FROM events WHERE event_type <> 'reference_document'").fetchall()
     ordered = sorted(rows, key=lambda row: (_recency_key(row), row["event_id"]), reverse=True)[: max(1, min(int(top_k), 100))]
     return {"results": [{key: row[key] for key in ("event_id", "event_type", "status", "date", "summary")} for row in ordered]}
@@ -167,11 +179,23 @@ def memory_fetch_evidence(path: str, start_line: int, end_line: int | None = Non
     lines = resolved.read_text(encoding="utf-8", errors="replace").splitlines()
     end = min(end, len(lines))
     content = "\n".join(f"{number}: {text}" for number, text in enumerate(lines[start - 1:end], start))
+    current_sha256 = hashlib.sha256(resolved.read_bytes()).hexdigest()
+    hashes = indexed_source_hashes(path)
+    indexed_sha256 = hashes[0] if len(hashes) == 1 else None
+    integrity_status = (
+        "matched" if indexed_sha256 == current_sha256 else "mismatched"
+        if indexed_sha256 is not None else "not_indexed" if not hashes else "ambiguous"
+    )
     return {
         "path": str(resolved.relative_to(ROOT)),
         "start_line": start,
         "end_line": end,
-        "sha256": hashlib.sha256(resolved.read_bytes()).hexdigest(),
+        # Keep the prior field as a compatibility alias. New callers should
+        # use the explicit indexed/current fields and integrity status.
+        "sha256": current_sha256,
+        "indexed_sha256": indexed_sha256,
+        "current_sha256": current_sha256,
+        "integrity_status": integrity_status,
         "content": content,
     }
 

@@ -1,4 +1,5 @@
 from copy import deepcopy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -23,6 +24,17 @@ def base_record(record_id: str, kind: str, status: str = "completed") -> dict:
     }
 
 
+def approved_scope() -> dict:
+    approval = base_record("approval_fixture", "approval", status="approved")
+    approval["payload"] = {
+        "scope": {
+            "study_ids": ["study_fixture"],
+            "record_kinds": ["observation"],
+        }
+    }
+    return approval
+
+
 class FrameworkOperationTests(unittest.TestCase):
     def test_completed_amendment_only_changes_resolved_view(self) -> None:
         original = base_record("obs_original", "observation")
@@ -43,12 +55,40 @@ class FrameworkOperationTests(unittest.TestCase):
         record["approval_refs"] = ["approval_fixture"]
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "events.jsonl"
+            path.write_text(json.dumps(approved_scope()) + "\n", encoding="utf-8")
             append_approved_record(path, record, "approval_fixture")
             first = path.read_text(encoding="utf-8")
-            self.assertEqual(first.count("\n"), 1)
+            self.assertEqual(first.count("\n"), 2)
             with self.assertRaises(ValueError):
                 append_approved_record(path, record, "approval_fixture")
             self.assertEqual(path.read_text(encoding="utf-8"), first)
+
+    def test_fabricated_approval_reference_is_rejected(self) -> None:
+        record = base_record("obs_fake_approval", "observation")
+        record["approval_refs"] = ["approval_fake"]
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "events.jsonl"
+            with self.assertRaisesRegex(ValueError, "does not exist"):
+                append_approved_record(path, record, "approval_fake")
+
+    def test_approval_must_be_human_approved_and_in_scope(self) -> None:
+        record = base_record("obs_out_of_scope", "observation")
+        record["approval_refs"] = ["approval_fixture"]
+        approval = approved_scope()
+        approval["created_by"] = {"actor_id": "agent", "actor_type": "ai"}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "events.jsonl"
+            path.write_text(json.dumps(approval) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "human actor"):
+                append_approved_record(path, record, "approval_fixture")
+
+        approval = approved_scope()
+        approval["payload"]["scope"]["record_kinds"] = ["claim"]
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "events.jsonl"
+            path.write_text(json.dumps(approval) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "record kind"):
+                append_approved_record(path, record, "approval_fixture")
 
     def test_audit_returns_record_addressable_approval_finding(self) -> None:
         session = base_record("session_unapproved", "execution_session", status="active")

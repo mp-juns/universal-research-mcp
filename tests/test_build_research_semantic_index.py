@@ -56,6 +56,52 @@ def test_event_text_and_source_fingerprint_are_deterministic(tmp_path: Path) -> 
     assert "Summary: Qwen evidence extraction continued" in event_text(events[0])
 
 
+def test_core_records_project_into_semantic_retrieval_documents(tmp_path: Path) -> None:
+    root = tmp_path / "research-events"
+    digest = "a" * 64
+    write_jsonl(
+        root / "sources.jsonl",
+        [{"source_id": "src", "source_path": "docs/source.md", "source_sha256": digest, "source_type": "markdown", "legacy_import": False}],
+    )
+    protocol = {
+        "schema_version": "core/1.0", "record_id": "protocol_core", "record_kind": "protocol",
+        "study_id": "study_core", "occurred_at": "2026-08-04T09:00:00+09:00",
+        "recorded_at": "2026-08-04T09:01:00+09:00", "status": "completed",
+        "created_by": {"actor_id": "researcher", "actor_type": "human"},
+        "payload": {"summary": "Core protocol"},
+    }
+    claim = {
+        "schema_version": "core/1.0", "record_id": "claim_core", "record_kind": "claim",
+        "study_id": "study_core", "occurred_at": "2026-08-04T10:00:00+09:00",
+        "recorded_at": "2026-08-04T10:01:00+09:00", "status": "completed",
+        "created_by": {"actor_id": "researcher", "actor_type": "human"},
+        "relations": [{"type": "uses_protocol", "target_id": "protocol_core"}],
+        "source_refs": [{
+            "artifact_revision_id": f"artifact_source@sha256:{digest}",
+            "locator": {"kind": "line_range", "path": "docs/source.md", "start": 1, "end": 2},
+            "verification_status": "human_verified",
+        }],
+        "payload": {
+            "statement": "Core claim is retrieval-ready",
+            "support_status": "supported",
+            "observed": {"statement": "Observed core evidence"},
+            "uncertainty": "Fixture only",
+        },
+    }
+    write_jsonl(root / "daily" / "2026-08-04" / "events.jsonl", [protocol, claim])
+
+    events, _ = events_and_fingerprint(root)
+    indexed_claim = next(row for row in events if row["event_id"] == "claim_core")
+
+    assert indexed_claim["relations"] == [{"type": "uses_protocol", "target": "protocol_core"}]
+    assert indexed_claim["source"]["source_path"] == "docs/source.md"
+    assert indexed_claim["source"]["source_sha256"] == digest
+    rendered = event_text(indexed_claim)
+    assert "Summary: Core claim is retrieval-ready" in rendered
+    assert "Observed core evidence" in rendered
+    assert "Fixture only" in rendered
+
+
 def test_events_apply_append_only_source_range_correction_without_rewriting_jsonl(
     tmp_path: Path,
 ) -> None:

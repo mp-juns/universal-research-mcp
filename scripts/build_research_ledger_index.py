@@ -16,6 +16,8 @@ if __package__ in (None, ""):
 from scripts.research_reference_corpus import build_reference_corpus
 from scripts.research_event_corrections import apply_source_range_corrections
 from core.ledger import validate_records
+from core.amendments import resolve_core_amendments
+from core.indexing import index_document, index_document_id, is_core_record
 
 
 SCHEMA_VERSION = "1.0"
@@ -117,13 +119,17 @@ def build(events_root: Path, output: Path) -> dict:
             for issue in validation_issues
         )
         raise ValueError(f"Canonical ledger validation failed: {rendered}")
-    resolved_canonical_events, source_corrections = apply_source_range_corrections(
-        canonical_events
-    )
-    resolved_by_id = {event["event_id"]: event for event in resolved_canonical_events}
+    legacy_events = [event for event in canonical_events if not is_core_record(event)]
+    core_events = [event for event in canonical_events if is_core_record(event)]
+    resolved_legacy_events, source_corrections = apply_source_range_corrections(legacy_events)
+    resolved_core_events, core_corrections = resolve_core_amendments(core_events)
+    resolved_by_id = {
+        index_document_id(event): event
+        for event in [*resolved_legacy_events, *resolved_core_events]
+    }
     reference_corpus = build_reference_corpus(events_root.parent)
     events = [*canonical_events, *reference_corpus.events]
-    event_ids = [event["event_id"] for event in events]
+    event_ids = [index_document_id(event) for event in events]
     if len(event_ids) != len(set(event_ids)):
         raise ValueError("Duplicate event_id in JSONL input")
 
@@ -146,20 +152,21 @@ def build(events_root: Path, output: Path) -> dict:
             ],
         )
         for event in events:
-            effective_event = resolved_by_id.get(event["event_id"], event)
+            identifier = index_document_id(event)
+            effective_event = index_document(resolved_by_id.get(identifier, event))
             source = effective_event.get("source", {})
             connection.execute(
                 """
                 INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    event["event_id"],
-                    event["date"],
-                    event["event_type"],
-                    event["status"],
-                    event["project"],
-                    event.get("workstream"),
-                    event["summary"],
+                    effective_event["event_id"],
+                    effective_event["date"],
+                    effective_event["event_type"],
+                    effective_event["status"],
+                    effective_event["project"],
+                    effective_event.get("workstream"),
+                    effective_event["summary"],
                     source.get("source_path"),
                     source.get("heading"),
                     source.get("source_sha256"),
@@ -172,19 +179,19 @@ def build(events_root: Path, output: Path) -> dict:
             )
             connection.execute(
                 "INSERT INTO event_fts VALUES (?, ?, ?, ?)",
-                (event["event_id"], event["summary"], source.get("heading", ""), source.get("source_path", "")),
+                (effective_event["event_id"], effective_event["summary"], source.get("heading", ""), source.get("source_path", "")),
             )
             connection.executemany(
                 "INSERT OR IGNORE INTO relations VALUES (?, ?, ?)",
                 [
                     (
-                        event["event_id"],
+                        effective_event["event_id"],
                         normalized.get("type", "unknown"),
                         normalized.get("target", "unknown"),
                     )
                     for normalized in (
-                        normalize_relation(relation, event_id=event["event_id"])
-                        for relation in event.get("relations", [])
+                        normalize_relation(relation, event_id=effective_event["event_id"])
+                        for relation in effective_event.get("relations", [])
                     )
                 ],
             )
@@ -192,12 +199,12 @@ def build(events_root: Path, output: Path) -> dict:
                 "INSERT OR IGNORE INTO artifacts VALUES (?, ?, ?, ?)",
                 [
                     (
-                        event["event_id"],
+                        effective_event["event_id"],
                         normalized["path"],
                         normalized.get("sha256"),
                         normalized.get("role"),
                     )
-                    for normalized in (normalize_artifact(artifact) for artifact in event.get("artifacts", []))
+                    for normalized in (normalize_artifact(artifact) for artifact in effective_event.get("artifacts", []))
                 ],
             )
         metadata = {
@@ -219,6 +226,7 @@ def build(events_root: Path, output: Path) -> dict:
             "reference_ocr_pdf_page_count": str(reference_corpus.ocr_pdf_page_count),
             "reference_extraction_error_count": str(reference_corpus.extraction_error_count),
             "source_range_correction_count": str(len(source_corrections)),
+            "core_amendment_correction_count": str(len(core_corrections)),
         }
         connection.executemany("INSERT INTO metadata VALUES (?, ?)", metadata.items())
         connection.commit()

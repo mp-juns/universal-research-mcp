@@ -97,3 +97,31 @@ read-only audit를 정의하고 project-specific 기능은 pack/profile/adapter�
 - [x] Lexical/semantic derived-index validation hooks
 - [x] Local read-only MCP audit surface and evidence-first plugin Skill
 - [x] Fixture, compatibility, Skill, and plugin validation
+
+## Active task — Core retrieval and approval P0 hardening
+
+### Objective
+
+Close the reviewed gap between `core/1.0` canonical records and the existing
+derived retrieval path, and make the append boundary verify real human approval
+scope rather than an approval-shaped string.
+
+### Approved scope
+
+- Requested by: User
+- Target files: `core/indexing.py`, `core/proposals.py`, lexical/semantic index
+  builders, read-only MCP, fixture tests, and architecture/contract docs.
+- Commands: targeted `unittest` and `pytest` validation only.
+- Success: a Core claim preserves relation and source provenance through both
+  index projections; MCP fetch compares indexed and current hashes; fabricated
+  approval references are rejected.
+- Excluded: reference project access, historical-ledger changes, package
+  installation, network, daemon startup, and any new write MCP capability.
+
+### Completed
+
+- [x] Core-to-index compatibility projection for lexical and semantic builders
+- [x] Real, human-issued, approved, scoped approval verification at append
+  boundary
+- [x] Indexed/current source-hash integrity status in evidence fetch
+- [x] Core-only candidate → fetch → audit E2E and negative approval fixtures

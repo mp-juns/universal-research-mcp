@@ -22,12 +22,16 @@ revision and a line, page, row, or structured-data locator.
 - `core/amendments.py` creates a narrow, fail-closed resolved view for completed
   payload amendments without changing canonical records.
 - `core/proposals.py` supplies an explicit approval-checked append boundary;
-  the MCP intentionally does not call it.
+  it resolves the referenced approval record and requires approved, human,
+  explicitly scoped authority. The MCP intentionally does not call it.
 - `core/audit.py` derives read-only findings with record-addressable evidence.
 - `scripts/validate_research_ledger.py` is a read-only ledger validation entry
   point.
+- `core/indexing.py` projects Core 1.0 records into a compatibility retrieval
+  document; canonical JSONL remains unchanged and is retained as `raw_json`.
 - `mcp/research_memory/` is a local, read-only lexical retrieval adapter. It
-  does not start a daemon, load a model, or expose writes.
+  does not start a daemon, load a model, or expose writes. Evidence fetch
+  reports indexed-versus-current source hash integrity.
 - The MCP transport requires the documented `mcp[cli]` runtime. Pure ledger and
   lexical-query contract tests do not import that optional transport runtime.
 - `packs/` adds constraints without relaxing the core policy.
