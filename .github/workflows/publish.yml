@@ -22,10 +22,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Build distribution artifacts
+      - name: Install test and build dependencies
+        run: python -m pip install --upgrade ".[test]" build twine
+      - name: Run the complete test suite
+        run: python -m pytest -q
+      - name: Build and inspect distribution artifacts
         run: |
-          python -m pip install --upgrade build twine
           python -m build
+          python scripts/validate_distribution_artifact.py dist/*.whl
           twine check dist/*
+      - name: Install the wheel and initialize a fresh project
+        run: |
+          python -m venv --system-site-packages "$RUNNER_TEMP/universal-research-wheel-venv"
+          "$RUNNER_TEMP/universal-research-wheel-venv/bin/python" -m pip install --no-deps --force-reinstall dist/*.whl
+          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" --version
+          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research-mcp" --version
+          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" --help
+          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" init "$RUNNER_TEMP/universal-research-smoke"
+          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" doctor --root "$RUNNER_TEMP/universal-research-smoke"
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

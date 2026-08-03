@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.local/schemas/index-health-v1.json",
+  "title": "Derived Research Index Health Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "index_revision", "event_count", "passage_count", "embedding_model", "embedding_dimension", "artifact_hashes", "source_event_ids", "retrieval_verification", "failures"],
+  "properties": {
+    "schema_version": {"const": "research-index-health-v1"},
+    "status": {"enum": ["succeeded", "partial", "failed", "stale"]},
+    "index_revision": {"type": "string", "minLength": 1},
+    "event_count": {"type": "integer", "minimum": 0},
+    "passage_count": {"type": "integer", "minimum": 0},
+    "embedding_model": {"type": "string", "minLength": 1},
+    "embedding_dimension": {"type": "integer", "minimum": 0},
+    "artifact_hashes": {"type": "array"},
+    "source_event_ids": {"type": "array"},
+    "retrieval_verification": {"type": "object", "required": ["status"], "properties": {"status": {"enum": ["passed", "failed", "not_run"]}}},
+    "failures": {"type": "array"}
+  }
+}

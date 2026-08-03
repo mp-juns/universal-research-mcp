@@ -1,20 +1,41 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.1.0"
-description = "Source-grounded, append-only research operations framework and read-only MCP retrieval layer."
+version = "0.3.0"
+description = "Provenance-first research memory and governed research workflows for Codex."
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "mp-juns"}]
-keywords = ["mcp", "research", "provenance", "audit", "reproducibility"]
+keywords = ["codex", "mcp", "research", "provenance", "audit", "reproducibility"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
 dependencies = ["mcp>=1.27,<2"]
 
+[project.urls]
+Homepage = "https://github.com/mp-juns/universal-research-mcp"
+Repository = "https://github.com/mp-juns/universal-research-mcp"
+Issues = "https://github.com/mp-juns/universal-research-mcp/issues"
+Documentation = "https://github.com/mp-juns/universal-research-mcp#readme"
+
 [project.optional-dependencies]
-test = ["jsonschema[format]>=4.25", "numpy>=1.26", "pytest>=8"]
+test = [
+  "jsonschema[format]>=4.25",
+  "numpy>=1.26",
+  "pytest>=8",
+  "watchdog>=4",
+]
 semantic = [
   "huggingface-hub>=0.23",
   "numpy>=1.26",
@@ -25,7 +46,37 @@ semantic = [
 ]
 
 [project.scripts]
-universal-research-mcp = "universal_research_mcp.server:main"
+universal-research-mcp = "universal_research_mcp.cli:legacy_main"
+universal-research-governance = "universal_research_mcp.governance_server:main"
+universal-research = "universal_research_mcp.cli:main"
+urgov = "governance.cli:main"
 
 [tool.setuptools]
-packages = ["adapters", "core", "universal_research_mcp"]
+packages = ["adapters", "core", "governance", "integrations", "integrations.codex", "scripts", "universal_research_mcp", "universal_research_mcp.agent_runtime", "universal_research_mcp.harness", "universal_research_mcp.indexing", "universal_research_mcp.providers", "universal_research_mcp.runtime"]
+
+[tool.setuptools.package-data]
+governance = ["roles/*/role.yaml", "roles/*/instructions.md", "schemas/*.json"]
+
+[tool.setuptools.data-files]
+"share/universal-research-mcp/docs" = [
+  "docs/failure-policy.md",
+  "docs/host-integration.md",
+  "docs/security.md",
+]
+"share/universal-research-mcp/schemas" = ["schemas/*.json"]
+"share/universal-research-mcp/packs/study_type" = ["packs/study_type/*.yaml"]
+"share/universal-research-mcp/plugin/universal-research-memory" = [
+  "plugin/universal-research-memory/.mcp.json",
+]
+"share/universal-research-mcp/plugin/universal-research-memory/.codex-plugin" = [
+  "plugin/universal-research-memory/.codex-plugin/plugin.json",
+]
+"share/universal-research-mcp/plugin/universal-research-memory/skills/research-workflow" = [
+  "plugin/universal-research-memory/skills/research-workflow/SKILL.md",
+]
+"share/universal-research-mcp/plugin/universal-research-memory/skills/research-governance" = [
+  "plugin/universal-research-memory/skills/research-governance/SKILL.md",
+]
+"share/universal-research-mcp/plugin/universal-research-memory/skills/research-governance/agents" = [
+  "plugin/universal-research-memory/skills/research-governance/agents/openai.yaml",
+]

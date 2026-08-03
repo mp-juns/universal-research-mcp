@@ -1,4 +1,4 @@
-profile_version: profile/1.0
+profile_version: profile/2.0
 
 project:
   id: study_universal_research_memory
@@ -28,6 +28,17 @@ adapters:
     plan_view: agents/TODO.md
     work_log_view: agents/WORK_LOG.md
     session_view_root: agents/sessions
+
+governance:
+  version: agent-governance/2.0
+  failure_policy:
+    stop: blocking_only
+    record: ask
+    detail: redacted
+  capability_defaults:
+    # Host visualization means the Codex visualization skill, not ordinary plots.
+    host_visualization: off
+    data_plot_generation: scoped
 
 policy_overlay:
   approval_required_actions:

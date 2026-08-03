@@ -12,8 +12,8 @@ decisions, results, failures, or artifacts managed by this project.
 
 1. Call `memory_search_candidates` to obtain candidate records.
 2. Treat every returned score, preview, and summary as candidate metadata.
-3. For any material claim, call `memory_fetch_evidence` for the returned path
-   and line range.
+3. For any material claim, call `memory_fetch_evidence` with the returned
+   `event_id`, path, line range, and `source_sha256` as `expected_sha256`.
 4. State the verified path, line range, and uncertainty with the conclusion.
 5. If evidence conflicts, preserve the conflict rather than merging it.
 
@@ -25,8 +25,10 @@ approve a session, alter a record, or settle a scientific conclusion.
 
 ## Operating boundaries
 
-- Do not create, modify, delete, copy, index, test, install, network, or run
-  background work without explicit user approval.
+- The configured automatic lexical bootstrap may create or replace only the
+  project-local derived index after staging verification. Do not otherwise
+  create, modify, delete, copy, index, test, install, network, call a model, or
+  run background work without explicit user approval and scope validation.
 - Do not treat semantic similarity or search rank as research evidence.
 - Do not make unsupported faster, better, optimal, causal, or performance
   claims.

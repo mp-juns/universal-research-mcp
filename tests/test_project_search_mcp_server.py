@@ -1,3 +1,14 @@
+# ruff: noqa: E402
+
+import pytest
+
+
+pytest.skip(
+    "legacy project-specific search daemon is intentionally outside the "
+    "universal package; keep these fixtures for a future compatibility adapter",
+    allow_module_level=True,
+)
+
 from tools.project_search.mcp_server import (
     _dedupe_candidates,
     _event_recency_timestamp,
@@ -81,10 +92,7 @@ def test_event_recency_timestamp_prefers_timestamp_end() -> None:
         '{"timestamp_start":"2026-07-27T03:00:00+09:00",'
         '"timestamp_end":"2026-07-27T22:29:41+09:00"}'
     )
-    assert (
-        _event_recency_timestamp(raw, "2026-07-27")
-        == "2026-07-27T22:29:41+09:00"
-    )
+    assert _event_recency_timestamp(raw, "2026-07-27") == "2026-07-27T22:29:41+09:00"
     assert (
         _event_recency_timestamp(
             '{"timestamp_start":"2026-07-27T03:00:00+09:00"}',

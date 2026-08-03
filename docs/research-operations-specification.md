@@ -337,7 +337,11 @@ universal-research-mcp --root /path/to/research-project
 - `memory_latest`: 최신 non-reference record 조회
 - `memory_fetch_evidence`: 원문 line range와 hash integrity 확인
 - `memory_audit_ledger`: read-only policy and integrity findings
-- `research_search`, `research_latest`, `research_fetch`: compatibility alias
+- `research_search`, `research_latest`, `research_fetch`: 기본 비노출 compatibility alias. 구형 client가 필요한 경우에만 `--legacy-tools` 또는 `UNIVERSAL_RESEARCH_ENABLE_LEGACY_TOOLS=1`로 활성화한다.
+
+현재 공개 MCP query schema는 lexical mode만 허용한다. Semantic index는 별도 관리
+CLI가 원자적으로 생성·검증하지만, query-time encoder/ranker가 연결되기 전에는
+semantic/hybrid 요청을 빈 성공 결과로 반환하지 않는다.
 
 제공하지 않는 도구:
 

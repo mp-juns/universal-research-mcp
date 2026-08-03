@@ -106,7 +106,10 @@ def test_incremental_metadata_keeps_references_separate(
     assert metadata["reference_ocr_pdf_page_count"] == "1"
     assert metadata["encoder_dtype"] == "float32"
     assert metadata["encoder_smoke_count"] == "1"
-    assert metadata["encoder_compatibility_bridge"] == watcher.ENCODER_COMPATIBILITY_BRIDGE_VERSION
+    assert (
+        metadata["encoder_compatibility_bridge"]
+        == watcher.ENCODER_COMPATIBILITY_BRIDGE_VERSION
+    )
     assert metadata["encoder_restored_tensor_count"] == "2"
     assert metadata["encoder_repaired_buffer_count"] == "4"
     assert metadata["encoder_oracle_status"] == "passed"
@@ -115,7 +118,10 @@ def test_incremental_metadata_keeps_references_separate(
     assert manifest["embedding_count"] == "3"
     assert manifest["encoder_dtype"] == "float32"
     assert manifest["encoder_smoke_count"] == "1"
-    assert manifest["encoder_compatibility_bridge"] == watcher.ENCODER_COMPATIBILITY_BRIDGE_VERSION
+    assert (
+        manifest["encoder_compatibility_bridge"]
+        == watcher.ENCODER_COMPATIBILITY_BRIDGE_VERSION
+    )
 
 
 def test_incremental_correction_replaces_existing_target_passages(
@@ -130,8 +136,10 @@ def test_incremental_correction_replaces_existing_target_passages(
     source_path.write_text("# Evidence\nalpha\n\nbeta\ngamma\n", encoding="utf-8")
     target = {
         "event_id": "evt_target",
+        "date": "2026-08-03",
         "event_type": "observation",
         "status": "completed",
+        "project": "watcher-fixture",
         "summary": "target before correction",
         "source": {
             "source_path": "evidence.md",
@@ -169,8 +177,10 @@ def test_incremental_correction_replaces_existing_target_passages(
 
     correction = {
         "event_id": "evt_correction",
+        "date": "2026-08-03",
         "event_type": "amendment",
         "status": "completed",
+        "project": "watcher-fixture",
         "summary": "correct target range",
         "observed": {
             "corrected_event_id": target["event_id"],

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.local/schemas/role-prompt-pack-v1.json",
+  "title": "Universal Research Governance Role Prompt Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "governance_version",
+    "agent_id",
+    "version",
+    "mission",
+    "inputs",
+    "outputs",
+    "forbidden",
+    "activation",
+    "prompt_injection",
+    "evidence",
+    "output_contract",
+    "prompt_pack_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "role-prompt-pack/1.0"},
+    "governance_version": {"const": "agent-governance/2.0"},
+    "agent_id": {
+      "enum": [
+        "scope_and_cost_governor",
+        "retrieval_governor",
+        "benchmark_control_auditor",
+        "analysis_objectivity_auditor",
+        "paper_evidence_evaluator",
+        "correction_executor",
+        "research_memory_maintainer",
+        "cold_adversarial_reviewer",
+        "substance_reviewer",
+        "user_alignment_reviewer",
+        "reproducibility_reviewer"
+      ]
+    },
+    "version": {"type": "string", "minLength": 1},
+    "mission": {"type": "string", "minLength": 1},
+    "inputs": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "outputs": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "forbidden": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "activation": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "prompt_injection": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "evidence": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "output_contract": {"$ref": "#/$defs/nonempty_unique_strings"},
+    "prompt_pack_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "nonempty_unique_strings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

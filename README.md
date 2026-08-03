@@ -1,61 +1,80 @@
-# Universal Research Memory MCP
+# Universal Research MCP
 
-연구의 검색 결과를 곧바로 사실로 취급하지 않고, 계획·승인·관찰·주장·실패·수정·기여를 출처와 함께 추적하는 append-only 연구 운영 프레임워크이자 read-only MCP다.
+연구 검색 결과를 곧바로 사실로 취급하지 않고 계획·승인·관찰·주장·실패·수정·기여를
+출처와 함께 추적하는 append-only 연구 운영 프레임워크이자 provenance-first MCP다.
+Canonical JSONL은 권위 원본이며 SQLite 검색 DB는 검증 후 재생성할 수 있는 파생물이다.
 
-현재 공개본은 **prototype**이다. Canonical JSONL을 권위 원본으로 유지하고,
-SQLite/semantic index는 언제든 재생성 가능한 검색 projection으로만 다룬다.
+> **지원 범위 (0.3.0 preview): 현재 공개 통합 대상은 Codex 플러그인뿐이다.**
+> 모델 선택, 실제 에이전트 세션, 도구 실행과 승인은 Codex host가 소유한다.
+> Ollama·OpenAI API·Anthropic API·Moonshot/Kimi 모델 실행과 Claude Code·OpenCode·
+> OpenClaw 통합은 이번 공개본에서 지원하거나 자동 호출하지 않는다.
+
+저장소에는 후속 연구용 provider/runtime prototype이 남아 있을 수 있으나 기본 CLI,
+Codex 플러그인, MCP 도구 또는 배포 entry point로 노출되지 않는다. 이 내부 코드는
+호환성·지원 계약이 아니며 현재 공개 기능으로 간주하면 안 된다.
 
 ## Quick Start (5 minutes)
 
-요구 사항: Python 3.11 이상. [uv](https://docs.astral.sh/uv/)가 있으면 clone한
-저장소 루트에서 다음 한 줄로 local MCP를 시작한다.
+Python 3.11 이상이 필요하다. PyPI 설치 후 독립 연구 저장소와 검색 DB를 초기화한다.
 
 ```bash
-uv run universal-research-mcp --root .
+python -m pip install universal-research-mcp
+universal-research init ./my-research
+universal-research serve --root ./my-research
 ```
 
-또는 표준 Python 환경에서 설치한다.
+초기화는 빈 `sources.jsonl`, 무결성 검증된 FTS5 DB, 빈 semantic DB를 만든다.
+Canonical JSONL을 수정하지 않는 lexical refresh는 staging DB 검증 후 원자적으로
+교체된다. 프로젝트 경로는 `--root` 또는 `UNIVERSAL_RESEARCH_ROOT`로 지정한다.
 
-```bash
-python -m pip install .
-universal-research-mcp --root /path/to/research-project
-```
+기본 `universal_research` MCP는 다음만 제공한다.
 
-`--root` 아래에는 canonical `data/events/`와 파생
-`data/index/research.sqlite`가 있어야 한다. 서버는 검색·근거 fetch·audit만
-제공하며 JSONL write, approval, amendment, model loading, remote proxy를 하지
-않는다. Codex plugin은 repository-relative Python 파일 대신 이 안정적인
-`universal-research-mcp` 실행 파일을 사용한다. 프로젝트 경로는 Codex가 MCP를
-시작하는 working directory이거나 `UNIVERSAL_RESEARCH_ROOT` 환경변수로 지정한다.
+- 근거 후보 검색과 event/hash가 결합된 원문 재검증
+- 고정 11-role governance contract와 Codex dispatch manifest 준비
+- scope/cost preflight, deterministic operation gate, failure tombstone 준비
+- lexical/semantic 파생 index 상태
 
-## Optional semantic adapter
-
-기본 MCP는 가벼운 lexical retrieval만 제공한다. 기존 semantic index builder는
-의도적으로 별도 설치 대상이다.
-
-```bash
-python -m pip install '.[semantic]'
-```
-
-이 extra는 encoder runtime만 제공하며 모델을 자동으로 내려받거나 MCP에 model
-loading tool을 추가하지 않는다. 모델 snapshot download, semantic index build, 또는
-benchmark는 별도 연구 계획·승인 범위에서 실행해야 한다.
+MCP는 사용자 대신 승인하거나 canonical ledger를 쓰지 않으며 모델·API·benchmark를
+호출하지 않는다. 현재 query-time 검색은 lexical mode만 지원한다. Dense embedding
+생성과 외부 provider fallback은 후속 릴리스 범위다.
 
 ## Minimal evidence flow
 
 ```text
-canonical JSONL → derived SQLite candidates → memory_fetch_evidence
-→ indexed/current hash check → bounded claim, decision, or audit finding
+canonical JSONL → staged/verified SQLite candidates → memory_fetch_evidence
+with event_id + expected_sha256 → current hash check → bounded claim
 ```
 
-검색 후보는 근거가 아니다. 중요한 결론에는 `memory_fetch_evidence`가 반환한
-원문 path·line range·`integrity_status`를 함께 남긴다.
+검색 후보는 근거가 아니다. 중요한 결론에는 `memory_fetch_evidence`가 반환한 원문
+event ID·path·line range·expected/current hash·`integrity_status`를 함께 남긴다.
+인덱스에 등록되지 않은 프로젝트 파일은 fetch할 수 없다.
+
+## Governed Codex agents
+
+`scope_and_cost_governor`는 모든 mode에서 계획 승인 전에 실행된다. 필요성, 시간 범위,
+작업 단위, 난이도, compute/network 비용과 근거를 평가하지만 직접 승인하거나 프로세스를
+종료하지 않는다. 실제 allow/block은 승인된 `scope_hash`와 tool call을 비교하는
+결정론적 controller가 수행한다.
+
+플러그인은 role별 task packet, hash-bound scope receipt, 동일 evidence snapshot을 가진
+Codex dispatch manifest를 준비한다. manifest 자체는 에이전트를 시작하지 않는다.
+Codex가 host 권한과 사용자 entitlement 안에서 실제 subagent를 만들고 병렬 실행하며,
+세션·모델·GUI 표시 여부도 Codex surface가 결정한다. 플러그인이 별도 유료 API로
+우회하거나 Codex 구독 권한을 외부 API quota로 바꾸지 않는다.
+
+실패 정책 기본값은 `blocking_only + ask + redacted`다. 실패 사실과 최소 tombstone은
+항상 남고 상세 보존만 `full | metadata_only | ask` 및
+`full | redacted | hashes_only`로 조절한다. `off` 모드는 없다.
+
+Codex host visualization은 기본값이 `off`다. task capability scope, plan reference,
+사용자의 명시적 opt-in이 모두 있을 때만 별도로 사용할 수 있다. 일반 데이터 plot
+권한은 host visualization 권한을 뜻하지 않는다.
 
 ## 목적
 
 - 연구 계획, 승인, 실행, 실패, 결정, 결과, 출처를 추적하는 공통 운영 규칙을 제공한다.
 - 기존 연구 프로젝트의 BM25/FTS5 및 dense embedding DB 구조를 참고해 재현 가능한 연구 기억 저장소를 설계한다.
-- `research_search`, `research_latest`, `research_fetch` 같은 source-grounded MCP 도구를 범용화한다.
+- `memory_search_candidates`, `memory_latest`, `memory_fetch_evidence` 같은 source-grounded MCP 도구를 범용화한다.
 - Codex 플러그인으로 설치할 수 있는 독립적인 연구 작업 환경을 제공한다.
 
 ## 현재 연구 폴더와의 경계
@@ -79,7 +98,7 @@ canonical JSONL → derived SQLite candidates → memory_fetch_evidence
 
 다음 항목을 원본에서 보존적으로 복사하고 범용화한다.
 
-- `tools/project_search/`의 MCP proxy, API server, query expansion, export 코드
+- `mcp/project_search/`의 legacy MCP proxy, API server, query expansion, export 코드
 - 연구 ledger 조회·lexical index·semantic index·watcher에 필요한 `scripts/` 모듈
 - MCP 전용 requirements와 환경설정 예시
 - `AGENT_RULES.md`, `TODO.md`, `WORK_LOG.md`, agent 운영 README의 구조와 attribution 규칙
@@ -135,22 +154,34 @@ for the canonical ledger.
 - `mcp/research_memory/` provides local read-only candidate retrieval and
   evidence fetch with indexed-versus-current SHA-256 integrity status. It never
   exposes direct ledger writes.
+- `core/governance.py` defines the fixed eleven-role research governance roster,
+  mode activation, task/decision validation, claim escalation, and concise
+  central-manager reporting without executing models or experiments.
+- `core/index_refresh.py` permits only canonical-event-triggered derived-index
+  refreshes and validates index-health records; it never rewrites canonical
+  evidence. See `docs/multi-agent-governance.md`.
 
 ## Codex marketplace
 
 `marketplace_root/.agents/plugins/marketplace.json` is a repository-contained
 local marketplace. Its plugin source is a relative link to the canonical plugin
 directory, so it can be registered locally without copying plugin code. The
-plugin itself calls the installed `universal-research-mcp` entry point; it does
+plugin requires the PyPI package to be installed first and calls its
+`universal-research` entry point; it does
 not reach back to `../../mcp` or `../../data`. The top-level `.agents` directory
 is workspace-managed and read-only.
 
 ## 상태
 
-현재 단계는 원본 MCP와 DB 구조를 독립 프로젝트로 이주하는 bootstrap 단계다. 이 단계에서는 실험, benchmark, network, background watcher, remote 작업을 실행하지 않는다.
+현재 공개 지원 범위는 Codex 플러그인, 로컬 lexical lifecycle, source-grounded evidence
+fetch, 11-role governance, 비실행 Codex dispatch contract다. 설치·기본 MCP 시작·CI는
+API 호출, local model call, 모델 download, benchmark, background watcher를 실행하지
+않는다. 내부 provider/runtime prototype은 기본 공개면에서 비활성화되어 있다.
 
 ## 다음 단계
 
-- claim, protocol, contribution, and audit projections as display adapters
-- a separately approved append-only proposal/commit write boundary
-- fixture-based contract expansion before any index builder integration
+- top-level `core`/`adapters` compatibility packages의 차기 namespaced migration
+- 영어 기본 README와 한국어 `README.ko.md` 분리
+- Codex host dispatch 통합 fixture와 설치 문서 강화
+- 별도 설계·보안 검토 후 local/OpenAI/Anthropic/Moonshot provider adapter 평가
+- Claude Code·OpenCode·OpenClaw용 host adapter는 각각 독립 지원 계약으로 검토

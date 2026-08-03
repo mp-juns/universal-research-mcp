@@ -24,7 +24,11 @@ SCHEMA_VERSION = "1.0"
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
 
 
 def normalize_artifact(artifact: dict | str) -> dict:
@@ -103,7 +107,26 @@ def initialize(connection: sqlite3.Connection) -> None:
     )
 
 
-def build(events_root: Path, output: Path) -> dict:
+def _infer_project_root(events_root: Path) -> Path:
+    """Keep legacy layouts while recognizing the packaged data/events layout."""
+
+    resolved = events_root.resolve()
+    if resolved.name == "events" and resolved.parent.name == "data":
+        return resolved.parent.parent
+    return resolved.parent
+
+
+def build(
+    events_root: Path,
+    output: Path,
+    project_root: Path | None = None,
+) -> dict:
+    events_root = events_root.resolve()
+    project_root = (
+        project_root.resolve()
+        if project_root is not None
+        else _infer_project_root(events_root)
+    )
     sources_path = events_root / "sources.jsonl"
     if not sources_path.exists():
         raise FileNotFoundError(f"Missing source manifest: {sources_path}")
@@ -121,13 +144,15 @@ def build(events_root: Path, output: Path) -> dict:
         raise ValueError(f"Canonical ledger validation failed: {rendered}")
     legacy_events = [event for event in canonical_events if not is_core_record(event)]
     core_events = [event for event in canonical_events if is_core_record(event)]
-    resolved_legacy_events, source_corrections = apply_source_range_corrections(legacy_events)
+    resolved_legacy_events, source_corrections = apply_source_range_corrections(
+        legacy_events
+    )
     resolved_core_events, core_corrections = resolve_core_amendments(core_events)
     resolved_by_id = {
         index_document_id(event): event
         for event in [*resolved_legacy_events, *resolved_core_events]
     }
-    reference_corpus = build_reference_corpus(events_root.parent)
+    reference_corpus = build_reference_corpus(project_root)
     events = [*canonical_events, *reference_corpus.events]
     event_ids = [index_document_id(event) for event in events]
     if len(event_ids) != len(set(event_ids)):
@@ -179,7 +204,12 @@ def build(events_root: Path, output: Path) -> dict:
             )
             connection.execute(
                 "INSERT INTO event_fts VALUES (?, ?, ?, ?)",
-                (effective_event["event_id"], effective_event["summary"], source.get("heading", ""), source.get("source_path", "")),
+                (
+                    effective_event["event_id"],
+                    effective_event["summary"],
+                    source.get("heading", ""),
+                    source.get("source_path", ""),
+                ),
             )
             connection.executemany(
                 "INSERT OR IGNORE INTO relations VALUES (?, ?, ?)",
@@ -190,7 +220,9 @@ def build(events_root: Path, output: Path) -> dict:
                         normalized.get("target", "unknown"),
                     )
                     for normalized in (
-                        normalize_relation(relation, event_id=effective_event["event_id"])
+                        normalize_relation(
+                            relation, event_id=effective_event["event_id"]
+                        )
                         for relation in effective_event.get("relations", [])
                     )
                 ],
@@ -204,7 +236,10 @@ def build(events_root: Path, output: Path) -> dict:
                         normalized.get("sha256"),
                         normalized.get("role"),
                     )
-                    for normalized in (normalize_artifact(artifact) for artifact in effective_event.get("artifacts", []))
+                    for normalized in (
+                        normalize_artifact(artifact)
+                        for artifact in effective_event.get("artifacts", [])
+                    )
                 ],
             )
         metadata = {
@@ -222,9 +257,13 @@ def build(events_root: Path, output: Path) -> dict:
             "reference_auxiliary_count": str(reference_corpus.auxiliary_count),
             "reference_pdf_count": str(reference_corpus.pdf_count),
             "reference_pdf_page_count": str(reference_corpus.pdf_page_count),
-            "reference_sparse_pdf_page_count": str(reference_corpus.sparse_pdf_page_count),
+            "reference_sparse_pdf_page_count": str(
+                reference_corpus.sparse_pdf_page_count
+            ),
             "reference_ocr_pdf_page_count": str(reference_corpus.ocr_pdf_page_count),
-            "reference_extraction_error_count": str(reference_corpus.extraction_error_count),
+            "reference_extraction_error_count": str(
+                reference_corpus.extraction_error_count
+            ),
             "source_range_correction_count": str(len(source_corrections)),
             "core_amendment_correction_count": str(len(core_corrections)),
         }
@@ -238,8 +277,23 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--events-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--project-root", type=Path)
     args = parser.parse_args()
-    print(json.dumps(build(args.events_root.resolve(), args.output.resolve()), ensure_ascii=False, sort_keys=True))
+    print(
+        json.dumps(
+            build(
+                args.events_root.resolve(),
+                args.output.resolve(),
+                project_root=(
+                    args.project_root.resolve()
+                    if args.project_root is not None
+                    else None
+                ),
+            ),
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
     return 0
 
 

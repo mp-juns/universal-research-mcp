@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.example/schemas/benchmark-run/1.0",
+  "title": "MCP A/B Benchmark Run Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "benchmark_id", "trial_id", "task_id", "condition", "repetition", "run_status", "configuration_fingerprint", "isolation", "model", "usage", "calls", "payload_bytes", "latency_ms", "evaluation_status", "cost"],
+  "properties": {
+    "schema_version": {"const": "benchmark-run/1.0"},
+    "benchmark_id": {"type": "string"},
+    "trial_id": {"type": "string"},
+    "task_id": {"type": "string"},
+    "condition": {"enum": ["filesystem", "mcp"]},
+    "repetition": {"type": "integer", "minimum": 1},
+    "run_status": {"enum": ["completed", "failed", "stopped"]},
+    "configuration_fingerprint": {"type": "string"},
+    "isolation": {"$ref": "#/$defs/isolation"},
+    "model": {"type": "object"},
+    "answer": {"type": ["object", "null"]},
+    "usage": {"$ref": "#/$defs/usage"},
+    "calls": {"$ref": "#/$defs/calls"},
+    "payload_bytes": {"$ref": "#/$defs/payload"},
+    "latency_ms": {"type": "number", "minimum": 0},
+    "evaluation_status": {"enum": ["pending", "completed"]},
+    "evaluation": {"type": ["object", "null"]},
+    "cost": {"$ref": "#/$defs/cost"},
+    "failure": {"type": ["object", "null"]}
+  },
+  "$defs": {
+    "isolation": {
+      "type": "object",
+      "required": ["fresh_workspace", "read_only_source", "independent_derived_index", "no_cross_condition_state", "secret_via_environment_only", "strength"],
+      "properties": {
+        "fresh_workspace": {"const": true},
+        "read_only_source": {"const": true},
+        "independent_derived_index": {"const": true},
+        "no_cross_condition_state": {"const": true},
+        "secret_via_environment_only": {"const": true},
+        "strength": {"enum": ["development_only", "strong"]}
+      }
+    },
+    "usage": {
+      "type": "object",
+      "required": ["scope", "authority", "input_tokens", "output_tokens", "provider_total_tokens", "cached_input_tokens", "cache_write_input_tokens", "reasoning_tokens", "billable_tokens", "standardized_non_overlapping_tokens", "total_inclusion_semantics", "provider_usage_raw_sha256"],
+      "properties": {
+        "scope": {"const": "agent_execution"},
+        "authority": {"enum": ["provider_reported", "gateway_reported", "estimated", "mixed"]},
+        "input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "output_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "provider_total_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "cached_input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "cache_write_input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "reasoning_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "billable_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "standardized_non_overlapping_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "total_inclusion_semantics": {"enum": ["input_plus_output", "provider_native", "unavailable"]},
+        "provider_usage_raw_sha256": {"type": "string"}
+      }
+    },
+    "calls": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "payload": {
+      "type": "object",
+      "required": ["model_input_bytes", "model_output_bytes", "tool_request_bytes", "tool_response_bytes", "tool_content_bytes", "estimated_context_tokens", "tokenizer_id"],
+      "properties": {
+        "model_input_bytes": {"type": "integer", "minimum": 0},
+        "model_output_bytes": {"type": "integer", "minimum": 0},
+        "tool_request_bytes": {"type": "integer", "minimum": 0},
+        "tool_response_bytes": {"type": "integer", "minimum": 0},
+        "tool_content_bytes": {"type": "integer", "minimum": 0},
+        "estimated_context_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "tokenizer_id": {"type": ["string", "null"]}
+      }
+    },
+    "cost": {
+      "type": "object",
+      "required": ["currency", "normalized_list_amount", "provider_billed_amount", "pricing_snapshot_id"],
+      "properties": {
+        "currency": {"const": "USD"},
+        "normalized_list_amount": {"type": "number", "minimum": 0},
+        "provider_billed_amount": {"type": ["number", "null"], "minimum": 0},
+        "pricing_snapshot_id": {"type": "string"}
+      }
+    }
+  }
+}

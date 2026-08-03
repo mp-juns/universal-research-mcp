@@ -3,7 +3,13 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+/build/
+/dist/
+*.egg-info/
 data/index/*.sqlite
 data/index/*.sqlite-*
 data/index/semantic-manifest.json
+data/index/*-health.json
 data/index/hf-modules/
+data/governance/approvals/
+data/governance/runs/

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.local/schemas/research-agent-decision-v2.json",
+  "title": "Research Agent Decision Record (agent-governance/2.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_id", "workflow_id", "agent_id", "role_manifest_hash",
+    "task_packet_hash", "status", "summary", "classification", "findings",
+    "evidence", "commands", "decisions", "recommended_actions", "authority_used",
+    "limitations", "attribution", "started_at", "completed_at", "output_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "research-agent-decision/1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "workflow_id": {"type": "string", "minLength": 1},
+    "agent_id": {
+      "enum": [
+        "scope_and_cost_governor", "retrieval_governor",
+        "benchmark_control_auditor", "analysis_objectivity_auditor",
+        "paper_evidence_evaluator", "correction_executor",
+        "research_memory_maintainer", "cold_adversarial_reviewer",
+        "substance_reviewer", "user_alignment_reviewer",
+        "reproducibility_reviewer"
+      ]
+    },
+    "role_manifest_hash": {"$ref": "#/$defs/hash"},
+    "task_packet_hash": {"$ref": "#/$defs/hash"},
+    "status": {"enum": ["pass", "warn", "fail", "inconclusive", "blocked"]},
+    "summary": {"type": "string", "minLength": 1},
+    "classification": {"type": "object"},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "evidence": {"type": "array"},
+    "commands": {"type": "array"},
+    "decisions": {"type": "array"},
+    "recommended_actions": {"type": "array"},
+    "authority_used": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "limitations": {"type": "array"},
+    "attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requester", "proposer", "executor", "reviewer"],
+      "properties": {
+        "requester": {"type": "string"},
+        "proposer": {"type": "string"},
+        "executor": {"type": "string"},
+        "provider_reported_model": {"type": "string", "minLength": 1},
+        "reviewer": {"type": "string"}
+      }
+    },
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "output_hash": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "severity", "claim", "evidence_refs", "impact", "recommended_fix", "confidence"],
+      "properties": {
+        "finding_id": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["critical", "high", "medium", "low", "note"]},
+        "claim": {"type": "string", "minLength": 1},
+        "evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence_ref"}},
+        "impact": {"type": "string", "minLength": 1},
+        "recommended_fix": {"type": "string", "minLength": 1},
+        "confidence": {"enum": ["high", "medium", "low"]}
+      }
+    },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line_start", "line_end", "hash"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "line_start": {"type": "integer", "minimum": 1},
+        "line_end": {"type": "integer", "minimum": 1},
+        "hash": {"$ref": "#/$defs/hash"}
+      }
+    }
+  }
+}

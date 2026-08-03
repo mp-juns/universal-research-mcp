@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .server import app
-from . import answer as _answer  # Register /answer.
+from . import answer as _answer  # noqa: F401  # Register /answer.
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -27,4 +27,3 @@ async def retired_custom_chat_ui():
         url="https://mpllm.tail7e5dfc.ts.net",
         status_code=307,
     )
-
