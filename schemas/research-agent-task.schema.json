@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.local/schemas/research-agent-task-v2.json",
+  "title": "Research Agent Task Packet (agent-governance/2.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "governance_version", "run_id", "workflow_id", "agent_id",
+    "requester", "purpose", "mode", "scope", "evidence_boundary", "authority",
+    "failure_policy", "success_criteria", "stop_conditions", "role_manifest_hash",
+    "created_at", "expires_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "research-agent-task/1.0"},
+    "governance_version": {"const": "agent-governance/2.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "workflow_id": {"type": "string", "minLength": 1},
+    "agent_id": {
+      "type": "string",
+      "enum": [
+        "scope_and_cost_governor", "retrieval_governor",
+        "benchmark_control_auditor", "analysis_objectivity_auditor",
+        "paper_evidence_evaluator", "correction_executor",
+        "research_memory_maintainer", "cold_adversarial_reviewer",
+        "substance_reviewer", "user_alignment_reviewer",
+        "reproducibility_reviewer"
+      ]
+    },
+    "requester": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {"enum": ["user", "host_agent", "workflow"]},
+        "id": {"type": "string", "minLength": 1}
+      }
+    },
+    "purpose": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["lightweight", "benchmark", "final_review"]},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_paths", "allowed_sources", "allowed_actions", "forbidden_actions",
+        "allowed_capabilities", "allowed_providers", "allow_network",
+        "allow_model_execution", "allow_benchmark", "allow_background",
+        "max_parallelism", "estimated_cost_usd", "max_cost_usd"
+      ],
+      "properties": {
+        "allowed_paths": {"$ref": "#/$defs/string_array"},
+        "allowed_sources": {"$ref": "#/$defs/string_array"},
+        "allowed_actions": {"$ref": "#/$defs/string_array"},
+        "forbidden_actions": {"$ref": "#/$defs/string_array"},
+        "allowed_capabilities": {
+          "type": "array",
+          "items": {"enum": ["host_visualization", "data_plot_generation"]},
+          "uniqueItems": true
+        },
+        "allowed_providers": {"$ref": "#/$defs/string_array"},
+        "allow_network": {"type": "boolean"},
+        "allow_model_execution": {"type": "boolean"},
+        "allow_benchmark": {"type": "boolean"},
+        "allow_background": {"type": "boolean"},
+        "max_parallelism": {"type": "integer", "minimum": 1},
+        "estimated_cost_usd": {"type": "number", "minimum": 0},
+        "max_cost_usd": {"type": "number", "minimum": 0}
+      }
+    },
+    "evidence_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_ids", "result_ids", "dataset_hashes", "model_hashes",
+        "artifact_revisions", "commit_ids", "snapshot_hash"
+      ],
+      "properties": {
+        "record_ids": {"$ref": "#/$defs/string_array"},
+        "result_ids": {"$ref": "#/$defs/string_array"},
+        "dataset_hashes": {"$ref": "#/$defs/string_array"},
+        "model_hashes": {"$ref": "#/$defs/string_array"},
+        "artifact_revisions": {"$ref": "#/$defs/string_array"},
+        "commit_ids": {"$ref": "#/$defs/string_array"},
+        "snapshot_hash": {"type": "string", "minLength": 1}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approval_refs", "authority_basis", "scope_hash", "plan_refs", "user_opt_ins"
+      ],
+      "properties": {
+        "approval_refs": {"$ref": "#/$defs/string_array"},
+        "authority_basis": {"type": "string", "minLength": 1},
+        "scope_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "plan_refs": {"$ref": "#/$defs/string_array"},
+        "user_opt_ins": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "failure_policy": {"$ref": "#/$defs/failure_policy"},
+    "success_criteria": {"$ref": "#/$defs/string_array"},
+    "stop_conditions": {"$ref": "#/$defs/string_array"},
+    "role_manifest_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "failure_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stop", "record", "detail"],
+      "properties": {
+        "stop": {"enum": ["always", "blocking_only", "current_step"]},
+        "record": {"enum": ["full", "metadata_only", "ask"]},
+        "detail": {"enum": ["full", "redacted", "hashes_only"]}
+      }
+    }
+  }
+}

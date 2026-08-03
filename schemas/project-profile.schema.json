@@ -1,15 +1,88 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://universal-research-memory.local/schema/project-profile/1.0",
-  "title": "Universal Research Project Profile",
+  "$id": "https://universal-research-mcp.local/schema/project-profile/2.0",
+  "title": "Universal Research Project Profile v2",
   "type": "object",
-  "required": ["profile_version", "project", "storage", "adapters", "policy_overlay"],
+  "required": ["profile_version", "project", "storage", "adapters", "governance", "policy_overlay"],
   "properties": {
-    "profile_version": {"const": "profile/1.0"},
-    "project": {"type": "object", "required": ["id", "name", "active_packs"], "properties": {"id": {"type": "string", "pattern": "^study_"}, "name": {"type": "string"}, "active_packs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}, "additionalProperties": false},
-    "storage": {"type": "object", "required": ["events_root"], "properties": {"events_root": {"type": "string"}, "derived_index_root": {"type": "string"}}, "additionalProperties": false},
-    "adapters": {"type": "object", "required": ["ledger", "search", "display"], "properties": {"ledger": {"type": "object"}, "search": {"type": "object"}, "display": {"type": "object"}}, "additionalProperties": false},
-    "policy_overlay": {"type": "object", "required": ["approval_required_actions", "reference_sources"], "properties": {"approval_required_actions": {"type": "array", "items": {"type": "string"}}, "reference_sources": {"type": "array", "items": {"type": "object", "required": ["locator", "access"], "properties": {"locator": {"type": "string"}, "access": {"const": "read_only"}}, "additionalProperties": false}}}, "additionalProperties": false}
+    "profile_version": {"const": "profile/2.0"},
+    "project": {
+      "type": "object",
+      "required": ["id", "name", "active_packs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^study_"},
+        "name": {"type": "string", "minLength": 1},
+        "active_packs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      },
+      "additionalProperties": false
+    },
+    "storage": {
+      "type": "object",
+      "required": ["events_root", "derived_index_root"],
+      "properties": {
+        "events_root": {"type": "string"},
+        "derived_index_root": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "adapters": {
+      "type": "object",
+      "required": ["ledger", "search", "display"],
+      "properties": {
+        "ledger": {"type": "object"},
+        "search": {"type": "object"},
+        "display": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "governance": {
+      "type": "object",
+      "required": ["version", "failure_policy", "capability_defaults"],
+      "properties": {
+        "version": {"const": "agent-governance/2.0"},
+        "failure_policy": {
+          "type": "object",
+          "required": ["stop", "record", "detail"],
+          "properties": {
+            "stop": {"enum": ["always", "blocking_only", "current_step"]},
+            "record": {"enum": ["full", "metadata_only", "ask"]},
+            "detail": {"enum": ["full", "redacted", "hashes_only"]}
+          },
+          "additionalProperties": false
+        },
+        "capability_defaults": {
+          "type": "object",
+          "required": ["host_visualization", "data_plot_generation"],
+          "properties": {
+            "host_visualization": {"const": "off"},
+            "data_plot_generation": {"enum": ["off", "scoped"]}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "policy_overlay": {
+      "type": "object",
+      "required": ["approval_required_actions", "reference_sources", "separation_rules"],
+      "properties": {
+        "approval_required_actions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "reference_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["locator", "access"],
+            "properties": {
+              "locator": {"type": "string"},
+              "access": {"const": "read_only"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "separation_rules": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

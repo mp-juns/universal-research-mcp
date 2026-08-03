@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.example/schemas/benchmark-task/1.0",
+  "title": "MCP A/B Benchmark Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "source_bundle_id", "category", "difficulty", "holdout", "prompt", "required_capabilities", "expected"],
+  "properties": {
+    "schema_version": {"const": "benchmark-task/1.0"},
+    "task_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]+$"},
+    "source_bundle_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]+$"},
+    "category": {"enum": ["evidence_retrieval", "claim_verification", "approval_governance", "integrity_change", "negative_result", "contribution_attribution", "amendment_history", "uncertainty_calibration"]},
+    "difficulty": {"enum": ["easy", "medium", "hard"]},
+    "holdout": {"const": true},
+    "prompt": {"type": "string", "minLength": 1},
+    "required_capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["facts", "citations", "must_abstain", "policy_expectations"],
+      "properties": {
+        "facts": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "citations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "start_line", "end_line"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "start_line": {"type": "integer", "minimum": 1},
+              "end_line": {"type": "integer", "minimum": 1},
+              "integrity_status": {"enum": ["matched", "mismatched", "not_indexed", "ambiguous"]}
+            }
+          }
+        },
+        "must_abstain": {"type": "boolean"},
+        "policy_expectations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    }
+  }
+}

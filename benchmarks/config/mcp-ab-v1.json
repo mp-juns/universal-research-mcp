@@ -1,0 +1,57 @@
+{
+  "schema_version": "benchmark-config/1.0",
+  "benchmark_id": "mcp_ab_v1",
+  "status": "proposed",
+  "approval_required": true,
+  "primary_conditions": ["filesystem", "mcp"],
+  "primary_endpoints": {
+    "effectiveness": "audit_ready_success",
+    "burden": "provider_total_tokens",
+    "paired_direction": "mcp_minus_filesystem"
+  },
+  "secondary_composite": {
+    "name": "blinded_composite_quality",
+    "weights": {
+      "task_success": 0.16666666666666666,
+      "factual_correctness": 0.16666666666666666,
+      "evidence_grounding": 0.16666666666666666,
+      "citation_validity": 0.16666666666666666,
+      "policy_compliance": 0.16666666666666666,
+      "uncertainty_calibration": 0.16666666666666666
+    }
+  },
+  "pilot": {"minimum_development_tasks": 18, "repetitions_per_condition": 1},
+  "confirmatory": {"minimum_independent_tasks": 72, "maximum_tasks_after_preapproved_power_amendment": 144, "repetitions_per_condition": 2},
+  "randomization": {"method": "within-pair seeded order", "seed": 20260804},
+  "bootstrap": {"paired_samples": 5000, "seed": 20260804, "confidence": 0.95},
+  "budgets": {
+    "max_model_calls": 12,
+    "max_tool_calls": 24,
+    "max_output_tokens": 4096,
+    "max_wall_seconds": 300,
+    "max_retries": 2
+  },
+  "isolation": {
+    "fresh_process_per_trial": true,
+    "fresh_workspace_per_trial": true,
+    "read_only_source": true,
+    "independent_derived_index": true,
+    "no_cross_condition_state": true,
+    "secret_via_environment_only": true,
+    "network_allowlist": ["approved_model_api_endpoint_only"]
+  },
+  "token_accounting": {
+    "primary_scope": "agent_execution",
+    "separate_scopes": ["setup", "evaluation"],
+    "authoritative_preference": ["provider_reported", "gateway_reported"],
+    "do_not_double_count_tool_context": true,
+    "unavailable_is_null": true
+  },
+  "execution": {
+    "enabled": false,
+    "requires_human_approval_record": true,
+    "requires_frozen_task_fingerprint": true,
+    "requires_frozen_source_bundle_fingerprint": true,
+    "requires_pricing_snapshot": true
+  }
+}

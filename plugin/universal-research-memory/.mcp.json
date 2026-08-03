@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "universal_research_memory": {
-      "command": "universal-research-mcp",
-      "args": []
+    "universal_research": {
+      "command": "universal-research",
+      "args": ["serve", "--auto-index"]
     }
   }
 }

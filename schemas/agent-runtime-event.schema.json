@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.local/schemas/agent-runtime-event-v1.json",
+  "title": "Agent Runtime Hash-Chained Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "sequence", "timestamp", "run_id", "session_id",
+    "agent_id", "event_scope", "event_type", "from_state", "to_state",
+    "previous_event_hash", "user_visible_summary", "internal_artifact_refs",
+    "commands_or_operations", "decision", "authority_basis",
+    "chat_disclosure", "event_id", "event_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "agent-runtime-event/1.0"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "run_id": {"type": "string", "minLength": 1},
+    "session_id": {"type": ["string", "null"]},
+    "agent_id": {"type": ["string", "null"]},
+    "event_scope": {"enum": ["run", "session"]},
+    "event_type": {"type": "string", "minLength": 1},
+    "from_state": {"type": ["string", "null"]},
+    "to_state": {"type": "string", "minLength": 1},
+    "previous_event_hash": {"anyOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+    "user_visible_summary": {"type": "string", "minLength": 1},
+    "internal_artifact_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "commands_or_operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "decision": {"type": "string", "minLength": 1},
+    "authority_basis": {"type": "string", "minLength": 1},
+    "chat_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "reason"],
+      "properties": {
+        "mode": {"enum": ["summary_only", "user_requested_detail"]},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "event_id": {"type": "string", "pattern": "^runtime_event_[0-9a-f]{24}$"},
+    "event_hash": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

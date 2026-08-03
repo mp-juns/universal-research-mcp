@@ -1,6 +1,6 @@
-"""Run the read-only MCP through ``python -m universal_research_mcp``."""
+"""Run the unified CLI through ``python -m universal_research_mcp``."""
 
-from universal_research_mcp.server import main
+from universal_research_mcp.cli import main
 
 
 if __name__ == "__main__":

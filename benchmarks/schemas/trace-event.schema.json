@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.example/schemas/benchmark-trace/1.0",
+  "title": "Append-only Benchmark Trace Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "trace_event_id", "run_id", "pair_id", "task_id", "repetition", "condition_blind_label", "event_kind", "occurred_at", "sequence", "actor", "environment_fingerprint", "payload"],
+  "properties": {
+    "schema_version": {"const": "benchmark-trace/1.0"},
+    "trace_event_id": {"type": "string"},
+    "run_id": {"type": "string"},
+    "pair_id": {"type": "string"},
+    "task_id": {"type": "string"},
+    "repetition": {"type": "integer", "minimum": 1},
+    "condition_blind_label": {"type": "string"},
+    "event_kind": {"enum": ["benchmark_run_planned", "benchmark_run_approved", "run_started", "model_call_started", "model_call_completed", "tool_call_started", "tool_call_completed", "evidence_selected", "run_completed", "evaluation_completed", "run_failed", "pricing_snapshot_recorded"]},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "span_id": {"type": ["string", "null"]},
+    "parent_span_id": {"type": ["string", "null"]},
+    "actor": {"type": "object", "required": ["type"], "properties": {"type": {"enum": ["agent", "harness", "human", "provider"]}}},
+    "environment_fingerprint": {"type": "string"},
+    "payload": {"type": "object"}
+  }
+}

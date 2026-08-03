@@ -7,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import torch
 
 from scripts import build_research_semantic_index as semantic_builder
 from scripts import query_research_ledger as query_module
@@ -29,6 +28,11 @@ from scripts.build_research_semantic_index import (
 from scripts.query_research_ledger import hybrid_query, semantic_query
 
 
+torch = pytest.importorskip(
+    "torch", reason="legacy encoder compatibility fixtures require semantic extras"
+)
+
+
 def write_jsonl(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
@@ -36,17 +40,42 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 
 def event(event_id: str, summary: str) -> dict:
     return {
-        "schema_version": "1.0", "event_id": event_id, "date": "2026-07-19", "event_type": "gate_result",
-        "status": "completed", "project": "test", "workstream": "test", "summary": summary,
-        "relations": [], "artifacts": [],
-        "source": {"source_path": "docs/source.md", "source_sha256": "abc", "heading": event_id,
-                   "line_start": 1, "line_end": 2, "legacy_import": False, "requires_human_review": False},
+        "schema_version": "1.0",
+        "event_id": event_id,
+        "date": "2026-07-19",
+        "event_type": "gate_result",
+        "status": "completed",
+        "project": "test",
+        "workstream": "test",
+        "summary": summary,
+        "relations": [],
+        "artifacts": [],
+        "source": {
+            "source_path": "docs/source.md",
+            "source_sha256": "abc",
+            "heading": event_id,
+            "line_start": 1,
+            "line_end": 2,
+            "legacy_import": False,
+            "requires_human_review": False,
+        },
     }
 
 
 def test_event_text_and_source_fingerprint_are_deterministic(tmp_path: Path) -> None:
     root = tmp_path / "research-events"
-    write_jsonl(root / "sources.jsonl", [{"source_id": "src", "source_path": "docs/source.md", "source_sha256": "abc", "source_type": "markdown", "legacy_import": False}])
+    write_jsonl(
+        root / "sources.jsonl",
+        [
+            {
+                "source_id": "src",
+                "source_path": "docs/source.md",
+                "source_sha256": "abc",
+                "source_type": "markdown",
+                "legacy_import": False,
+            }
+        ],
+    )
     sample = event("evt_1", "Qwen evidence extraction continued")
     write_jsonl(root / "daily" / "2026-07-19" / "events.jsonl", [sample])
     events, first = events_and_fingerprint(root)
@@ -61,26 +90,49 @@ def test_core_records_project_into_semantic_retrieval_documents(tmp_path: Path) 
     digest = "a" * 64
     write_jsonl(
         root / "sources.jsonl",
-        [{"source_id": "src", "source_path": "docs/source.md", "source_sha256": digest, "source_type": "markdown", "legacy_import": False}],
+        [
+            {
+                "source_id": "src",
+                "source_path": "docs/source.md",
+                "source_sha256": digest,
+                "source_type": "markdown",
+                "legacy_import": False,
+            }
+        ],
     )
     protocol = {
-        "schema_version": "core/1.0", "record_id": "protocol_core", "record_kind": "protocol",
-        "study_id": "study_core", "occurred_at": "2026-08-04T09:00:00+09:00",
-        "recorded_at": "2026-08-04T09:01:00+09:00", "status": "completed",
+        "schema_version": "core/1.0",
+        "record_id": "protocol_core",
+        "record_kind": "protocol",
+        "study_id": "study_core",
+        "occurred_at": "2026-08-04T09:00:00+09:00",
+        "recorded_at": "2026-08-04T09:01:00+09:00",
+        "status": "completed",
         "created_by": {"actor_id": "actor_researcher", "actor_type": "human"},
         "payload": {"summary": "Core protocol"},
     }
     claim = {
-        "schema_version": "core/1.0", "record_id": "claim_core", "record_kind": "claim",
-        "study_id": "study_core", "occurred_at": "2026-08-04T10:00:00+09:00",
-        "recorded_at": "2026-08-04T10:01:00+09:00", "status": "completed",
+        "schema_version": "core/1.0",
+        "record_id": "claim_core",
+        "record_kind": "claim",
+        "study_id": "study_core",
+        "occurred_at": "2026-08-04T10:00:00+09:00",
+        "recorded_at": "2026-08-04T10:01:00+09:00",
+        "status": "completed",
         "created_by": {"actor_id": "actor_researcher", "actor_type": "human"},
         "relations": [{"type": "uses_protocol", "target_id": "protocol_core"}],
-        "source_refs": [{
-            "artifact_revision_id": f"artifact_source@sha256:{digest}",
-            "locator": {"kind": "line_range", "path": "docs/source.md", "start": 1, "end": 2},
-            "verification_status": "human_verified",
-        }],
+        "source_refs": [
+            {
+                "artifact_revision_id": f"artifact_source@sha256:{digest}",
+                "locator": {
+                    "kind": "line_range",
+                    "path": "docs/source.md",
+                    "start": 1,
+                    "end": 2,
+                },
+                "verification_status": "human_verified",
+            }
+        ],
         "payload": {
             "statement": "Core claim is retrieval-ready",
             "support_status": "supported",
@@ -93,7 +145,9 @@ def test_core_records_project_into_semantic_retrieval_documents(tmp_path: Path) 
     events, _ = events_and_fingerprint(root)
     indexed_claim = next(row for row in events if row["event_id"] == "claim_core")
 
-    assert indexed_claim["relations"] == [{"type": "uses_protocol", "target": "protocol_core"}]
+    assert indexed_claim["relations"] == [
+        {"type": "uses_protocol", "target": "protocol_core"}
+    ]
     assert indexed_claim["source"]["source_path"] == "docs/source.md"
     assert indexed_claim["source"]["source_sha256"] == digest
     rendered = event_text(indexed_claim)
@@ -106,7 +160,18 @@ def test_events_apply_append_only_source_range_correction_without_rewriting_json
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "research-events"
-    write_jsonl(root / "sources.jsonl", [{"source_id": "src", "source_path": "docs/source.md", "source_sha256": "abc", "source_type": "markdown", "legacy_import": False}])
+    write_jsonl(
+        root / "sources.jsonl",
+        [
+            {
+                "source_id": "src",
+                "source_path": "docs/source.md",
+                "source_sha256": "abc",
+                "source_type": "markdown",
+                "legacy_import": False,
+            }
+        ],
+    )
     original = event("evt_original", "Original range")
     original["source"]["line_end"] = 3
     correction = event("evt_correction", "Corrected range")
@@ -129,41 +194,97 @@ def test_events_apply_append_only_source_range_correction_without_rewriting_json
     events, _ = events_and_fingerprint(root)
 
     assert events_path.read_bytes() == canonical_before
-    assert next(row for row in events if row["event_id"] == "evt_original")["source"]["line_end"] == 2
+    assert (
+        next(row for row in events if row["event_id"] == "evt_original")["source"][
+            "line_end"
+        ]
+        == 2
+    )
 
 
 def test_hybrid_query_fuses_lexical_and_semantic_candidates(tmp_path: Path) -> None:
     root = tmp_path / "research-events"
-    write_jsonl(root / "sources.jsonl", [{"source_id": "src", "source_path": "docs/source.md", "source_sha256": "abc", "source_type": "markdown", "legacy_import": False}])
-    rows = [event("evt_qwen", "Qwen evidence extraction continued"), event("evt_minilm", "MiniLM baseline result")]
+    write_jsonl(
+        root / "sources.jsonl",
+        [
+            {
+                "source_id": "src",
+                "source_path": "docs/source.md",
+                "source_sha256": "abc",
+                "source_type": "markdown",
+                "legacy_import": False,
+            }
+        ],
+    )
+    rows = [
+        event("evt_qwen", "Qwen evidence extraction continued"),
+        event("evt_minilm", "MiniLM baseline result"),
+    ]
     write_jsonl(root / "daily" / "2026-07-19" / "events.jsonl", rows)
     ledger = root / "index" / "research.sqlite"
     build_ledger(root, ledger)
     semantic = root / "index" / "semantic.sqlite"
     with sqlite3.connect(semantic) as connection:
         initialize(connection)
-        connection.executemany("INSERT INTO embeddings VALUES (?, ?, ?, ?)", [
-            ("evt_qwen", 2, np.array([0.9, 0.0], dtype=np.float32).tobytes(), "q"),
-            ("evt_minilm", 2, np.array([0.0, 1.0], dtype=np.float32).tobytes(), "m"),
-        ])
+        connection.executemany(
+            "INSERT INTO embeddings VALUES (?, ?, ?, ?)",
+            [
+                ("evt_qwen", 2, np.array([0.9, 0.0], dtype=np.float32).tobytes(), "q"),
+                (
+                    "evt_minilm",
+                    2,
+                    np.array([0.0, 1.0], dtype=np.float32).tobytes(),
+                    "m",
+                ),
+            ],
+        )
         connection.execute(
             "INSERT INTO passage_embeddings VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                "psg_qwen", "evt_qwen", "docs/source.md", "Qwen evidence", 10, 12, 2,
-                np.array([1.0, 0.0], dtype=np.float32).tobytes(), "p",
+                "psg_qwen",
+                "evt_qwen",
+                "docs/source.md",
+                "Qwen evidence",
+                10,
+                12,
+                2,
+                np.array([1.0, 0.0], dtype=np.float32).tobytes(),
+                "p",
             ),
         )
         connection.execute("INSERT INTO metadata VALUES (?, ?)", ("dimensions", "2"))
         connection.commit()
-    args = argparse.Namespace(query="Qwen", date=None, status=None, event_type=None, source_path=None, related_to=None, limit=2)
-    with sqlite3.connect(ledger) as ledger_connection, sqlite3.connect(semantic) as semantic_connection:
-        results = hybrid_query(ledger_connection, semantic_connection, args, np.array([1.0, 0.0], dtype=np.float32))
+    args = argparse.Namespace(
+        query="Qwen",
+        date=None,
+        status=None,
+        event_type=None,
+        source_path=None,
+        related_to=None,
+        limit=2,
+    )
+    with (
+        sqlite3.connect(ledger) as ledger_connection,
+        sqlite3.connect(semantic) as semantic_connection,
+    ):
+        results = hybrid_query(
+            ledger_connection,
+            semantic_connection,
+            args,
+            np.array([1.0, 0.0], dtype=np.float32),
+        )
     assert results[0]["event_id"] == "evt_qwen"
     assert results[0]["retrieval"]["cosine_similarity"] == 1.0
     assert results[0]["retrieval"]["semantic_evidence"]["line_start"] == 10
-    with sqlite3.connect(ledger) as ledger_connection, sqlite3.connect(semantic) as semantic_connection:
+    with (
+        sqlite3.connect(ledger) as ledger_connection,
+        sqlite3.connect(semantic) as semantic_connection,
+    ):
         dense_results = semantic_query(
-            ledger_connection, semantic_connection, args, np.array([1.0, 0.0], dtype=np.float32)
+            ledger_connection,
+            semantic_connection,
+            args,
+            np.array([1.0, 0.0], dtype=np.float32),
         )
     assert dense_results[0]["event_id"] == "evt_qwen"
     assert dense_results[0]["retrieval"]["semantic_evidence"]["line_end"] == 12
@@ -172,9 +293,14 @@ def test_hybrid_query_fuses_lexical_and_semantic_candidates(tmp_path: Path) -> N
 def test_source_passages_keep_provenance_and_cap_long_sections(tmp_path: Path) -> None:
     source = tmp_path / "docs" / "source.md"
     source.parent.mkdir(parents=True)
-    source.write_text("\n\n".join(f"paragraph {index} evidence" for index in range(10)), encoding="utf-8")
+    source.write_text(
+        "\n\n".join(f"paragraph {index} evidence" for index in range(10)),
+        encoding="utf-8",
+    )
     row = event("evt_source", "summary")
-    row["source"].update({"source_path": "docs/source.md", "line_start": 1, "line_end": 19})
+    row["source"].update(
+        {"source_path": "docs/source.md", "line_start": 1, "line_end": 19}
+    )
     passages = source_passages(row, tmp_path, maximum=4, target_chars=20)
     assert len(passages) == 4
     assert passages[0]["source_path"] == "docs/source.md"
@@ -193,7 +319,9 @@ def test_normalize_vectors_rejects_non_finite_encoder_output() -> None:
         raise AssertionError("Expected non-finite encoder output to be rejected")
 
 
-def test_source_passages_use_exact_event_line_for_canonical_daily_jsonl(tmp_path: Path) -> None:
+def test_source_passages_use_exact_event_line_for_canonical_daily_jsonl(
+    tmp_path: Path,
+) -> None:
     path = tmp_path / "research-events" / "daily" / "2026-07-27" / "events.jsonl"
     first = event("evt_first", "first summary")
     second = event("evt_second", "second summary")
@@ -227,7 +355,9 @@ class _FakeSentenceModel:
         return self.transformer
 
 
-def test_checkpoint_bridge_strictly_restores_prefixed_base_weights(tmp_path: Path) -> None:
+def test_checkpoint_bridge_strictly_restores_prefixed_base_weights(
+    tmp_path: Path,
+) -> None:
     from safetensors.torch import save_file
 
     base = torch.nn.Module()
@@ -331,7 +461,10 @@ def test_model_card_oracle_accepts_expected_scores_and_rejects_drift() -> None:
                 vectors[index, 1] = np.sqrt(1.0 - float(score) ** 2)
             return vectors
 
-    assert validate_encoder_model_card_oracle(FakeOracleModel(ENCODER_ORACLE_EXPECTED)) == 0.0
+    assert (
+        validate_encoder_model_card_oracle(FakeOracleModel(ENCODER_ORACLE_EXPECTED))
+        == 0.0
+    )
     with pytest.raises(ValueError, match="model-card oracle failed"):
         validate_encoder_model_card_oracle(
             FakeOracleModel(ENCODER_ORACLE_EXPECTED + np.float32(0.1))
@@ -441,7 +574,15 @@ def test_build_records_encoder_dtype_and_smoke_count(
     root = tmp_path / "research-events"
     write_jsonl(
         root / "sources.jsonl",
-        [{"source_id": "src", "source_path": "docs/source.md", "source_sha256": "abc", "source_type": "markdown", "legacy_import": False}],
+        [
+            {
+                "source_id": "src",
+                "source_path": "docs/source.md",
+                "source_sha256": "abc",
+                "source_type": "markdown",
+                "legacy_import": False,
+            }
+        ],
     )
     write_jsonl(
         root / "daily" / "2026-07-19" / "events.jsonl",
@@ -458,9 +599,7 @@ def test_build_records_encoder_dtype_and_smoke_count(
     )
     monkeypatch.setattr(semantic_builder, "remote_code_kwargs", lambda *_args: {})
     monkeypatch.setattr(semantic_builder, "snapshot_hashes", lambda _path: {})
-    monkeypatch.setattr(
-        semantic_builder, "remote_code_dependencies", lambda _path: []
-    )
+    monkeypatch.setattr(semantic_builder, "remote_code_dependencies", lambda _path: [])
     monkeypatch.setattr(
         semantic_builder, "checkpoint_bridge_layout", lambda _path: (["weight"], [])
     )
@@ -498,9 +637,7 @@ def test_build_records_encoder_dtype_and_smoke_count(
     assert manifest["encoder_smoke_count"] == "1"
 
 
-def test_query_loader_uses_recorded_encoder_dtype(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_query_loader_uses_recorded_encoder_dtype(tmp_path: Path, monkeypatch) -> None:
     captured: dict[str, object] = {}
 
     class FakeSentenceTransformer:
