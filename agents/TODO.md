@@ -677,9 +677,9 @@ contract gap with parity coverage, and document a short reproducible start path.
 
 ### Release sequence
 
-- [ ] Push this release authorization record and require CI success
-- [ ] Mark PR #1 ready and squash-merge the exact final head into `main`
-- [ ] Confirm the merged `main` CI result
-- [ ] Create and inspect draft GitHub Release `v0.3.0`
-- [ ] Publish the release and confirm the Trusted Publishing workflow succeeds
-- [ ] Verify PyPI metadata and an isolated installation of version 0.3.0
+- [x] Push this release authorization record and require CI success
+- [x] Mark PR #1 ready and squash-merge the exact final head into `main`
+- [x] Confirm the merged `main` CI result
+- [x] Create and inspect draft GitHub Release `v0.3.0`
+- [x] Publish the release and confirm the Trusted Publishing workflow succeeds
+- [x] Verify PyPI metadata and an isolated installation of version 0.3.0
