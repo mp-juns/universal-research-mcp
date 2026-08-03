@@ -1,13 +1,8 @@
 {
   "mcpServers": {
     "universal_research_memory": {
-      "command": "python3",
-      "args": ["../../mcp/research_memory/mcp_server.py"],
-      "env": {
-        "UNIVERSAL_RESEARCH_ROOT": "../../",
-        "UNIVERSAL_RESEARCH_LEXICAL_DB": "../../data/index/research.sqlite",
-        "UNIVERSAL_RESEARCH_EVENTS_ROOT": "../../data/events"
-      }
+      "command": "universal-research-mcp",
+      "args": []
     }
   }
 }

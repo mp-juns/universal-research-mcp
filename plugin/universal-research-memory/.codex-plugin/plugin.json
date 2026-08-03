@@ -1,7 +1,16 @@
 {
   "name": "universal-research-memory",
-  "version": "0.1.0+codex.20260803135458",
+  "version": "0.1.0+codex.20260803165050",
   "description": "A standalone, source-grounded research memory MCP and governed operating framework.",
+  "homepage": "https://github.com/mp-juns/universal-research-mcp",
+  "repository": "https://github.com/mp-juns/universal-research-mcp",
+  "license": "MIT",
+  "keywords": [
+    "research",
+    "provenance",
+    "mcp",
+    "audit"
+  ],
   "author": {
     "name": "Local developer"
   },

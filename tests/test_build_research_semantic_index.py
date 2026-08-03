@@ -67,14 +67,14 @@ def test_core_records_project_into_semantic_retrieval_documents(tmp_path: Path) 
         "schema_version": "core/1.0", "record_id": "protocol_core", "record_kind": "protocol",
         "study_id": "study_core", "occurred_at": "2026-08-04T09:00:00+09:00",
         "recorded_at": "2026-08-04T09:01:00+09:00", "status": "completed",
-        "created_by": {"actor_id": "researcher", "actor_type": "human"},
+        "created_by": {"actor_id": "actor_researcher", "actor_type": "human"},
         "payload": {"summary": "Core protocol"},
     }
     claim = {
         "schema_version": "core/1.0", "record_id": "claim_core", "record_kind": "claim",
         "study_id": "study_core", "occurred_at": "2026-08-04T10:00:00+09:00",
         "recorded_at": "2026-08-04T10:01:00+09:00", "status": "completed",
-        "created_by": {"actor_id": "researcher", "actor_type": "human"},
+        "created_by": {"actor_id": "actor_researcher", "actor_type": "human"},
         "relations": [{"type": "uses_protocol", "target_id": "protocol_core"}],
         "source_refs": [{
             "artifact_revision_id": f"artifact_source@sha256:{digest}",

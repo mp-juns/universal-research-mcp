@@ -125,3 +125,35 @@ scope rather than an approval-shaped string.
   boundary
 - [x] Indexed/current source-hash integrity status in evidence fetch
 - [x] Core-only candidate → fetch → audit E2E and negative approval fixtures
+
+## Active task — public usability and contract parity hardening
+
+### Objective
+
+Turn the reviewed bootstrap into an installable local package and a
+path-independent plugin launcher, close the declared-schema/manual-validator
+contract gap with parity coverage, and document a short reproducible start path.
+
+### Approved scope
+
+- Requested by: User (continue after P0)
+- Target files: package metadata/entry point, read-only MCP launcher, plugin
+  manifest/config, validator and tests, README/docs, LICENSE, and agent records.
+- Commands: local unit tests, plugin validation/cachebuster/reinstall, Git commit
+  and push to the already authorized public repository.
+- Success: `uv run universal-research-mcp --help` exposes a stable entry point;
+  plugin config has no repository-relative implementation path; core parity
+  cases detect contract drift; public license and 5-minute Quick Start exist.
+- Excluded: reference-project writes/reads, research data or historical-log
+  changes, remote research execution, model download, benchmark, and new MCP
+  write tools.
+
+### Completed
+
+- [x] `pyproject.toml` package metadata and stable MCP entry point
+- [x] Plugin launcher no longer reaches into repository-relative `mcp/` or data
+  paths
+- [x] MIT license and Quick Start
+- [x] Schema/manual validator parity fixture and expanded structural validation
+- [x] Explicit symlink and sensitive-path safety fixture
+- [x] Plugin cachebuster, validation, and local marketplace reinstall

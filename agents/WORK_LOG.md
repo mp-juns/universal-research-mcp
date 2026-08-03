@@ -265,3 +265,58 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
 - No warnings remained after explicitly closing MCP read-only SQLite
   connections. No reference-project, canonical-project-ledger, historical-log,
   network, or daemon operation occurred.
+
+## 2026-08-04 — public usability and contract parity plan
+
+### Ownership and scope
+
+- Requested by: User, continuing the public-project review follow-up.
+- Planned and executed by: Codex.
+- Scope: packaging and launcher independence, JSON Schema/manual validator
+  parity coverage, a public license, Quick Start, and local plugin refresh.
+- Excluded: all reference-project activity, research-data writes, model or
+  benchmark execution, remote research services, and write-capable MCP tools.
+
+### Planned verification
+
+- Exercise only package help/version entry points and fixture tests.
+- Validate and refresh the existing local plugin through its documented
+  cachebuster/reinstall flow after changing its MCP configuration.
+- Scan the commit for local paths and credential patterns before the
+  user-authorized push.
+
+### Results
+
+- Added installable `universal_research_mcp` runtime and the
+  `universal-research-mcp` console entry point. It accepts explicit root,
+  lexical-index, and event-root paths and retains a source-tree compatibility
+  wrapper for existing callers.
+- Added `pyproject.toml` with Python 3.11+, read-only MCP runtime dependency,
+  and optional test dependencies; added MIT `LICENSE`.
+- Replaced the plugin's `../../mcp/...` and `../../data/...` configuration with
+  the stable console entry point. Project routing now comes from the launch
+  working directory or explicit environment/CLI configuration, not a plugin
+  parent path.
+- Expanded the dependency-free validator to mirror schema-declared ID, ISO
+  date-time, additional-property, relation, reference-array, actor, and
+  evidence constraints. A JSON Schema parity fixture compares acceptance of
+  representative valid and invalid contracts.
+- Added local MCP safety coverage for sensitive path rejection and symlink
+  escape rejection.
+- Updated the existing plugin cachebuster to
+  `0.1.0+codex.20260803165050`, validated it, and reinstalled it from the
+  already configured `universal-research-local` marketplace.
+
+### Verification outcomes
+
+- `python3 -m universal_research_mcp --help` and `--version`: passed; version
+  is `0.1.0`. `uv` is not installed in this environment, so no `uv run`
+  command was executed or installed.
+- Core Schema parity: 5 unittest checks passed.
+- MCP path safety: 2 unittest checks passed.
+- Core candidate → evidence → audit E2E: 1 unittest check passed.
+- Approval boundary: 6 unittest checks passed.
+- Public distribution contract: 2 unittest checks passed.
+- Derived lexical/semantic index regression: 20 pytest checks passed.
+- No reference-project, historical-log, canonical-project-ledger, model,
+  benchmark, daemon, or remote research operation occurred.

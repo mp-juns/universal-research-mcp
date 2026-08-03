@@ -1,6 +1,42 @@
 # Universal Research Memory MCP
 
-이 폴더는 특정 모델이나 특정 연구 프로젝트에 종속되지 않는 연구 운영용 MCP와 Codex 플러그인을 만드는 독립 프로젝트다.
+연구의 검색 결과를 곧바로 사실로 취급하지 않고, 계획·승인·관찰·주장·실패·수정·기여를 출처와 함께 추적하는 append-only 연구 운영 프레임워크이자 read-only MCP다.
+
+현재 공개본은 **prototype**이다. Canonical JSONL을 권위 원본으로 유지하고,
+SQLite/semantic index는 언제든 재생성 가능한 검색 projection으로만 다룬다.
+
+## Quick Start (5 minutes)
+
+요구 사항: Python 3.11 이상. [uv](https://docs.astral.sh/uv/)가 있으면 clone한
+저장소 루트에서 다음 한 줄로 local MCP를 시작한다.
+
+```bash
+uv run universal-research-mcp --root .
+```
+
+또는 표준 Python 환경에서 설치한다.
+
+```bash
+python -m pip install .
+universal-research-mcp --root /path/to/research-project
+```
+
+`--root` 아래에는 canonical `data/events/`와 파생
+`data/index/research.sqlite`가 있어야 한다. 서버는 검색·근거 fetch·audit만
+제공하며 JSONL write, approval, amendment, model loading, remote proxy를 하지
+않는다. Codex plugin은 repository-relative Python 파일 대신 이 안정적인
+`universal-research-mcp` 실행 파일을 사용한다. 프로젝트 경로는 Codex가 MCP를
+시작하는 working directory이거나 `UNIVERSAL_RESEARCH_ROOT` 환경변수로 지정한다.
+
+## Minimal evidence flow
+
+```text
+canonical JSONL → derived SQLite candidates → memory_fetch_evidence
+→ indexed/current hash check → bounded claim, decision, or audit finding
+```
+
+검색 후보는 근거가 아니다. 중요한 결론에는 `memory_fetch_evidence`가 반환한
+원문 path·line range·`integrity_status`를 함께 남긴다.
 
 ## 목적
 
@@ -80,7 +116,7 @@ for the canonical ledger.
 - `schemas/project-profile.schema.json` separates per-project paths and
   adapters from the universal core.
 - `core/ledger.py` validates core records and existing legacy events without
-  writing data.
+  writing data. Its safety-relevant checks have JSON Schema parity fixtures.
 - `core/indexing.py` maps `core/1.0` records to the lexical and semantic
   retrieval projection while preserving the original record as canonical JSON.
 - `mcp/research_memory/` provides local read-only candidate retrieval and
@@ -92,7 +128,9 @@ for the canonical ledger.
 `marketplace_root/.agents/plugins/marketplace.json` is a repository-contained
 local marketplace. Its plugin source is a relative link to the canonical plugin
 directory, so it can be registered locally without copying plugin code. The
-top-level `.agents` directory is workspace-managed and read-only.
+plugin itself calls the installed `universal-research-mcp` entry point; it does
+not reach back to `../../mcp` or `../../data`. The top-level `.agents` directory
+is workspace-managed and read-only.
 
 ## 상태
 

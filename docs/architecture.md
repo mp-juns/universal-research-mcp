@@ -32,6 +32,8 @@ revision and a line, page, row, or structured-data locator.
 - `mcp/research_memory/` is a local, read-only lexical retrieval adapter. It
   does not start a daemon, load a model, or expose writes. Evidence fetch
   reports indexed-versus-current source hash integrity.
+- `universal_research_mcp/` provides the installable MCP entry point. It accepts
+  an explicit project root and never uses a reference-project runtime path.
 - The MCP transport requires the documented `mcp[cli]` runtime. Pure ledger and
   lexical-query contract tests do not import that optional transport runtime.
 - `packs/` adds constraints without relaxing the core policy.
