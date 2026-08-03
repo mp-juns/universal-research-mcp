@@ -320,3 +320,24 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
 - Derived lexical/semantic index regression: 20 pytest checks passed.
 - No reference-project, historical-log, canonical-project-ledger, model,
   benchmark, daemon, or remote research operation occurred.
+
+## 2026-08-04 — retrieval failure-mode hardening
+
+### Ownership and scope
+
+- Requested by: User, continuing the public-project review follow-up.
+- Planned and executed by: Codex.
+- Scope: fixture-only failures around source mutation, malformed JSONL, and a
+  large derived-index input; no project data or reference project was used.
+
+### Results and verification
+
+- `memory_fetch_evidence` reads a source artifact into one byte snapshot before
+  both rendering its line range and calculating `current_sha256`. A replacement
+  after that read cannot produce a response whose displayed content and hash
+  describe different file versions.
+- Added an explicit malformed-JSONL rejection fixture and a 1,000-record
+  lexical-index fixture that asserts canonical input bytes remain unchanged.
+- MCP safety (2) and Core E2E (1) unittest checks passed; lexical/semantic
+  builder regression checks passed (22). No warning, project-data mutation,
+  reference-project access, network, model, daemon, or benchmark occurred.

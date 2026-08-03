@@ -175,10 +175,14 @@ def memory_fetch_evidence(path: str, start_line: int, end_line: int | None = Non
     end = requested_end + max(0, min(int(context_lines), 50))
     if end < start or end - start + 1 > MAX_FETCH_LINES:
         raise ValueError("invalid or excessive fetch range")
-    lines = resolved.read_text(encoding="utf-8", errors="replace").splitlines()
+    # Read once so returned evidence and its hash describe the same file
+    # snapshot even if an external process replaces the artifact immediately
+    # afterwards.
+    snapshot = resolved.read_bytes()
+    lines = snapshot.decode("utf-8", errors="replace").splitlines()
     end = min(end, len(lines))
     content = "\n".join(f"{number}: {text}" for number, text in enumerate(lines[start - 1:end], start))
-    current_sha256 = hashlib.sha256(resolved.read_bytes()).hexdigest()
+    current_sha256 = hashlib.sha256(snapshot).hexdigest()
     hashes = indexed_source_hashes(path)
     indexed_sha256 = hashes[0] if len(hashes) == 1 else None
     integrity_status = "matched" if indexed_sha256 == current_sha256 else "mismatched" if indexed_sha256 is not None else "not_indexed" if not hashes else "ambiguous"

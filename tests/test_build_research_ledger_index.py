@@ -3,6 +3,8 @@ import sqlite3
 from argparse import Namespace
 from pathlib import Path
 
+import pytest
+
 from scripts.build_research_ledger_index import build
 from scripts.query_research_ledger import query
 
@@ -157,3 +159,34 @@ def test_build_applies_append_only_source_range_correction_to_derived_columns(
     assert line_end == 4
     assert json.loads(raw_json)["source"]["line_end"] == 5
     assert correction_count == "1"
+
+
+def test_build_rejects_malformed_canonical_jsonl(tmp_path: Path) -> None:
+    root = tmp_path / "research-events"
+    write_jsonl(
+        root / "sources.jsonl",
+        [{"source_id": "src_1", "source_path": "docs/source.md", "source_sha256": "abc", "source_type": "markdown", "legacy_import": False}],
+    )
+    path = root / "daily" / "2026-08-04" / "events.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text('{"event_id":\n', encoding="utf-8")
+
+    with pytest.raises(json.JSONDecodeError):
+        build(root, root / "index" / "research.sqlite")
+
+
+def test_build_handles_large_fixture_ledger_without_altering_canonical_input(tmp_path: Path) -> None:
+    root = tmp_path / "research-events"
+    write_jsonl(
+        root / "sources.jsonl",
+        [{"source_id": "src_1", "source_path": "docs/source.md", "source_sha256": "abc", "source_type": "markdown", "legacy_import": False}],
+    )
+    rows = [event(f"evt_{number:04d}", "2026-08-04", f"Fixture evidence {number}") for number in range(1000)]
+    path = root / "daily" / "2026-08-04" / "events.jsonl"
+    write_jsonl(path, rows)
+    canonical_before = path.read_bytes()
+
+    report = build(root, root / "index" / "research.sqlite")
+
+    assert report["event_count"] == "1000"
+    assert path.read_bytes() == canonical_before

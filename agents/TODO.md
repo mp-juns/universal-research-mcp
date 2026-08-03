@@ -157,3 +157,21 @@ contract gap with parity coverage, and document a short reproducible start path.
 - [x] Schema/manual validator parity fixture and expanded structural validation
 - [x] Explicit symlink and sensitive-path safety fixture
 - [x] Plugin cachebuster, validation, and local marketplace reinstall
+
+## Completed task — retrieval failure-mode fixtures
+
+### Objective and scope
+
+- Requested by: User, continuing the public-project hardening work.
+- Target: read-only evidence fetch and lexical index builder fixtures only.
+- Success: fetched content and current hash come from one byte snapshot;
+  malformed canonical JSONL fails closed; a large fixture ledger indexes without
+  canonical mutation.
+- Excluded: project ledger/index writes, reference project access, packages,
+  network, daemon, benchmark, and write MCP tools.
+
+### Completed
+
+- [x] One-read evidence snapshot before rendering and SHA-256 calculation
+- [x] Malformed JSONL failure fixture
+- [x] 1,000-record derived-index fixture with canonical-input preservation
