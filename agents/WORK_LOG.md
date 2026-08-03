@@ -430,3 +430,21 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   were generated. No PyPI API token was handled by this workspace.
 - No reference project/data, model, semantic index, benchmark, daemon, or MCP
   write capability was involved.
+
+## 2026-08-04 — consolidated operating specification plan
+
+- Requested by: User.
+- Plan: author one standalone Markdown specification of the implemented
+  framework, with explicit governance, environment-isolation, provenance, MCP,
+  adapter, validation, and distribution boundaries.
+- Excluded: code-policy changes, research-data access, secrets, package/model
+  operations, network, and release actions.
+
+### Results
+
+- Added `docs/research-operations-specification.md` as one standalone
+  specification of the implemented framework. It covers authority, Core records,
+  evidence, approval, amendments, agent governance, environment isolation,
+  path/secret boundaries, adapters, MCP, plugin, validation, CI, and release.
+- The document contains no secret, local absolute path, or reference-project
+  research result and introduces no runtime behavior change.

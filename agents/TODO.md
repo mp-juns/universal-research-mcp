@@ -246,3 +246,20 @@ contract gap with parity coverage, and document a short reproducible start path.
 - [x] Release-published-only OIDC PyPI workflow
 - [x] Initial public `v0.1.0` GitHub Release
 - [x] Build, artifact check, PyPI publish, and digital attestation workflow
+
+## Active task — consolidated operating specification
+
+### Objective and scope
+
+- Requested by: User.
+- Target: one Markdown specification under `docs/` that describes the complete
+  research operations framework, including governance, isolation, data, adapter,
+  MCP, validation, and distribution boundaries.
+- Success: the document stands alone without exposing a secret, local absolute
+  path, or reference-project research result.
+- Excluded: implementation or policy changes, research-data changes, package
+  installation, network, and release actions.
+
+### Completed
+
+- [x] Standalone framework specification covering governance through release
