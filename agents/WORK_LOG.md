@@ -389,5 +389,7 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
 - The test now supplies an explicit `FormatChecker(formats=["date-time"])`,
   making date-time assertion independent of validator-default behavior. The
   test extra explicitly requests `jsonschema[format]` so CI installs the
-  date-time format provider. The focused local Core test passed (5 checks). The
-  next push reruns CI.
+  date-time format provider. The lexical fixture also needs `numpy` through its
+  query helper, so the test extra declares it without adding the semantic
+  encoder stack. The focused local Core test passed (5 checks). The next push
+  reruns CI.

@@ -14,7 +14,7 @@ keywords = ["mcp", "research", "provenance", "audit", "reproducibility"]
 dependencies = ["mcp>=1.27,<2"]
 
 [project.optional-dependencies]
-test = ["jsonschema[format]>=4.25", "pytest>=8"]
+test = ["jsonschema[format]>=4.25", "numpy>=1.26", "pytest>=8"]
 
 [project.scripts]
 universal-research-mcp = "universal_research_mcp.server:main"
