@@ -210,3 +210,19 @@ contract gap with parity coverage, and document a short reproducible start path.
 
 - [x] Python 3.11 GitHub Actions workflow for push and pull-request checks
 - [x] Package entry-point, core, read-only MCP, and lexical fixture baseline
+
+## Completed task — optional semantic runtime contract
+
+### Objective and scope
+
+- Requested by: User, continuing public-project completion work.
+- Target: package metadata and README only.
+- Success: semantic encoder dependencies are opt-in, while the default MCP
+  remains lexical, read-only, and model-load-free.
+- Excluded: dependency installation, model download, semantic index build,
+  benchmark, and any reference-project or research-data operation.
+
+### Completed
+
+- [x] Declared a separate `semantic` package extra
+- [x] Documented its approval-gated, non-automatic model boundary

@@ -402,3 +402,12 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
 - GitHub emitted only a hosted-runner Node.js deprecation notice for the
   upstream checkout/setup actions; it did not affect the Python workflow or
   test result.
+
+## 2026-08-04 — optional semantic runtime contract
+
+- Requested by: User, continuing public-project completion work.
+- Added a `semantic` package extra for the already-present, optional semantic
+  index builder dependencies. The default MCP dependency set remains lexical
+  and read-only.
+- No extra was installed; no model was downloaded or loaded; no semantic index,
+  benchmark, project data, or reference project was touched.

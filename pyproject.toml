@@ -15,6 +15,14 @@ dependencies = ["mcp>=1.27,<2"]
 
 [project.optional-dependencies]
 test = ["jsonschema[format]>=4.25", "numpy>=1.26", "pytest>=8"]
+semantic = [
+  "huggingface-hub>=0.23",
+  "numpy>=1.26",
+  "safetensors>=0.4",
+  "sentence-transformers>=3",
+  "torch>=2.2",
+  "transformers>=4.40",
+]
 
 [project.scripts]
 universal-research-mcp = "universal_research_mcp.server:main"

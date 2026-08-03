@@ -28,6 +28,19 @@ universal-research-mcp --root /path/to/research-project
 `universal-research-mcp` 실행 파일을 사용한다. 프로젝트 경로는 Codex가 MCP를
 시작하는 working directory이거나 `UNIVERSAL_RESEARCH_ROOT` 환경변수로 지정한다.
 
+## Optional semantic adapter
+
+기본 MCP는 가벼운 lexical retrieval만 제공한다. 기존 semantic index builder는
+의도적으로 별도 설치 대상이다.
+
+```bash
+python -m pip install '.[semantic]'
+```
+
+이 extra는 encoder runtime만 제공하며 모델을 자동으로 내려받거나 MCP에 model
+loading tool을 추가하지 않는다. 모델 snapshot download, semantic index build, 또는
+benchmark는 별도 연구 계획·승인 범위에서 실행해야 한다.
+
 ## Minimal evidence flow
 
 ```text
