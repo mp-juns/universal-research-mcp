@@ -1005,3 +1005,23 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   Publishing, or the PyPI version check fails unexpectedly.
 - No model/API inference, benchmark execution, credential reading, reference
   project access, or canonical research-data write is authorized.
+
+### Release outcome
+
+- Final PR head `23e5862fd526ee21b6f70e5fa61da31760a7e954` passed both
+  push and pull-request CI checks.
+- PR #1 was marked ready and squash-merged with the expected-head guard. The
+  resulting `main` commit is `20edbf462609f91a59abe0f4cccacf54f91ed9b1`.
+- The merged `main` CI run `30861570759` passed the full tests, distribution
+  build/inspection, and installed-wheel initialization smoke.
+- Draft release `v0.3.0` was verified to target the exact merge commit and then
+  published at `https://github.com/mp-juns/universal-research-mcp/releases/tag/v0.3.0`.
+- Trusted Publishing run `30861655499` passed tests, artifact inspection,
+  installed-wheel smoke, OIDC publication, and digital attestation upload.
+- PyPI version endpoint for 0.3.0 returned HTTP 200 after publication. A fresh
+  isolated environment downloaded and installed
+  `universal-research-mcp==0.3.0` from the public PyPI index; package metadata,
+  version output, Codex-only CLI commands, and absence of the provider runtime
+  console entry point were verified.
+- The only non-blocking workflow annotation was the hosted-runner Node.js 20
+  deprecation notice for upstream checkout/setup actions.
