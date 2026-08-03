@@ -651,6 +651,6 @@ contract gap with parity coverage, and document a short reproducible start path.
 
 ### Remaining publication gate
 
-- [ ] Commit the reviewed worktree on `agent/codex-only-preview`
-- [ ] Push the branch and open a draft pull request against `main`
-- [ ] Confirm GitHub CI result for the pushed revision
+- [x] Commit the reviewed worktree on `agent/codex-only-preview`
+- [x] Push the branch and open draft pull request #1 against `main`
+- [x] Confirm both push and pull-request GitHub CI runs passed

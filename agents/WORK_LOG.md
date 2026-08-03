@@ -964,3 +964,14 @@ The copied MCP defaults were then changed to use this project's `data/index/` pa
   created offline with the installed pip/setuptools backend and passed the
   repository distribution validator. GitHub CI remains responsible for the
   clean PyPA build and source-distribution check.
+
+### GitHub publication result
+
+- Committed the reviewed implementation as `6f8ec42` on
+  `agent/codex-only-preview` and pushed it to the public origin.
+- Opened draft pull request #1 against `main`:
+  `https://github.com/mp-juns/universal-research-mcp/pull/1`.
+- Both GitHub Actions `core-contracts` runs triggered by the branch push and
+  pull request completed successfully on clean hosted runners.
+- The pull request remains draft; no merge, GitHub Release, or PyPI publication
+  was performed.
