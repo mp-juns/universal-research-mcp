@@ -104,3 +104,8 @@
   `gh repo edit` for the recorded description/topics; `gh api` for the
   main-protection payload; then, only after `release-gate` succeeds, merge and
   `git tag v0.4.0`/`git push origin v0.4.0`.
+- CI correction: PR #3 initially failed because prompt-pack resource lookup
+  still named the removed `governance` package and PowerShell did not expand a
+  wheel glob. These are fixed in commit `4889f49`. The remaining static failure
+  is CI resolving unpinned mypy 2.3.0 while the recorded local public-package
+  baseline is 1.17.1; pin the CI tool to `mypy==1.17.1` and rerun the gate.
