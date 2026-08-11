@@ -198,6 +198,7 @@ def _build_empty(output: Path) -> dict[str, Any]:
         }
         connection.executemany("INSERT INTO metadata VALUES (?, ?)", metadata.items())
         connection.commit()
+    connection.close()
     return {"output": str(output), **metadata}
 
 
@@ -225,6 +226,7 @@ def _record_fingerprint(database: Path, fingerprint: dict[str, Any]) -> None:
             "INSERT OR REPLACE INTO metadata VALUES (?, ?)", metadata.items()
         )
         connection.commit()
+    connection.close()
 
 
 def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str, Any]:

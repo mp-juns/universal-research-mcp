@@ -118,3 +118,7 @@
   descriptor (`WinError`/bad descriptor), which also left the temporary SQLite
   file locked. Open the staging file as `r+b` solely for `fsync`; no canonical
   or derived content is changed by this synchronization step.
+- Windows follow-up: SQLite connection context managers commit/rollback but do
+  not close the connection. Explicitly close the empty-index and fingerprint
+  staging connections before atomic replacement so Windows releases the file
+  handle before `os.replace`.
