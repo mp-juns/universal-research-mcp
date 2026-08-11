@@ -380,7 +380,8 @@ def index_status(root: str | Path) -> dict[str, Any]:
 
 
 def _sync_file(path: Path) -> None:
-    with path.open("rb") as handle:
+    # Windows rejects fsync on a read-only file descriptor.
+    with path.open("r+b") as handle:
         os.fsync(handle.fileno())
 
 

@@ -114,3 +114,7 @@
   required, while only those documented runtime-interface error categories are
   disabled; import/name/syntax and all other configured static checks remain in
   the release gate.
+- Windows smoke correction: CI showed `os.fsync` receiving a read-only staging
+  descriptor (`WinError`/bad descriptor), which also left the temporary SQLite
+  file locked. Open the staging file as `r+b` solely for `fsync`; no canonical
+  or derived content is changed by this synchronization step.
