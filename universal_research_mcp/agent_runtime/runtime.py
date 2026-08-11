@@ -30,6 +30,7 @@ from .evidence import (
     ProjectEvidenceBundleBuilder,
     evidence_snapshot_hash,
 )
+from .reservations import RuntimeDispatchReservationAuthority
 from .store import RuntimeStoreError, SessionStore
 
 
@@ -246,6 +247,13 @@ class AgentRuntime:
         self.evidence_builder = evidence_builder or ProjectEvidenceBundleBuilder()
         self.approval_validator = approval_validator
         self.store = SessionStore(self.root)
+        self._dispatch_reservations = RuntimeDispatchReservationAuthority()
+        reservation_binder = getattr(
+            self.executor, "bind_runtime_dispatch_consumer", None,
+        )
+        self._provider_reservation_required = callable(reservation_binder)
+        if self._provider_reservation_required:
+            reservation_binder(self._dispatch_reservations.consumer())
 
     def preflight(self, packets: list[dict[str, Any]], run_config: RunConfiguration) -> dict[str, Any]:
         prepared = self._prepare(packets, run_config)
@@ -753,6 +761,11 @@ class AgentRuntime:
         estimate_snapshot_hash: str, execution_request_hash: str,
     ) -> dict[str, Any]:
         value = deepcopy(dispatch)
+        parent_dispatch_hash = value.pop("dispatch_hash", None)
+        if parent_dispatch_hash != hash_without(dispatch, "dispatch_hash"):
+            raise RuntimeOutputError("base dispatch integrity hash mismatch before runtime enrichment")
+        value["parent_dispatch_hash"] = parent_dispatch_hash
+        value["schema_version"] = "urag-runtime-dispatch/1.0"
         instructions = dict(value.get("role_instructions") or {})
         template = prompt["template"]
         instructions["runtime_binding"] = {
@@ -788,7 +801,11 @@ class AgentRuntime:
             "timeout_seconds": config.timeout_seconds,
             "configuration_hash": artifact_hash(config.to_dict()),
             "provider_configuration_hash": config.provider_configuration_hash,
+            "parent_dispatch_hash": parent_dispatch_hash,
         }
+        value["runtime_dispatch_hash"] = hash_without(
+            value, "runtime_dispatch_hash",
+        )
         return value
 
 
@@ -840,6 +857,10 @@ class _ExecutionContext:
             session_id, self.prepared.run_plan_hash, self.prepared.estimate_snapshot_hash,
             self.prepared.execution_request_hash,
         )
+        if enriched.get("runtime_dispatch_hash") != hash_without(
+            enriched, "runtime_dispatch_hash",
+        ):
+            raise RuntimeOutputError("runtime dispatch integrity hash mismatch")
         runtime_binding = enriched.get("runtime") or {}
         expected_binding = {
             "session_id": session_id,
@@ -855,6 +876,7 @@ class _ExecutionContext:
             "timeout_seconds": self.prepared.configuration.timeout_seconds,
             "configuration_hash": artifact_hash(self.prepared.configuration.to_dict()),
             "provider_configuration_hash": self.prepared.configuration.provider_configuration_hash,
+            "parent_dispatch_hash": dispatch["dispatch_hash"],
         }
         if runtime_binding != expected_binding:
             raise RuntimeOutputError("dispatch runtime binding does not match the exact approved run plan")
@@ -867,6 +889,7 @@ class _ExecutionContext:
             "evidence_bundle": self.prepared.bundles[agent_id].to_dict(),
             "evidence_bundle_hash": self.prepared.bundles[agent_id].bundle_hash,
             "provider_configuration_hash": self.prepared.configuration.provider_configuration_hash,
+            "parent_dispatch_hash": dispatch["dispatch_hash"],
         }
         if any(enriched.get(key) != value for key, value in expected_top_level.items()):
             raise RuntimeOutputError("dispatch top-level prompt, plan, evidence, or provider binding is invalid")
@@ -897,9 +920,11 @@ class _ExecutionContext:
             authority_basis=self.prepared.configuration.approval_ref,
             summary=f"One provider call started for {agent_id}.",
         )
+        if self.runtime._provider_reservation_required:
+            self.runtime._dispatch_reservations.reserve(dispatch_ref["sha256"])
         with self.lock:
             self.external_call_count += 1
-        decision = self.runtime.executor(enriched)
+        decision = self.runtime.executor(deepcopy(enriched))
         if not isinstance(decision, dict):
             raise RuntimeOutputError("executor returned a non-object decision")
         executor_label = str((decision.get("attribution") or {}).get("executor") or "")
@@ -924,7 +949,7 @@ class _ExecutionContext:
         self.bindings[agent_id] = {
             "session_id": session_id,
             "prompt_hash": artifact_hash(prompt),
-            "dispatch_hash": artifact_hash(enriched),
+            "dispatch_hash": dispatch_ref["sha256"],
             "evidence_bundle_hash": self.prepared.bundles[agent_id].bundle_hash,
         }
         return decision

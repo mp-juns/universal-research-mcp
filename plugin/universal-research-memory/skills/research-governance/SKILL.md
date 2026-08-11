@@ -39,8 +39,11 @@ Activate `scope_and_cost_governor` before plan approval in every mode. Require
 it to classify proposed work as `required`, `useful_but_not_required`,
 `optional`, or `out_of_scope`; report bounded elapsed time, work units,
 difficulty, resource/API cost, confidence, and evidence. The role emits a
-finding only. Apply actual tool-call allow/block decisions through the
-deterministic operation gate bound to the approved `scope_hash`.
+finding only. Use the deterministic operation gate bound to the approved
+`scope_hash` as declarative preflight. It never grants execution: require
+`execution_authorized=false`, then let the Codex host bind a closed
+action-specific argument envelope and compare its pinned hash at the actual
+tool boundary. If that host boundary is unavailable, do not execute the call.
 
 Select the smallest mode that fits the work:
 

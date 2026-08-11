@@ -16,6 +16,7 @@ from integrations.codex.adapter import (
     build_dispatch_request,
     build_scope_governor_receipt,
     capture_decision,
+    validate_dispatch_manifest,
     validate_critical_review_batch,
 )
 
@@ -306,6 +307,18 @@ class ParallelResearchHarness:
                 "code": "GOV-DISPATCH-INVALID",
                 "blocking": True,
                 "detail": {"issues": dispatch.get("issues") or []},
+            })
+        pinned_dispatch_hash = str(dispatch.get("dispatch_hash") or "")
+        dispatch_issues = validate_dispatch_manifest(
+            dispatch,
+            expected_manifest_hash=pinned_dispatch_hash,
+        )
+        if dispatch_issues:
+            return _Outcome(index, packet, None, {
+                "classification": "policy_violation",
+                "code": "GOV-DISPATCH-INVALID",
+                "blocking": True,
+                "detail": {"issues": dispatch_issues},
             })
         try:
             decision = self._executor(dispatch)

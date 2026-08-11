@@ -280,7 +280,11 @@ def _agent_command(root: Path, args: argparse.Namespace) -> int:
         if key in report
     }
     safe["provider"] = bundle.summary()
-    safe["provider_usage_estimate"] = bundle.executor.usage_snapshot()
+    safe["provider_usage_reservation"] = bundle.executor.usage_snapshot()
+    from universal_research_mcp.harness import read_usage_observations, summarize_usage
+    safe["usage_summary"] = summarize_usage(
+        read_usage_observations(root), run_id=report.get("run_id"),
+    )
     safe["artifact_contents_included"] = False
     _emit(safe)
     return 0 if report.get("status") == "completed" else 2
@@ -311,6 +315,23 @@ def _harness_command(root: Path, args: argparse.Namespace) -> int:
     )
     _emit(report)
     return 0 if report["valid"] else 2
+
+
+def _usage_command(root: Path, args: argparse.Namespace) -> int:
+    """Report only token counts that a provider or host actually supplied."""
+
+    from universal_research_mcp.harness import read_usage_observations, summarize_usage
+
+    summary = summarize_usage(read_usage_observations(root), run_id=args.run_id)
+    _emit({
+        **summary,
+        "root": str(root),
+        "host_telemetry_note": (
+            "Codex host command, skill, and visualization tokens are excluded "
+            "unless the host supplied an exact host_reported observation."
+        ),
+    })
+    return 0
 
 
 def _semantic_status(root: Path) -> dict[str, Any]:
@@ -473,6 +494,14 @@ def build_parser() -> argparse.ArgumentParser:
     build_index = subparsers.add_parser("build-index", help="Compatibility alias for lexical index ensure.")
     build_index.add_argument("--root", type=Path)
 
+    usage = subparsers.add_parser(
+        "usage", help="Summarize observed token usage without estimates.",
+    )
+    usage_actions = usage.add_subparsers(dest="usage_action", required=True)
+    usage_summary = usage_actions.add_parser("summary", help="Read append-only token-usage observations.")
+    usage_summary.add_argument("--root", type=Path)
+    usage_summary.add_argument("--run-id")
+
     for command in ("doctor", "validate"):
         diagnostic = subparsers.add_parser(command, help="Report readiness without changing state.")
         diagnostic.add_argument("--root", type=Path)
@@ -632,6 +661,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "agent":
         return _agent_command(_root(args.root), args)
 
+    if args.command == "usage":
+        return _usage_command(_root(args.root), args)
+
     from universal_research_mcp.indexing import (
         ensure_lexical_index,
         ensure_semantic_index,
@@ -643,10 +675,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     root = _root(args.root, getattr(args, "path", None))
     if args.command == "init":
         lexical = initialize_project(root)
-        semantic = ensure_semantic_index(
-            root, _NoCallEmbedder(), provider_id="none", model="unconfigured",
-            dimensions=None, batch_size=1,
-        )
+        # Initialization creates only canonical + lexical state.  A zero-vector
+        # placeholder must not masquerade as an available semantic index.
+        semantic = semantic_status(root)
         _emit({"root": str(root), "lexical": lexical, "semantic": semantic})
         return 0
     if args.command == "build-index":
@@ -693,7 +724,7 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     """Preserve ``universal-research-mcp --root ...`` while adding subcommands."""
 
     materialized = list(sys.argv[1:] if argv is None else argv)
-    commands = {"serve", "init", "index", "build-index", "doctor", "validate"}
+    commands = {"serve", "init", "index", "build-index", "doctor", "validate", "usage"}
     if _internal_provider_preview_enabled():
         commands.update({"provider", "harness", "agent"})
     if materialized and materialized[0] in commands:

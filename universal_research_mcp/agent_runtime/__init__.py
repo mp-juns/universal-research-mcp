@@ -14,6 +14,11 @@ from .runtime import (
     build_estimate_snapshot,
     build_execution_request_hash,
 )
+from .reservations import (
+    RuntimeDispatchReservationAuthority,
+    RuntimeDispatchReservationConsumer,
+    RuntimeDispatchReservationError,
+)
 from .store import RuntimeStoreError, SessionStore
 
 __all__ = [
@@ -25,6 +30,9 @@ __all__ = [
     "ProjectEvidenceBundleBuilder",
     "RunConfiguration",
     "RuntimeOutputError",
+    "RuntimeDispatchReservationAuthority",
+    "RuntimeDispatchReservationConsumer",
+    "RuntimeDispatchReservationError",
     "RuntimeStoreError",
     "SessionStore",
     "build_estimate_snapshot",

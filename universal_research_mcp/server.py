@@ -411,7 +411,7 @@ def governance_assess_plan(operation: dict[str, Any]) -> dict[str, Any]:
 
 @mcp.tool()
 def governance_evaluate_operation(operation: dict[str, Any], packet: dict[str, Any]) -> dict[str, Any]:
-    """Return the deterministic allow/block action for one proposed tool call."""
+    """Evaluate declarative preflight; never authorize or execute a host tool call."""
 
     return operation_gate(operation, packet)
 

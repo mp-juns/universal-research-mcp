@@ -70,11 +70,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             if len(packets) != 1:
                 parser.error("dispatch prepare requires exactly one packet")
             dispatch = build_dispatch_request(packets[0], receipt)
-            print(serialize_dispatch_manifest(dispatch) if dispatch.get("dispatchable") else json.dumps(dispatch, ensure_ascii=False, sort_keys=True))
+            print(
+                serialize_dispatch_manifest(
+                    dispatch,
+                    expected_manifest_hash=str(dispatch.get("dispatch_hash") or ""),
+                )
+                if dispatch.get("dispatchable")
+                else json.dumps(dispatch, ensure_ascii=False, sort_keys=True)
+            )
             return 0 if dispatch.get("dispatchable") else 2
         if args.action == "critical-batch":
             dispatch = build_critical_review_batch(packets, receipt)
-            print(serialize_dispatch_manifest(dispatch) if dispatch.get("dispatchable") else json.dumps(dispatch, ensure_ascii=False, sort_keys=True))
+            print(
+                serialize_dispatch_manifest(
+                    dispatch,
+                    expected_manifest_hash=str(dispatch.get("batch_hash") or ""),
+                )
+                if dispatch.get("dispatchable")
+                else json.dumps(dispatch, ensure_ascii=False, sort_keys=True)
+            )
             return 0 if dispatch.get("dispatchable") else 2
         if len(packets) != 1 or args.decision is None:
             parser.error("dispatch capture requires one packet and --decision")

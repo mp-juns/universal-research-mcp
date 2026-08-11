@@ -52,6 +52,23 @@ the packet. It cannot approve spending or execute work. Host visualization is
 off by default and needs both explicit user opt-in and task capability scope;
 ordinary data-plot generation is a separate permission.
 
+Operations proposed for execution use a closed, typed declarative preflight
+schema. The deterministic gate rejects unknown fields and returns hashes for
+the exact preflight operation, task packet, and approved scope. Action-specific
+tool arguments still require a closed host envelope and a comparison at the
+actual tool boundary; the gate does not imply interception of arbitrary host
+calls and always reports execution authorization as false. Dispatch requests
+and critical batches are deep-copy isolated, sealed
+after all authority fields are present, pinned by the host at build time, and
+revalidated before export or provider handoff. These SHA-256 receipts detect
+drift but do not authenticate the host; host trust or a future signature layer
+is still required against a malicious host.
+
+The retained development provider path also uses a runtime-owned, single-use
+reservation for the exact stored dispatch artifact. The provider executor
+atomically consumes it before transport; direct invocation and replay without a
+pending reservation are rejected.
+
 Failure policy resolves field-by-field from task, profile, environment, then
 defaults. Every failure stops immediately before retry or downstream work and
 creates at least a hashed metadata tombstone, including when full recording is

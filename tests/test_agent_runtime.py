@@ -171,6 +171,7 @@ class _Executor:
         bad_agent: str | None = None,
         bad_kind: str | None = None,
         parallel_workers: int = 0,
+        mutate_runtime_dispatch: bool = False,
     ) -> None:
         self.bad_agent = bad_agent
         self.bad_kind = bad_kind
@@ -180,6 +181,7 @@ class _Executor:
         self._active = 0
         self.maximum_active = 0
         self._barrier = threading.Barrier(parallel_workers) if parallel_workers else None
+        self.mutate_runtime_dispatch = mutate_runtime_dispatch
 
     @staticmethod
     def estimate_dispatch(_dispatch: dict[str, Any]) -> dict[str, int]:
@@ -267,7 +269,27 @@ class _Executor:
             "completed_at": now,
         }
         decision["output_hash"] = hash_without(decision, "output_hash")
+        if self.mutate_runtime_dispatch:
+            dispatch["runtime"]["model"] = "mutated-by-executor"
         return decision
+
+
+class _ReservationAwareExecutor(_Executor):
+    def __init__(self) -> None:
+        super().__init__()
+        self._reservation_consumer: Any = None
+
+    def bind_runtime_dispatch_consumer(self, consumer: Any) -> None:
+        assert self._reservation_consumer is None
+        self._reservation_consumer = consumer
+
+    def __call__(self, dispatch: dict[str, Any]) -> dict[str, Any]:
+        if (
+            self._reservation_consumer is None
+            or not self._reservation_consumer.consume(artifact_hash(dispatch))
+        ):
+            raise RuntimeError("missing single-use runtime dispatch reservation")
+        return super().__call__(dispatch)
 
 
 def _runtime(root: Path, executor: _Executor, approval_validator=_approval) -> AgentRuntime:
@@ -319,6 +341,54 @@ def test_governor_first_independent_sessions_are_actually_parallel_and_hash_boun
     )
     assert "completed its bounded review" not in json.dumps(inspection)
     assert (tmp_path / "data/governance/runs/run_fixture/run-seal.json").is_file()
+
+
+def test_executor_cannot_mutate_the_stored_runtime_dispatch_or_decision_binding(
+    tmp_path: Path,
+) -> None:
+    executor = _Executor(mutate_runtime_dispatch=True)
+    runtime = _runtime(tmp_path, executor)
+
+    result = runtime.run(
+        [_packet("scope_and_cost_governor"), _packet("retrieval_governor")],
+        _configuration(max_calls=2, max_workers=1),
+    )
+
+    assert result["status"] == "completed"
+    for captured in executor.dispatches:
+        assert captured["runtime"]["model"] == "mutated-by-executor"
+        session_id = captured["runtime"]["session_id"]
+        session_root = (
+            tmp_path / "data/governance/runs/run_fixture/sessions" / session_id
+        )
+        stored_dispatch = json.loads(
+            (session_root / "dispatch.json").read_text(encoding="utf-8")
+        )
+        decision_envelope = json.loads(
+            (session_root / "decision.json").read_text(encoding="utf-8")
+        )
+        assert stored_dispatch["runtime"]["model"] == "fixture-model"
+        assert stored_dispatch["runtime_dispatch_hash"] == hash_without(
+            stored_dispatch, "runtime_dispatch_hash",
+        )
+        assert decision_envelope["dispatch_hash"] == artifact_hash(stored_dispatch)
+
+
+def test_runtime_reserves_each_provider_dispatch_once_and_replay_is_rejected(
+    tmp_path: Path,
+) -> None:
+    executor = _ReservationAwareExecutor()
+    runtime = _runtime(tmp_path, executor)
+
+    result = runtime.run(
+        [_packet("scope_and_cost_governor"), _packet("retrieval_governor")],
+        _configuration(max_calls=2, max_workers=1),
+    )
+
+    assert result["status"] == "completed"
+    assert len(executor.dispatches) == 2
+    with pytest.raises(RuntimeError, match="single-use"):
+        executor(executor.dispatches[0])
 
 
 def test_run_requires_explicit_exact_approval_and_does_not_call_executor(tmp_path: Path) -> None:

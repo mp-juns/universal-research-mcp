@@ -25,6 +25,41 @@ NO_PLAN_ACTIONS = frozenset({
     "emit_decision", "assess_plan_necessity", "estimate_operation",
     "validate_operation_scope",
 })
+WRITE_ACTIONS = frozenset({
+    "edit_derived_artifact", "rebuild_derived_index", "repair_index",
+})
+
+# The gate is an authority boundary, so its input contract is deliberately
+# closed. Unknown fields are not harmless metadata: an execution adapter could
+# otherwise interpret values such as ``command``, ``args``, or ``env`` after
+# this validator has approved the surrounding operation.
+OPERATION_FIELDS = frozenset({
+    "action",
+    "alternatives",
+    "background",
+    "benchmark",
+    "benefit_ref",
+    "capabilities",
+    "declared_out_of_scope",
+    "elapsed_time_minutes",
+    "estimate_evidence_refs",
+    "estimated_cost_usd",
+    "experimental",
+    "goal_requirement_ref",
+    "model_execution",
+    "necessity",
+    "necessity_reason",
+    "network",
+    "network_download_bytes",
+    "parallelism",
+    "paths",
+    "provider",
+    "scope_hash",
+    "sources",
+    "storage_bytes",
+    "work_units",
+    "writes",
+})
 
 
 def _issue(code: str, message: str) -> dict[str, str]:
@@ -33,6 +68,92 @@ def _issue(code: str, message: str) -> dict[str, str]:
 
 def _strings(value: Any) -> list[str]:
     return value if isinstance(value, list) and all(isinstance(item, str) for item in value) else []
+
+
+def _operation_contract_errors(operation: Any) -> list[str]:
+    """Validate the closed, typed operation envelope without granting scope."""
+
+    if not isinstance(operation, dict):
+        return ["operation must be an object"]
+    errors: list[str] = []
+    unknown_fields = sorted(str(field) for field in set(operation) - OPERATION_FIELDS)
+    if unknown_fields:
+        errors.append(f"operation contains unsupported fields: {', '.join(unknown_fields)}")
+    action = operation.get("action")
+    if not isinstance(action, str) or not action.strip():
+        errors.append("operation.action must be a non-empty string")
+    for field in ("paths", "sources", "capabilities", "alternatives", "estimate_evidence_refs"):
+        value = operation.get(field)
+        if value is not None and (
+            not isinstance(value, list)
+            or any(not isinstance(item, str) or not item for item in value)
+        ):
+            errors.append(f"operation.{field} must be an array of non-empty strings")
+    for field in (
+        "background", "benchmark", "declared_out_of_scope", "experimental",
+        "model_execution", "network", "writes",
+    ):
+        if field in operation and not isinstance(operation[field], bool):
+            errors.append(f"operation.{field} must be boolean")
+    for field in ("benefit_ref", "goal_requirement_ref", "necessity_reason", "provider"):
+        if field in operation and (
+            not isinstance(operation[field], str) or not operation[field].strip()
+        ):
+            errors.append(f"operation.{field} must be a non-empty string")
+    scope_hash = operation.get("scope_hash")
+    if "scope_hash" in operation and not (
+        isinstance(scope_hash, str)
+        and scope_hash.startswith("sha256:")
+        and len(scope_hash) == 71
+        and all(character in "0123456789abcdef" for character in scope_hash[7:])
+    ):
+        errors.append("operation.scope_hash must be an exact sha256 artifact hash")
+    if "necessity" in operation and (
+        not isinstance(operation["necessity"], str)
+        or operation["necessity"] not in NECESSITY_VALUES
+    ):
+        errors.append("operation.necessity is invalid")
+    parallelism = operation.get("parallelism")
+    if parallelism is not None and (
+        not isinstance(parallelism, int) or isinstance(parallelism, bool) or parallelism < 1
+    ):
+        errors.append("operation.parallelism must be a positive integer")
+    for field in ("estimated_cost_usd", "network_download_bytes", "storage_bytes"):
+        value = operation.get(field)
+        if value is not None and (
+            not isinstance(value, (int, float))
+            or isinstance(value, bool)
+            or not isfinite(float(value))
+            or value < 0
+        ):
+            errors.append(f"operation.{field} must be a non-negative finite number")
+    elapsed = operation.get("elapsed_time_minutes")
+    if elapsed is not None:
+        if not isinstance(elapsed, dict):
+            errors.append("operation.elapsed_time_minutes must be an object")
+        else:
+            unknown = sorted(
+                str(field) for field in set(elapsed) - {"minimum", "likely", "maximum"}
+            )
+            if unknown:
+                errors.append(
+                    "operation.elapsed_time_minutes contains unsupported fields: "
+                    + ", ".join(unknown)
+                )
+    work_units = operation.get("work_units")
+    if work_units is not None:
+        if not isinstance(work_units, dict):
+            errors.append("operation.work_units must be an object")
+        else:
+            unknown = sorted(
+                str(field) for field in set(work_units) - set(WORK_UNIT_FIELDS)
+            )
+            if unknown:
+                errors.append(
+                    "operation.work_units contains unsupported fields: "
+                    + ", ".join(unknown)
+                )
+    return errors
 
 
 def _path_is_within(candidate: str, allowed_root: str) -> bool:
@@ -133,11 +254,10 @@ def task_scope_hash(packet: dict[str, Any]) -> str:
 def assess_plan_necessity(operation: dict[str, Any]) -> dict[str, Any]:
     """Return a stable plan decision and a bounded, declaration-based estimate."""
 
-    if not isinstance(operation, dict) or not isinstance(operation.get("action"), str):
-        raise ValueError("operation.action must be a non-empty string")
+    contract_errors = _operation_contract_errors(operation)
+    if contract_errors:
+        raise ValueError("; ".join(contract_errors))
     action = operation["action"].strip()
-    if not action:
-        raise ValueError("operation.action must be a non-empty string")
 
     capabilities = set(_strings(operation.get("capabilities")))
     provider = str(operation.get("provider") or "local")
@@ -154,8 +274,6 @@ def assess_plan_necessity(operation: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("operation.estimated_cost_usd must be non-negative")
 
     necessity = operation.get("necessity")
-    if necessity is not None and necessity not in NECESSITY_VALUES:
-        raise ValueError("operation.necessity is invalid")
     if necessity is None:
         necessity = (
             "out_of_scope" if bool(operation.get("declared_out_of_scope"))
@@ -241,22 +359,43 @@ def validate_operation_scope(operation: dict[str, Any], packet: dict[str, Any]) 
 
     if not isinstance(operation, dict) or not isinstance(packet, dict):
         return [_issue(SCOPE_EXCEEDED, "operation and task packet must be objects")]
-    scope = packet.get("scope") or {}
-    authority = packet.get("authority") or {}
+    raw_scope = packet.get("scope")
+    raw_authority = packet.get("authority")
+    scope = raw_scope if isinstance(raw_scope, dict) else {}
+    authority = raw_authority if isinstance(raw_authority, dict) else {}
     issues: list[dict[str, str]] = []
+    contract_errors = _operation_contract_errors(operation)
+    issues.extend(_issue(SCOPE_EXCEEDED, message) for message in contract_errors)
+    if contract_errors:
+        return issues
     action = operation.get("action")
+    if action in {"inspect_artifact", "research_fetch"} and not _strings(operation.get("paths")):
+        issues.append(_issue(SCOPE_EXCEEDED, f"operation.{action} requires at least one path"))
     allowed_actions = set(_strings(scope.get("allowed_actions")))
     forbidden_actions = set(_strings(scope.get("forbidden_actions")))
     if action not in allowed_actions or action in forbidden_actions:
         issues.append(_issue(SCOPE_EXCEEDED, "operation action is outside task scope"))
+    if bool(operation.get("writes")) != (action in WRITE_ACTIONS):
+        issues.append(_issue(
+            SCOPE_EXCEEDED,
+            "operation write intent does not match an approved derived-write action",
+        ))
+    if action in WRITE_ACTIONS and not _strings(operation.get("paths")):
+        issues.append(_issue(
+            SCOPE_EXCEEDED,
+            "derived-write operation requires at least one explicit target path",
+        ))
 
     authority_scope_hash = authority.get("scope_hash")
     operation_scope_hash = operation.get("scope_hash")
-    if authority_scope_hash:
-        if authority_scope_hash != task_scope_hash(packet):
-            issues.append(_issue(SCOPE_EXCEEDED, "task scope hash does not match its boundary"))
-        if operation_scope_hash != authority_scope_hash:
-            issues.append(_issue(SCOPE_EXCEEDED, "operation is not bound to the approved scope hash"))
+    try:
+        computed_scope_hash = task_scope_hash(packet)
+    except (TypeError, ValueError):
+        computed_scope_hash = None
+    if authority_scope_hash != computed_scope_hash or computed_scope_hash is None:
+        issues.append(_issue(SCOPE_EXCEEDED, "task scope hash does not match its boundary"))
+    if operation_scope_hash != authority_scope_hash:
+        issues.append(_issue(SCOPE_EXCEEDED, "operation is not bound to the approved scope hash"))
 
     allowed_paths = _strings(scope.get("allowed_paths"))
     for path in _strings(operation.get("paths")):
@@ -322,6 +461,13 @@ def validate_operation_scope(operation: dict[str, Any], packet: dict[str, Any]) 
     except ValueError as exc:
         issues.append(_issue(SCOPE_EXCEEDED, str(exc)))
         return issues
+    if assessment["recommended_decision"] == "block":
+        issues.append(_issue(SCOPE_EXCEEDED, "operation is explicitly classified out of scope"))
+    if bool(operation.get("network")) or bool(operation.get("model_execution")):
+        if not isinstance(operation.get("provider"), str):
+            issues.append(_issue(SCOPE_EXCEEDED, "network or model execution requires an explicit provider"))
+        if "estimated_cost_usd" not in operation:
+            issues.append(_issue(COST_EXCEEDED, "network or model execution requires an explicit cost estimate"))
     if assessment["plan_required"] and not _strings(authority.get("plan_refs")):
         issues.append(_issue(PLAN_REQUIRED, "operation requires a recorded plan reference"))
     return issues
@@ -330,12 +476,50 @@ def validate_operation_scope(operation: dict[str, Any], packet: dict[str, Any]) 
 def operation_gate(operation: dict[str, Any], packet: dict[str, Any]) -> dict[str, Any]:
     """Return the controller action; this function never executes the operation."""
 
-    issues = validate_operation_scope(operation, packet)
+    # Import lazily because the task validator itself imports this module for
+    # scope hashing. The execution gate, unlike the lower-level scope helper,
+    # requires a complete valid task packet.
+    from governance.validation import validate_task_packet
+
+    try:
+        packet_issues = validate_task_packet(packet)
+    except (AttributeError, TypeError, ValueError) as exc:
+        packet_issues = [_issue(
+            SCOPE_EXCEEDED,
+            f"task packet validation failed closed: {type(exc).__name__}",
+        )]
+    issues = [*packet_issues, *validate_operation_scope(operation, packet)]
+    try:
+        operation_hash = artifact_hash(operation)
+    except (TypeError, ValueError):
+        operation_hash = None
+        issues.append(_issue(
+            SCOPE_EXCEEDED,
+            "operation cannot be bound to a canonical artifact hash",
+        ))
+    try:
+        packet_hash = artifact_hash(packet)
+    except (TypeError, ValueError):
+        packet_hash = None
+        issues.append(_issue(
+            SCOPE_EXCEEDED,
+            "task packet cannot be bound to a canonical artifact hash",
+        ))
+    preflight_passed = not issues
     return {
-        "schema_version": "operation-gate/2.0",
-        "allowed": not issues,
-        "controller_action": "allow_tool_call" if not issues else "reject_tool_call",
-        "workflow_state": "approved_scope" if not issues else "blocked",
+        "schema_version": "operation-gate/3.0",
+        "preflight_passed": preflight_passed,
+        "controller_action": "preflight_passed" if preflight_passed else "preflight_blocked",
+        "execution_authorized": False,
+        "host_argument_binding_required": preflight_passed,
+        "workflow_state": "preflight_complete" if preflight_passed else "blocked",
         "issues": issues,
         "reapproval_required": bool(issues),
+        "operation_hash": operation_hash,
+        "task_packet_hash": packet_hash,
+        "scope_hash": (
+            packet["authority"].get("scope_hash")
+            if isinstance(packet, dict) and isinstance(packet.get("authority"), dict)
+            else None
+        ),
     }

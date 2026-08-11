@@ -11,6 +11,7 @@ import pytest
 from governance.hashing import artifact_hash, hash_without
 from governance.registry import CRITICAL, load_registry, manifest_hash
 from governance.scope_policy import task_scope_hash
+from universal_research_mcp.agent_runtime import RuntimeDispatchReservationAuthority
 from universal_research_mcp.harness import ParallelResearchHarness
 from universal_research_mcp.harness import (
     AppendOnlyJsonlSink,
@@ -313,6 +314,65 @@ class _Transport:
         })
 
 
+def _runtime_dispatch(
+    executor: ProviderAgentExecutor,
+    dispatch: dict,
+    *,
+    provider_id: str = "openai",
+    network_scope: str = "remote",
+) -> dict:
+    provider_hash = "sha256:" + "a" * 64
+    executor.provider_id = provider_id
+    executor.network_scope = network_scope
+    executor.provider_configuration_hash = provider_hash
+    parent_hash = dispatch.pop("dispatch_hash")
+    dispatch["schema_version"] = "urag-runtime-dispatch/1.0"
+    dispatch["parent_dispatch_hash"] = parent_hash
+    dispatch.update({
+        "run_plan_hash": "sha256:" + "1" * 64,
+        "estimate_snapshot_hash": "sha256:" + "2" * 64,
+        "execution_request_hash": "sha256:" + "3" * 64,
+        "evidence_bundle": {"passages": []},
+        "evidence_bundle_hash": "sha256:" + "4" * 64,
+        "provider_configuration_hash": provider_hash,
+    })
+    runtime_binding = {
+        "session_id": "session_fixture",
+        "run_plan_hash": dispatch["run_plan_hash"],
+        "estimate_snapshot_hash": dispatch["estimate_snapshot_hash"],
+        "execution_request_hash": dispatch["execution_request_hash"],
+        "scope_governor_receipt_hash": dispatch["scope_governor_receipt_hash"],
+        "provider_configuration_hash": provider_hash,
+    }
+    dispatch["role_instructions"]["runtime_binding"] = runtime_binding
+    dispatch["runtime"] = {
+        **runtime_binding,
+        "prompt_hash": "sha256:" + "5" * 64,
+        "prompt_pack_hash": dispatch["role_prompt_hash"],
+        "evidence_bundle_hash": dispatch["evidence_bundle_hash"],
+        "provider_id": provider_id,
+        "model": executor.model,
+        "network_scope": network_scope,
+        "timeout_seconds": executor.request_timeout_seconds,
+        "configuration_hash": "sha256:" + "6" * 64,
+        "parent_dispatch_hash": parent_hash,
+    }
+    dispatch["runtime_dispatch_hash"] = hash_without(
+        dispatch, "runtime_dispatch_hash",
+    )
+    return dispatch
+
+
+def _bind_and_reserve(
+    executor: ProviderAgentExecutor,
+    dispatch: dict,
+) -> RuntimeDispatchReservationAuthority:
+    authority = RuntimeDispatchReservationAuthority()
+    executor.bind_runtime_dispatch_consumer(authority.consumer())
+    authority.reserve(artifact_hash(dispatch))
+    return authority
+
+
 def test_provider_agent_executor_strict_json_and_aggregate_budget(tmp_path: Path) -> None:
     body = json.dumps({
         "status": "pass", "summary": "Bounded review complete.",
@@ -341,14 +401,27 @@ def test_provider_agent_executor_strict_json_and_aggregate_budget(tmp_path: Path
         output_cost_per_million_tokens_usd="1",
     )
     task = packet("scope_and_cost_governor", max_parallelism=1)
-    dispatch = build_dispatch_request(task)
+    dispatch = _runtime_dispatch(executor, build_dispatch_request(task))
+    with pytest.raises(ProviderOutputError, match="unused host reservation"):
+        executor(dispatch)
+    assert transport.calls == 0
+    authority = _bind_and_reserve(executor, dispatch)
     result = executor(dispatch)
     assert result["status"] == "pass"
     assert result["attribution"]["executor"] == "openai:generation-fixture"
     assert result["attribution"]["provider_reported_model"] == "generation-fixture"
     assert transport.calls == 1
-    with pytest.raises(BudgetExceeded):
+    with pytest.raises(ProviderOutputError, match="unused host reservation"):
         executor(dispatch)
+    assert transport.calls == 1
+    second_dispatch = json.loads(json.dumps(dispatch))
+    second_dispatch["run_id"] = "run-harness-budget-2"
+    second_dispatch["runtime_dispatch_hash"] = hash_without(
+        second_dispatch, "runtime_dispatch_hash",
+    )
+    authority.reserve(artifact_hash(second_dispatch))
+    with pytest.raises(BudgetExceeded):
+        executor(second_dispatch)
     assert transport.calls == 1
 
     sink = AppendOnlyJsonlSink(tmp_path)
@@ -383,8 +456,13 @@ def test_provider_agent_executor_rejects_response_model_alias_without_retry() ->
         output_cost_per_million_tokens_usd="1",
     )
 
+    dispatch = _runtime_dispatch(
+        executor,
+        build_dispatch_request(packet("scope_and_cost_governor", max_parallelism=1)),
+    )
+    _bind_and_reserve(executor, dispatch)
     with pytest.raises(ProviderOutputError, match="pinned model"):
-        executor(build_dispatch_request(packet("scope_and_cost_governor", max_parallelism=1)))
+        executor(dispatch)
     assert transport.calls == 1
 
 
@@ -409,6 +487,11 @@ def test_provider_agent_executor_rejects_non_json_without_repair() -> None:
         input_cost_per_million_tokens_usd="1",
         output_cost_per_million_tokens_usd="1",
     )
+    dispatch = _runtime_dispatch(
+        executor,
+        build_dispatch_request(packet("scope_and_cost_governor", max_parallelism=1)),
+    )
+    _bind_and_reserve(executor, dispatch)
     with pytest.raises(ProviderOutputError):
-        executor(build_dispatch_request(packet("scope_and_cost_governor", max_parallelism=1)))
+        executor(dispatch)
     assert transport.calls == 1

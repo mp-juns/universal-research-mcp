@@ -1,6 +1,6 @@
 # Universal Research Framework Architecture
 
-> Public integration scope for 0.3.0 is Codex only. Provider-backed runtime
+> Public integration scope for 0.3.1 is Codex only. Provider-backed runtime
 > modules below are retained as internal prototypes and are not registered by
 > the plugin, exposed as distribution entry points, or covered by a public
 > compatibility promise.

@@ -13,3 +13,13 @@ data/index/*-health.json
 data/index/hf-modules/
 data/governance/approvals/
 data/governance/runs/
+
+# Local research-operation records and agent instructions are not package source.
+AGENTS.md
+agents/
+
+# Generated benchmark outputs are not package source.
+benchmarks/live_v*/
+benchmarks/results/
+data/events/daily/
+data/events/sources.jsonl

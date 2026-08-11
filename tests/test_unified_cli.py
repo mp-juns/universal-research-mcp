@@ -28,19 +28,18 @@ def test_default_cli_surface_is_codex_only(monkeypatch: pytest.MonkeyPatch) -> N
         parser.parse_args(["provider", "status"])
 
 
-def test_init_creates_queryable_empty_lexical_and_semantic_databases(
+def test_init_creates_queryable_empty_lexical_database_without_semantic_provider(
     tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
     root = tmp_path / "research"
     assert main(["init", str(root)]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["lexical"]["status"] == "current"
-    assert report["semantic"]["status"] == "current"
+    assert report["semantic"]["status"] == "missing"
     assert (root / "data/events/sources.jsonl").read_text(encoding="utf-8") == ""
     with sqlite3.connect(root / "data/index/research.sqlite") as db:
         assert db.execute("SELECT COUNT(*) FROM events").fetchone()[0] == 0
-    with sqlite3.connect(root / "data/index/semantic.sqlite") as db:
-        assert db.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0] == 0
+    assert not (root / "data/index/semantic.sqlite").exists()
 
 
 def test_legacy_entrypoint_accepts_new_init_subcommand(

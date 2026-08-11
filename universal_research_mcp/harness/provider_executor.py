@@ -7,9 +7,12 @@ from decimal import Decimal, InvalidOperation, ROUND_CEILING
 import json
 from math import isfinite
 import threading
-from typing import Any
+from typing import Any, Callable, Mapping
 
-from governance.hashing import hash_without
+from governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.agent_runtime.reservations import (
+    RuntimeDispatchReservationConsumer,
+)
 from universal_research_mcp.providers import (
     BudgetExceeded,
     GenerationRequest,
@@ -18,6 +21,9 @@ from universal_research_mcp.providers import (
     ProviderRouter,
     RemotePolicy,
 )
+
+from .usage import provider_generation_usage_observation
+from .reference_guard import unverified_technical_reference_count
 
 
 class ProviderOutputError(ValueError):
@@ -37,6 +43,7 @@ class ProviderAgentExecutor:
         input_cost_per_million_tokens_usd: str | float,
         output_cost_per_million_tokens_usd: str | float,
         request_timeout_seconds: float = 60.0,
+        usage_recorder: Callable[[Mapping[str, Any]], bool] | None = None,
     ) -> None:
         if remote_policy.budget is None:
             raise ValueError("provider agent execution requires an explicit budget")
@@ -57,11 +64,28 @@ class ProviderAgentExecutor:
         ):
             raise ValueError("request_timeout_seconds must be in (0, 600]")
         self.request_timeout_seconds = float(request_timeout_seconds)
+        self.usage_recorder = usage_recorder
         self._calls = 0
         self._input_tokens = 0
         self._output_tokens = 0
         self._cost_micros = 0
         self._lock = threading.Lock()
+        self._runtime_dispatch_consumer: RuntimeDispatchReservationConsumer | None = None
+
+    def bind_runtime_dispatch_consumer(
+        self, consumer: RuntimeDispatchReservationConsumer,
+    ) -> None:
+        """Bind exactly one host-owned reservation consumer before execution."""
+
+        if not isinstance(consumer, RuntimeDispatchReservationConsumer):
+            raise TypeError("runtime dispatch consumer has the wrong type")
+        with self._lock:
+            if (
+                self._runtime_dispatch_consumer is not None
+                and self._runtime_dispatch_consumer is not consumer
+            ):
+                raise RuntimeError("provider executor is already bound to another runtime")
+            self._runtime_dispatch_consumer = consumer
 
     @staticmethod
     def _price(value: str | float, label: str) -> Decimal:
@@ -95,6 +119,17 @@ class ProviderAgentExecutor:
         }
 
     def __call__(self, dispatch: dict[str, Any]) -> dict[str, Any]:
+        dispatch_issues = self._runtime_dispatch_issues(dispatch)
+        if dispatch_issues:
+            raise ProviderOutputError(
+                "runtime dispatch validation failed: " + "; ".join(dispatch_issues)
+            )
+        consumer = self._runtime_dispatch_consumer
+        dispatch_artifact_hash = artifact_hash(dispatch)
+        if consumer is None or not consumer.consume(dispatch_artifact_hash):
+            raise ProviderOutputError(
+                "runtime dispatch has no matching unused host reservation"
+            )
         started = datetime.now(timezone.utc).isoformat()
         prompt = self._prompt(dispatch)
         estimate = self.estimate_dispatch(dispatch)
@@ -117,11 +152,18 @@ class ProviderAgentExecutor:
         routed = self.router.execute(request, remote_policy=self.remote_policy)
         if not isinstance(routed.result, GenerationResult):
             raise ProviderOutputError("provider returned a non-generation result")
+        self._record_provider_usage(dispatch, routed.provider_id, routed.result)
         if routed.result.model != self.model:
             raise ProviderOutputError(
                 "provider response model does not exactly match the approved pinned model"
             )
         body = self._parse(routed.result.text)
+        if unverified_technical_reference_count(
+            body, dispatch.get("evidence_bundle"),
+        ):
+            raise ProviderOutputError(
+                "provider output cites an unverified file or technical identifier"
+            )
         completed = datetime.now(timezone.utc).isoformat()
         allowed_actions = set((dispatch.get("role_instructions") or {}).get("allowed_actions") or [])
         authority_used = body.get("authority_used") or []
@@ -156,6 +198,118 @@ class ProviderAgentExecutor:
         }
         decision["output_hash"] = hash_without(decision, "output_hash")
         return decision
+
+    def _record_provider_usage(
+        self,
+        dispatch: Mapping[str, Any],
+        provider_id: str,
+        result: GenerationResult,
+    ) -> None:
+        """Persist actual provider telemetry before later output validation.
+
+        A malformed or model-mismatched response can still consume tokens.  The
+        record therefore precedes JSON parsing and model identity checks.
+        """
+
+        if self.usage_recorder is None:
+            return
+        usage = result.usage
+        observation = provider_generation_usage_observation(
+            run_id=str(dispatch["run_id"]),
+            workflow_id=str(dispatch["workflow_id"]),
+            agent_id=str(dispatch["agent_id"]),
+            provider_id=provider_id,
+            model=result.model,
+            operation_ref=str(dispatch["runtime_dispatch_hash"]),
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            total_tokens=usage.total_tokens,
+        )
+        try:
+            recorded = self.usage_recorder(observation)
+        except Exception as exc:
+            raise ProviderOutputError("provider usage observation could not be recorded") from exc
+        if recorded is not True:
+            raise ProviderOutputError("provider usage observation was not accepted")
+
+    def _runtime_dispatch_issues(self, dispatch: object) -> list[str]:
+        if not isinstance(dispatch, dict):
+            return ["dispatch must be an object"]
+        issues: list[str] = []
+        if dispatch.get("schema_version") != "urag-runtime-dispatch/1.0":
+            issues.append("unsupported runtime dispatch schema")
+        if dispatch.get("dispatchable") is not True:
+            issues.append("runtime dispatch is not dispatchable")
+        try:
+            computed = hash_without(dispatch, "runtime_dispatch_hash")
+        except (TypeError, ValueError):
+            computed = None
+            issues.append("runtime dispatch cannot be canonically hashed")
+        if dispatch.get("runtime_dispatch_hash") != computed:
+            issues.append("runtime dispatch integrity hash mismatch")
+        parent_hash = dispatch.get("parent_dispatch_hash")
+        if not (
+            isinstance(parent_hash, str)
+            and parent_hash.startswith("sha256:")
+            and len(parent_hash) == 71
+        ):
+            issues.append("parent dispatch hash is invalid")
+        execution = dispatch.get("execution")
+        if not isinstance(execution, dict) or (
+            execution.get("host_dispatch_required") is not True
+            or execution.get("model_selection") != "host_owned"
+            or execution.get("network") != "not_granted_by_adapter"
+            or execution.get("write_execution") != "not_granted_by_adapter"
+        ):
+            issues.append("runtime dispatch execution boundary is invalid")
+        runtime = dispatch.get("runtime")
+        if not isinstance(runtime, dict):
+            issues.append("runtime binding must be an object")
+            return issues
+        expected = {
+            "provider_id": getattr(self, "provider_id", None),
+            "model": self.model,
+            "network_scope": getattr(self, "network_scope", None),
+            "provider_configuration_hash": getattr(
+                self, "provider_configuration_hash", None,
+            ),
+            "timeout_seconds": self.request_timeout_seconds,
+        }
+        if any(value is None for value in expected.values()):
+            issues.append("executor route identity is incomplete")
+        for field, value in expected.items():
+            if runtime.get(field) != value:
+                issues.append(f"runtime dispatch {field} does not match executor")
+        if runtime.get("parent_dispatch_hash") != parent_hash:
+            issues.append("runtime parent dispatch binding mismatch")
+        if dispatch.get("provider_configuration_hash") != runtime.get(
+            "provider_configuration_hash",
+        ):
+            issues.append("top-level provider configuration binding mismatch")
+        instructions = dispatch.get("role_instructions")
+        if not isinstance(instructions, dict):
+            issues.append("role instructions must be an object")
+            return issues
+        allowed_actions = instructions.get("allowed_actions")
+        if not isinstance(allowed_actions, list) or any(
+            not isinstance(item, str) for item in allowed_actions
+        ):
+            issues.append("allowed actions must be a string array")
+        runtime_binding = instructions.get("runtime_binding")
+        if not isinstance(runtime_binding, dict):
+            issues.append("role runtime binding must be an object")
+            return issues
+        for field in (
+            "run_plan_hash", "estimate_snapshot_hash", "execution_request_hash",
+            "provider_configuration_hash",
+        ):
+            if runtime_binding.get(field) != dispatch.get(field):
+                issues.append(f"role runtime {field} binding mismatch")
+        if runtime_binding.get("scope_governor_receipt_hash") != dispatch.get(
+            "scope_governor_receipt_hash",
+        ):
+            issues.append("role runtime receipt binding mismatch")
+        return issues
 
     def _reserve_remote(self, estimate: dict[str, int]) -> None:
         budget = self.remote_policy.budget
@@ -212,7 +366,9 @@ class ProviderAgentExecutor:
             "execute tools, or exceed allowed actions. Return exactly one JSON object with status, "
             "summary, classification, findings, evidence, decisions, recommended_actions, "
             "authority_used, and limitations. Preserve the reviewed plan, role prompt, and evidence "
-            "hashes in classification so the runtime can verify them."
+            "hashes in classification so the runtime can verify them. Name a file, path, function, "
+            "method, class, module, or script only when it occurs in the supplied exact evidence; "
+            "otherwise state that the identifier is unverified without inventing a name."
         )
 
     @staticmethod

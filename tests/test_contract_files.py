@@ -13,7 +13,7 @@ class ContractFileTests(unittest.TestCase):
         for name in (
             "core-record.schema.json", "pack-manifest.schema.json", "project-profile.schema.json",
             "research-agent-task.schema.json", "research-agent-decision.schema.json", "index-health.schema.json",
-            "agent-runtime-event.schema.json",
+            "agent-runtime-event.schema.json", "governance-operation.schema.json",
         ):
             with self.subTest(name=name):
                 schema = json.loads((ROOT / "schemas" / name).read_text(encoding="utf-8"))

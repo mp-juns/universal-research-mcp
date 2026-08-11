@@ -21,7 +21,7 @@ or call a local or external model service. Model selection, native agent
 sessions, tool permissions, and product entitlement remain owned by Codex.
 
 Provider-backed runtime modules retained in the source tree are internal
-prototypes. They are outside the 0.3.0 support and compatibility contract and
+prototypes. They are outside the 0.3.1 support and compatibility contract and
 must not be treated as an enabled security boundary. A future provider release
 requires a separate threat-model review, credential boundary, explicit
 cost/network approval, and distribution contract before activation.

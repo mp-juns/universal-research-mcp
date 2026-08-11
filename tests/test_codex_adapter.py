@@ -10,6 +10,7 @@ from integrations.codex.adapter import (
     build_scope_governor_receipt,
     capture_decision,
     serialize_dispatch_manifest,
+    validate_dispatch_manifest,
 )
 
 
@@ -147,12 +148,78 @@ class CodexAdapterTests(unittest.TestCase):
     def test_dispatch_manifest_is_deterministic_and_nonexecuting(self) -> None:
         task = packet()
         request = build_dispatch_request(task, scope_receipt([task]))
-        first = serialize_dispatch_manifest(request)
-        second = serialize_dispatch_manifest(request)
+        pinned_hash = request["dispatch_hash"]
+        first = serialize_dispatch_manifest(request, expected_manifest_hash=pinned_hash)
+        second = serialize_dispatch_manifest(request, expected_manifest_hash=pinned_hash)
         self.assertEqual(first, second)
         self.assertIn('"host_dispatch_required":true', first)
+        self.assertEqual(request["dispatch_hash"], hash_without(request, "dispatch_hash"))
+        self.assertEqual(
+            validate_dispatch_manifest(request, expected_manifest_hash=pinned_hash),
+            [],
+        )
         with self.assertRaises(ValueError):
-            serialize_dispatch_manifest({"dispatchable": False})
+            serialize_dispatch_manifest(
+                {"dispatchable": False},
+                expected_manifest_hash="sha256:" + "0" * 64,
+            )
+
+    def test_dispatch_manifest_rejects_post_build_authority_mutation(self) -> None:
+        task = packet()
+        original_task_hash = artifact_hash(task)
+        request = build_dispatch_request(task, scope_receipt([task]))
+        pinned_hash = request["dispatch_hash"]
+        request["role_instructions"]["allowed_actions"].append(
+            "edit_derived_artifact",
+        )
+
+        self.assertEqual(artifact_hash(task), original_task_hash)
+        self.assertNotIn(
+            "edit_derived_artifact",
+            task["scope"]["allowed_actions"],
+        )
+
+        with self.assertRaisesRegex(ValueError, "integrity hash mismatch"):
+            serialize_dispatch_manifest(request, expected_manifest_hash=pinned_hash)
+
+        request["dispatch_hash"] = hash_without(request, "dispatch_hash")
+        issues = validate_dispatch_manifest(
+            request,
+            expected_manifest_hash=pinned_hash,
+        )
+        self.assertTrue(any("outside role authority" in issue["message"] for issue in issues))
+        with self.assertRaisesRegex(ValueError, "outside role authority"):
+            serialize_dispatch_manifest(request, expected_manifest_hash=pinned_hash)
+
+    def test_critical_batch_is_sealed_and_revalidated_before_export(self) -> None:
+        tasks = [packet(agent_id, "final_review") for agent_id in CRITICAL]
+        batch = build_critical_review_batch(tasks, scope_receipt(tasks, "final_review"))
+        pinned_hash = batch["batch_hash"]
+
+        self.assertEqual(
+            validate_dispatch_manifest(batch, expected_manifest_hash=pinned_hash),
+            [],
+        )
+        serialize_dispatch_manifest(batch, expected_manifest_hash=pinned_hash)
+        batch["requests"][0]["execution"]["network"] = "granted"
+
+        with self.assertRaisesRegex(ValueError, "integrity hash mismatch"):
+            serialize_dispatch_manifest(batch, expected_manifest_hash=pinned_hash)
+
+    def test_dispatch_validator_fails_closed_on_malformed_nested_types(self) -> None:
+        task = packet()
+        request = build_dispatch_request(task, scope_receipt([task]))
+        pinned_hash = request["dispatch_hash"]
+        request["role_instructions"]["allowed_actions"] = [{"command": "hidden"}]
+        request["dispatch_hash"] = hash_without(request, "dispatch_hash")
+
+        issues = validate_dispatch_manifest(
+            request,
+            expected_manifest_hash=pinned_hash,
+        )
+
+        self.assertTrue(issues)
+        self.assertTrue(any("outside role authority" in issue["message"] for issue in issues))
 
 
 if __name__ == "__main__":

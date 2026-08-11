@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://universal-research-mcp.local/schemas/governance-operation-v2.json",
+  "title": "Governed Operation (agent-governance/2.0)",
+  "description": "Closed common structure for planning and declarative execution preflight. Contextual scope checks and action-specific tool arguments are enforced outside this schema; schema acceptance is never direct execution authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action"],
+  "properties": {
+    "action": {"type": "string", "minLength": 1},
+    "scope_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "paths": {"$ref": "#/$defs/string_array"},
+    "sources": {"$ref": "#/$defs/string_array"},
+    "provider": {"type": "string", "minLength": 1},
+    "capabilities": {"$ref": "#/$defs/string_array"},
+    "network": {"type": "boolean"},
+    "model_execution": {"type": "boolean"},
+    "benchmark": {"type": "boolean"},
+    "background": {"type": "boolean"},
+    "writes": {"type": "boolean"},
+    "parallelism": {"type": "integer", "minimum": 1},
+    "estimated_cost_usd": {"type": "number", "minimum": 0},
+    "necessity": {
+      "enum": ["required", "useful_but_not_required", "optional", "out_of_scope"]
+    },
+    "necessity_reason": {"type": "string", "minLength": 1},
+    "declared_out_of_scope": {"type": "boolean"},
+    "goal_requirement_ref": {"type": "string", "minLength": 1},
+    "benefit_ref": {"type": "string", "minLength": 1},
+    "alternatives": {"$ref": "#/$defs/string_array"},
+    "estimate_evidence_refs": {"$ref": "#/$defs/string_array"},
+    "elapsed_time_minutes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "likely", "maximum"],
+      "properties": {
+        "minimum": {"type": "number", "minimum": 0},
+        "likely": {"type": "number", "minimum": 0},
+        "maximum": {"type": "number", "minimum": 0}
+      }
+    },
+    "work_units": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files_to_read": {"type": "integer", "minimum": 0},
+        "files_to_modify": {"type": "integer", "minimum": 0},
+        "tests_to_run": {"type": "integer", "minimum": 0},
+        "model_runs": {"type": "integer", "minimum": 0},
+        "benchmark_runs": {"type": "integer", "minimum": 0}
+      }
+    },
+    "experimental": {"type": "boolean"},
+    "network_download_bytes": {"type": "number", "minimum": 0},
+    "storage_bytes": {"type": "number", "minimum": 0}
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

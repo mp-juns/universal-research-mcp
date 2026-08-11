@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from governance.hashing import artifact_hash
-from universal_research_mcp.harness import ProviderAgentExecutor
+from universal_research_mcp.harness import ProviderAgentExecutor, UsageRecorder
 from universal_research_mcp.providers import (
     AnthropicProvider,
     CredentialResolver,
@@ -179,6 +179,7 @@ def build_generation_executor(
         input_cost_per_million_tokens_usd=str(input_price),
         output_cost_per_million_tokens_usd=str(output_price),
         request_timeout_seconds=request_timeout_seconds,
+        usage_recorder=UsageRecorder(root),
     )
     provider_configuration_hash = artifact_hash(selected)
     # AgentRuntime checks these immutable route attributes against its exact
