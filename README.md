@@ -83,7 +83,31 @@ normal data plot does not imply permission to invoke a host visualization skill.
 Token accounting uses only exact counts supplied by a provider or host. If the
 host does not expose an exact count for commands, code generation, Skills, or
 visualization, that category is `unavailable`, not zero or an estimate. See
-[usage accounting](docs/usage-accounting.md).
+[the benchmark disclosure](docs/benchmark-disclosure.md) for the one archived
+development measurement published with this preview.
+
+## Development benchmark disclosure
+
+An archived paired Codex-host measurement compared direct file lookup with
+evidence that the real read-only MCP had already searched and hash-verified.
+It used **10 public synthetic lexical questions** (20 paired calls),
+`gpt-5.6-terra` at high reasoning effort, and no external provider API.
+
+| Observed development measurement | Direct file | Verified MCP prefetch |
+| --- | ---: | ---: |
+| Source-text fact matches on the later non-mutating audit | 10 / 10 | 10 / 10 |
+| Host-reported non-overlapping tokens | 229,372 | 113,931 |
+| Shell command events after treatment prefetch | 20 | 0 |
+
+Under that exact fixture and accounting definition, the prefetch treatment
+reported 115,441 fewer non-overlapping tokens (50.3%). This is **not** a price,
+latency, general-capability, or research-quality claim. The original strict
+scorer recorded the run as `terminal_failed` because its answer-format contract
+rejected otherwise source-matching outputs; the table uses a separately
+recorded, non-mutating source-text audit. The fixture was deliberately simple,
+and the treatment received centrally pre-fetched evidence, so it is not an
+end-to-end agent-runtime comparison. Full limitations and result status are in
+[the benchmark disclosure](docs/benchmark-disclosure.md).
 
 ## Boundaries and data authority
 
@@ -99,9 +123,8 @@ or shares a reference runtime database.
 4. Embedding similarity alone cannot establish a fact, cause, or performance
    claim.
 
-`TODO.md`, `WORK_LOG.md`, and `agents/sessions/` are human-readable projections
-of plans, decisions, and contributions. They do not replace the canonical
-ledger.
+Project-local working notes, when used, are not canonical records and are not
+distributed with the package.
 
 ## Architecture
 
