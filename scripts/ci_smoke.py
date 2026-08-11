@@ -20,12 +20,18 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("wheel", type=Path)
     args = parser.parse_args()
+    wheel = args.wheel
+    if not wheel.is_file():
+        matches = sorted(wheel.parent.glob(wheel.name))
+        if len(matches) != 1:
+            raise FileNotFoundError(f"expected exactly one wheel matching: {wheel}")
+        wheel = matches[0]
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         venv = root / "venv"
         subprocess.run([sys.executable, "-m", "venv", str(venv)], check=True)
         python = _entrypoint(venv, "python")
-        subprocess.run([str(python), "-m", "pip", "install", "--force-reinstall", str(args.wheel)], check=True)
+        subprocess.run([str(python), "-m", "pip", "install", "--force-reinstall", str(wheel)], check=True)
         research = _entrypoint(venv, "universal-research")
         subprocess.run([str(research), "--version"], check=True)
         subprocess.run([str(research), "init", str(root / "research")], check=True)

@@ -165,7 +165,9 @@ def _read_prompt_pack(agent_id: str, roles_root: Path | None) -> str:
             return path.read_text(encoding="utf-8")
         except OSError as exc:
             raise PromptPackError(f"cannot read prompt pack for {agent_id}") from exc
-    resource = resources.files("governance").joinpath("roles", agent_id, "instructions.md")
+    resource = resources.files("universal_research_mcp.governance").joinpath(
+        "roles", agent_id, "instructions.md",
+    )
     try:
         return resource.read_text(encoding="utf-8")
     except (FileNotFoundError, OSError) as exc:
