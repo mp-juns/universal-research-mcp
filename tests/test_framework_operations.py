@@ -4,10 +4,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from adapters.markdown_views import render_plan_view, render_work_log_view
-from core.amendments import resolve_core_amendments
-from core.audit import audit_report
-from core.proposals import append_approved_record
+from universal_research_mcp.adapters.markdown_views import render_plan_view, render_work_log_view
+from universal_research_mcp.core.amendments import resolve_core_amendments
+from universal_research_mcp.core.audit import audit_report
+from universal_research_mcp.core.proposals import append_approved_record
 
 
 def base_record(record_id: str, kind: str, status: str = "completed") -> dict:

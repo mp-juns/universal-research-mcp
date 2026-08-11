@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
 from universal_research_mcp.agent_runtime import RuntimeDispatchReservationAuthority
 from universal_research_mcp.harness.provider_executor import (
     ProviderAgentExecutor,

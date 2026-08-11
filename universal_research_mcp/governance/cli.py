@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 from typing import Any, Sequence
 
-from governance.registry import registry_report
-from governance.validation import validate_decision, validate_task_packet
-from integrations.codex.adapter import (
+from universal_research_mcp.governance.registry import registry_report
+from universal_research_mcp.governance.validation import validate_decision, validate_task_packet
+from universal_research_mcp.integrations.codex.adapter import (
     build_critical_review_batch,
     build_dispatch_request,
     build_scope_governor_receipt,

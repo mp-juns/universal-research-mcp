@@ -6,11 +6,11 @@ from datetime import datetime, timezone
 from math import isfinite
 from typing import Any
 
-from governance.errors import APPROVAL_MISSING, EVIDENCE_MISSING, OUTPUT_INVALID, REGISTRY_UNKNOWN_AGENT, SCOPE_EXCEEDED
-from governance.hashing import artifact_hash, hash_without
-from governance.registry import CRITICAL, load_registry, manifest_hash
-from governance.failure_policy import resolve_failure_policy
-from governance.scope_policy import HOST_VISUALIZATION, KNOWN_CAPABILITIES, task_scope_hash
+from universal_research_mcp.governance.errors import APPROVAL_MISSING, EVIDENCE_MISSING, OUTPUT_INVALID, REGISTRY_UNKNOWN_AGENT, SCOPE_EXCEEDED
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.registry import CRITICAL, load_registry, manifest_hash
+from universal_research_mcp.governance.failure_policy import resolve_failure_policy
+from universal_research_mcp.governance.scope_policy import HOST_VISUALIZATION, KNOWN_CAPABILITIES, task_scope_hash
 
 
 WRITE_ACTIONS = frozenset({"edit_derived_artifact", "rebuild_derived_index", "repair_index"})
@@ -175,6 +175,8 @@ def validate_task_packet(packet: dict[str, Any], registry: dict[str, dict[str, A
     if packet.get("governance_version") != "agent-governance/2.0":
         issues.append(_issue(OUTPUT_INVALID, "task packet must bind agent-governance/2.0"))
     agent_id = packet.get("agent_id")
+    if not isinstance(agent_id, str):
+        return [_issue(REGISTRY_UNKNOWN_AGENT, "task packet agent_id must be a string")]
     manifest = registry.get(agent_id)
     if manifest is None:
         return [_issue(REGISTRY_UNKNOWN_AGENT, "unknown governance agent")]
@@ -285,7 +287,8 @@ def validate_decision(decision: dict[str, Any], packet: dict[str, Any], registry
         issues.append(_issue(OUTPUT_INVALID, "unsupported decision schema"))
     if decision.get("agent_id") != packet.get("agent_id") or decision.get("run_id") != packet.get("run_id") or decision.get("workflow_id") != packet.get("workflow_id"):
         issues.append(_issue(OUTPUT_INVALID, "decision identity does not match task packet"))
-    manifest = registry.get(decision.get("agent_id"))
+    decision_agent_id = decision.get("agent_id")
+    manifest = registry.get(decision_agent_id) if isinstance(decision_agent_id, str) else None
     if manifest is None:
         issues.append(_issue(REGISTRY_UNKNOWN_AGENT, "decision has an unknown agent"))
     elif decision.get("role_manifest_hash") != manifest_hash(manifest):

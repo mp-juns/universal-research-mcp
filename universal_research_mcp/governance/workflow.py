@@ -36,6 +36,8 @@ def transition(state: dict[str, Any], target: str, reason: str) -> dict[str, Any
 
     mode = state.get("mode")
     current = state.get("stage")
+    if not isinstance(mode, str) or not isinstance(current, str):
+        raise ValueError("workflow state has no valid mode/stage")
     stages = MODE_STAGES.get(mode, ())
     if target in EXCEPTION_STATES:
         allowed = True

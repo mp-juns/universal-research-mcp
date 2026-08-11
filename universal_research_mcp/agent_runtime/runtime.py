@@ -11,17 +11,17 @@ import re
 import threading
 from typing import Any, Callable, Mapping
 
-from governance.failure_policy import build_failure_record, resolve_failure_policy
-from governance.escalation import evaluate_gate
-from governance.hashing import artifact_hash, hash_without
-from governance.prompts import load_prompt_pack, render_prompt_pack
-from governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR, load_registry
-from governance.validation import (
+from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
+from universal_research_mcp.governance.escalation import evaluate_gate
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.prompts import load_prompt_pack, render_prompt_pack
+from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR, load_registry
+from universal_research_mcp.governance.validation import (
     validate_decision,
     validate_scope_governor_decision,
     validate_task_packet,
 )
-from integrations.codex.adapter import build_dispatch_draft
+from universal_research_mcp.integrations.codex.adapter import build_dispatch_draft
 from universal_research_mcp.harness import ParallelResearchHarness
 
 from .evidence import (

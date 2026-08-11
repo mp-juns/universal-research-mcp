@@ -1,13 +1,13 @@
 """Local, deterministic governance contracts for Universal Research Agent Governance."""
 
-from governance.registry import load_registry, registry_report
-from governance.validation import (
+from universal_research_mcp.governance.registry import load_registry, registry_report
+from universal_research_mcp.governance.validation import (
     validate_decision,
     validate_scope_governor_decision,
     validate_task_packet,
 )
-from governance.failure_policy import build_failure_record, resolve_failure_policy
-from governance.scope_policy import (
+from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
+from universal_research_mcp.governance.scope_policy import (
     assess_plan_necessity,
     operation_gate,
     task_scope_hash,

@@ -6,8 +6,8 @@ from math import isfinite
 from pathlib import PurePosixPath
 from typing import Any
 
-from governance.errors import COST_EXCEEDED, PLAN_REQUIRED, SCOPE_EXCEEDED, USER_OPT_IN_MISSING
-from governance.hashing import artifact_hash
+from universal_research_mcp.governance.errors import COST_EXCEEDED, PLAN_REQUIRED, SCOPE_EXCEEDED, USER_OPT_IN_MISSING
+from universal_research_mcp.governance.hashing import artifact_hash
 
 
 HOST_VISUALIZATION = "host_visualization"
@@ -191,7 +191,7 @@ def _elapsed_range(operation: dict[str, Any]) -> dict[str, Any]:
     minimum = _nonnegative_number(raw.get("minimum"), "elapsed minimum")
     likely = _nonnegative_number(raw.get("likely"), "elapsed likely")
     maximum = _nonnegative_number(raw.get("maximum"), "elapsed maximum")
-    if None in {minimum, likely, maximum} or not (minimum <= likely <= maximum):
+    if minimum is None or likely is None or maximum is None or not (minimum <= likely <= maximum):
         raise ValueError("elapsed range must satisfy 0 <= minimum <= likely <= maximum")
     return {
         "minimum_minutes": minimum,
@@ -232,8 +232,10 @@ def _difficulty(operation: dict[str, Any], units: dict[str, int]) -> str:
 def task_scope_material(packet: dict[str, Any]) -> dict[str, Any]:
     """Return the exact immutable material bound by a task's scope hash."""
 
-    authority = packet.get("authority") if isinstance(packet.get("authority"), dict) else {}
-    failure = packet.get("failure_policy") if isinstance(packet.get("failure_policy"), dict) else {}
+    raw_authority = packet.get("authority")
+    raw_failure = packet.get("failure_policy")
+    authority = raw_authority if isinstance(raw_authority, dict) else {}
+    failure = raw_failure if isinstance(raw_failure, dict) else {}
     return {
         "scope": packet.get("scope"),
         "evidence_boundary": packet.get("evidence_boundary"),
@@ -479,7 +481,7 @@ def operation_gate(operation: dict[str, Any], packet: dict[str, Any]) -> dict[st
     # Import lazily because the task validator itself imports this module for
     # scope hashing. The execution gate, unlike the lower-level scope helper,
     # requires a complete valid task packet.
-    from governance.validation import validate_task_packet
+    from universal_research_mcp.governance.validation import validate_task_packet
 
     try:
         packet_issues = validate_task_packet(packet)

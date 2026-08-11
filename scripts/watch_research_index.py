@@ -40,8 +40,8 @@ from watchdog.observers import Observer
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.build_research_ledger_index import build as build_lexical
-from scripts.build_research_semantic_index import (
+from universal_research_mcp.tools.build_research_ledger_index import build as build_lexical
+from universal_research_mcp.tools.build_research_semantic_index import (
     DEFAULT_MODEL,
     ENCODER_COMPATIBILITY_BRIDGE_VERSION,
     ENCODER_DTYPE_CHOICES,
@@ -61,12 +61,12 @@ from scripts.build_research_semantic_index import (
     snapshot_model,
     source_passages,
 )
-from scripts.research_device import DEVICE_CHOICES, resolve_torch_device
-from scripts.research_event_corrections_v2 import (
+from universal_research_mcp.tools.research_device import DEVICE_CHOICES, resolve_torch_device
+from universal_research_mcp.tools.research_event_corrections_v2 import (
     source_range_correction_count,
     source_range_correction_target_ids,
 )
-from scripts.research_reference_corpus import REFERENCE_EVENT_TYPE
+from universal_research_mcp.tools.research_reference_corpus import REFERENCE_EVENT_TYPE
 
 KST = timezone(timedelta(hours=9))
 logger = logging.getLogger("watch-research-index")
@@ -572,7 +572,7 @@ def full_semantic_rebuild(
     encoder: EncoderHolder,
 ) -> dict[str, Any]:
     """Drop and rebuild semantic.sqlite from scratch."""
-    from scripts.build_research_semantic_index import build
+    from universal_research_mcp.tools.build_research_semantic_index import build
 
     return build(
         events_root=events_root,

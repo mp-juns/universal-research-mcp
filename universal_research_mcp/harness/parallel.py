@@ -8,11 +8,11 @@ from datetime import datetime, timezone
 from math import isfinite
 from typing import Any, Mapping, Protocol
 
-from governance.failure_policy import build_failure_record, resolve_failure_policy
-from governance.hashing import artifact_hash
-from governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR
-from governance.validation import validate_scope_governor_decision, validate_task_packet
-from integrations.codex.adapter import (
+from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
+from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR
+from universal_research_mcp.governance.validation import validate_scope_governor_decision, validate_task_packet
+from universal_research_mcp.integrations.codex.adapter import (
     build_dispatch_request,
     build_scope_governor_receipt,
     capture_decision,

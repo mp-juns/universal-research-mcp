@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from core.ledger import read_jsonl, validate_records
+from universal_research_mcp.core.ledger import read_jsonl, validate_records
 
 
 def main() -> int:

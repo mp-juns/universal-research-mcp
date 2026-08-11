@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.3.1"
-description = "Provenance-first research memory and governed research workflows for Codex."
+version = "0.4.0"
+description = "Read-only MCP for provenance-first research memory, evidence re-verification, and governed Codex workflows."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -49,13 +49,22 @@ semantic = [
 universal-research-mcp = "universal_research_mcp.cli:legacy_main"
 universal-research-governance = "universal_research_mcp.governance_server:main"
 universal-research = "universal_research_mcp.cli:main"
-urgov = "governance.cli:main"
+urgov = "universal_research_mcp.governance.cli:main"
 
 [tool.setuptools]
-packages = ["adapters", "core", "governance", "integrations", "integrations.codex", "scripts", "universal_research_mcp", "universal_research_mcp.agent_runtime", "universal_research_mcp.harness", "universal_research_mcp.indexing", "universal_research_mcp.providers", "universal_research_mcp.runtime"]
+packages = ["universal_research_mcp", "universal_research_mcp.adapters", "universal_research_mcp.agent_runtime", "universal_research_mcp.core", "universal_research_mcp.governance", "universal_research_mcp.harness", "universal_research_mcp.indexing", "universal_research_mcp.integrations", "universal_research_mcp.integrations.codex", "universal_research_mcp.providers", "universal_research_mcp.runtime", "universal_research_mcp.tools"]
 
 [tool.setuptools.package-data]
-governance = ["roles/*/role.yaml", "roles/*/instructions.md", "schemas/*.json"]
+"universal_research_mcp.governance" = ["roles/*/role.yaml", "roles/*/instructions.md", "schemas/*.json"]
+
+[tool.ruff]
+target-version = "py311"
+src = ["universal_research_mcp"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["universal_research_mcp"]
+ignore_missing_imports = true
 
 [tool.setuptools.data-files]
 "share/universal-research-mcp/docs" = [

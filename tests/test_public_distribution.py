@@ -5,8 +5,8 @@ import tomllib
 import unittest
 import zipfile
 
-from governance.registry import FIXED_ROSTER
-from scripts.validate_distribution_artifact import (
+from universal_research_mcp.governance.registry import FIXED_ROSTER
+from universal_research_mcp.tools.distribution import (
     BUNDLE_PREFIX,
     GOVERNANCE_ROLE_IDS,
     REQUIRED_BUNDLE_FILES,
@@ -24,7 +24,7 @@ class PublicDistributionTests(unittest.TestCase):
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         self.assertEqual(project["project"]["name"], "universal-research-mcp")
-        self.assertEqual(project["project"]["version"], "0.3.1")
+        self.assertEqual(project["project"]["version"], "0.4.0")
         self.assertEqual(project["project"]["license"], "MIT")
         self.assertEqual(project["project"]["license-files"], ["LICENSE"])
         self.assertEqual(project["project"]["authors"], [{"name": "mp-juns"}])
@@ -46,7 +46,7 @@ class PublicDistributionTests(unittest.TestCase):
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         data_files = project["tool"]["setuptools"]["data-files"]
-        package_data = project["tool"]["setuptools"]["package-data"]["governance"]
+        package_data = project["tool"]["setuptools"]["package-data"]["universal_research_mcp.governance"]
         self.assertIn("share/universal-research-mcp/docs", data_files)
         self.assertIn("share/universal-research-mcp/schemas", data_files)
         self.assertIn("share/universal-research-mcp/packs/study_type", data_files)
@@ -68,7 +68,7 @@ class PublicDistributionTests(unittest.TestCase):
 
     def test_wheel_validator_requires_every_role_prompt_pack_member(self) -> None:
         self.assertEqual(set(GOVERNANCE_ROLE_IDS), FIXED_ROSTER)
-        self.assertIn("integrations/codex/adapter.py", REQUIRED_RUNTIME_FILES)
+        self.assertIn("universal_research_mcp/integrations/codex/adapter.py", REQUIRED_RUNTIME_FILES)
         self.assertNotIn("universal_research_mcp/runtime_server.py", REQUIRED_RUNTIME_FILES)
         self.assertIn("docs/host-integration.md", REQUIRED_BUNDLE_FILES)
         self.assertNotIn("docs/agent-runtime.md", REQUIRED_BUNDLE_FILES)
@@ -79,7 +79,7 @@ class PublicDistributionTests(unittest.TestCase):
                 if path.endswith("/role.yaml")
             },
             {
-                f"governance/roles/{agent_id}/role.yaml"
+                f"universal_research_mcp/governance/roles/{agent_id}/role.yaml"
                 for agent_id in FIXED_ROSTER
             },
         )
@@ -90,21 +90,21 @@ class PublicDistributionTests(unittest.TestCase):
                 if path.endswith("/instructions.md")
             },
             {
-                f"governance/roles/{agent_id}/instructions.md"
+                f"universal_research_mcp/governance/roles/{agent_id}/instructions.md"
                 for agent_id in FIXED_ROSTER
             },
         )
         self.assertIn(
-            "governance/schemas/prompt-pack.schema.json",
+            "universal_research_mcp/governance/schemas/prompt-pack.schema.json",
             REQUIRED_GOVERNANCE_FILES,
         )
 
-        omitted = "governance/roles/retrieval_governor/instructions.md"
+        omitted = "universal_research_mcp/governance/roles/retrieval_governor/instructions.md"
         wheel_members = {
             *REQUIRED_RUNTIME_FILES,
             *REQUIRED_GOVERNANCE_FILES,
             *(BUNDLE_PREFIX + name for name in REQUIRED_BUNDLE_FILES),
-            "universal_research_mcp-0.3.1.dist-info/entry_points.txt",
+            "universal_research_mcp-0.4.0.dist-info/entry_points.txt",
         }
         wheel_members.remove(omitted)
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -133,7 +133,7 @@ class PublicDistributionTests(unittest.TestCase):
                 ROOT / "plugin/universal-research-memory/.codex-plugin/plugin.json"
             ).read_text(encoding="utf-8")
         )
-        self.assertTrue(manifest["version"].startswith("0.3.1+codex."))
+        self.assertTrue(manifest["version"].startswith("0.4.0+codex."))
         self.assertEqual(manifest["author"]["name"], "mp-juns")
         self.assertEqual(manifest["interface"]["developerName"], "mp-juns")
         self.assertIn("Codex-only", manifest["description"])

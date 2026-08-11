@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from governance.prompts import (
+from universal_research_mcp.governance.prompts import (
     PROMPT_PACK_SCHEMA_VERSION,
     PromptPackError,
     load_prompt_pack,
@@ -15,11 +15,11 @@ from governance.prompts import (
     render_prompt_pack,
     validate_prompt_pack,
 )
-from governance.registry import CRITICAL, FIXED_ROSTER, GOVERNANCE_VERSION
+from universal_research_mcp.governance.registry import CRITICAL, FIXED_ROSTER, GOVERNANCE_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ROLES_ROOT = ROOT / "governance/roles"
+ROLES_ROOT = ROOT / "universal_research_mcp/governance/roles"
 
 
 def test_all_fixed_roles_have_valid_unique_hash_bound_prompt_packs() -> None:
@@ -103,7 +103,7 @@ def test_loader_fails_closed_on_front_matter_identity_mismatch(tmp_path: Path) -
 
 def test_prompt_pack_schema_and_registry_report_cover_exact_roster() -> None:
     schema = json.loads(
-        (ROOT / "governance/schemas/prompt-pack.schema.json").read_text(encoding="utf-8")
+        (ROOT / "universal_research_mcp/governance/schemas/prompt-pack.schema.json").read_text(encoding="utf-8")
     )
     report = prompt_registry_report()
 

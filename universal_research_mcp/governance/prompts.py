@@ -12,8 +12,8 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, Mapping
 
-from governance.hashing import artifact_hash
-from governance.registry import FIXED_ROSTER, GOVERNANCE_VERSION
+from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.registry import FIXED_ROSTER, GOVERNANCE_VERSION
 
 
 PROMPT_PACK_SCHEMA_VERSION = "role-prompt-pack/1.0"

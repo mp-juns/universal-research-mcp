@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from governance.hashing import artifact_hash
+from universal_research_mcp.governance.hashing import artifact_hash
 
 
 GOVERNANCE_VERSION = "agent-governance/2.0"

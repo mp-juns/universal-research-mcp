@@ -1,6 +1,6 @@
 import unittest
 
-from core.search import safe_fts_query
+from universal_research_mcp.core.search import safe_fts_query
 
 
 class ResearchMemoryMCPTests(unittest.TestCase):

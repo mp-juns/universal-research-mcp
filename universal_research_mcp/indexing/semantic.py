@@ -22,7 +22,7 @@ import struct
 import tempfile
 from typing import Any, Mapping, Protocol, Sequence
 
-from core.index_refresh import validate_index_health_record
+from universal_research_mcp.core.index_refresh import validate_index_health_record
 from universal_research_mcp.indexing.lexical import FINGERPRINT_KEY, index_status
 from universal_research_mcp.providers.redaction import REDACTED, redact_text
 from universal_research_mcp.runtime import ProjectPaths
@@ -1195,8 +1195,10 @@ def ensure_semantic_index(
                 "health": health,
             }
 
-        documents = (*semantic_input.events, *semantic_input.passages)
-        texts = tuple(document.text for document in documents)
+        texts = tuple(
+            [document.text for document in semantic_input.events]
+            + [document.text for document in semantic_input.passages]
+        )
         if texts:
             vectors, effective_dimensions = _embed_documents(
                 embedder,

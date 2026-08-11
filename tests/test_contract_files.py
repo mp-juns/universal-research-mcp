@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import unittest
 
-from governance.registry import FIXED_ROSTER
+from universal_research_mcp.governance.registry import FIXED_ROSTER
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +26,7 @@ class ContractFileTests(unittest.TestCase):
 
     def test_governance_prompt_pack_schema_and_role_files_cover_fixed_roster(self) -> None:
         schema = json.loads(
-            (ROOT / "governance/schemas/prompt-pack.schema.json").read_text(
+            (ROOT / "universal_research_mcp/governance/schemas/prompt-pack.schema.json").read_text(
                 encoding="utf-8"
             )
         )
@@ -37,7 +37,7 @@ class ContractFileTests(unittest.TestCase):
             set(schema["properties"]["agent_id"]["enum"]), FIXED_ROSTER
         )
 
-        roles_root = ROOT / "governance/roles"
+        roles_root = ROOT / "universal_research_mcp/governance/roles"
         role_ids = {
             path.parent.name for path in roles_root.glob("*/role.yaml")
         }

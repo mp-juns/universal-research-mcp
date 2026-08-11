@@ -24,7 +24,7 @@ write, approval, amendment, model-loading, daemon, or remote-network execution
 tools. The unified management CLI may create verified derived indexes outside
 the MCP tool surface.
 
-The 0.3.1 preview supports the Codex plugin only. Codex owns model selection,
+The 0.4.0 release supports the Codex plugin only. Codex owns model selection,
 native agent sessions, tool execution, and approvals. The plugin does not
 register a provider-backed execution MCP and does not support Ollama, OpenAI
 API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, or OpenClaw.

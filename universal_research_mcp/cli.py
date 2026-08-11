@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 from typing import Any, Sequence
 
-from governance.registry import registry_report
+from universal_research_mcp.governance.registry import registry_report
 from universal_research_mcp import __version__
 
 
@@ -334,6 +334,66 @@ def _usage_command(root: Path, args: argparse.Namespace) -> int:
     return 0
 
 
+def _refresh_after_canonical_append(root: Path, *, action: str, details: dict[str, Any]) -> int:
+    """Refresh derived lexical state, never concealing a successful append."""
+
+    from universal_research_mcp.indexing import ensure_lexical_index, index_status
+
+    try:
+        index = ensure_lexical_index(root)
+    except (OSError, RuntimeError, ValueError) as exc:
+        _emit({
+            "status": "stale", "canonical_append_succeeded": True,
+            "action": action, **details, "index": index_status(root),
+            "recovery_command": f"universal-research index ensure --kind lexical --root {root}",
+            "reason": str(exc),
+        })
+        return 2
+    _emit({"status": "ok", "canonical_append_succeeded": True, "action": action,
+           **details, "index": index})
+    return 0
+
+
+def _source_command(root: Path, args: argparse.Namespace) -> int:
+    from universal_research_mcp.core.input import register_source
+
+    source = register_source(
+        root, args.path, source_id=args.source_id, source_type=args.source_type,
+    )
+    return _refresh_after_canonical_append(root, action="source_register", details={"source": source})
+
+
+def _record_command(root: Path, args: argparse.Namespace) -> int:
+    from universal_research_mcp.core.input import (
+        append_record, issues_json, read_record_input, sample_record,
+        validate_candidate_records,
+    )
+
+    if args.record_action == "template":
+        _emit(sample_record())
+        return 0
+    records = read_record_input(args.input)
+    if args.record_action == "validate":
+        issues = validate_candidate_records(root, records)
+        _emit({"valid": not issues, "record_count": len(records), "issues": issues_json(issues)})
+        return 0 if not issues else 2
+    if len(records) != 1:
+        raise ValueError("record append and record approve accept exactly one record")
+    record = records[0]
+    if args.record_action == "approve":
+        if record.get("record_id") != args.confirm:
+            raise ValueError("--confirm must exactly match the approval record_id")
+        ledger = append_record(root, record, approval_bootstrap=True)
+        return _refresh_after_canonical_append(root, action="record_approve", details={
+            "record_id": record["record_id"], "ledger": str(ledger.relative_to(root)),
+        })
+    ledger = append_record(root, record, approval_ref=args.approval_ref)
+    return _refresh_after_canonical_append(root, action="record_append", details={
+        "record_id": record["record_id"], "approval_ref": args.approval_ref,
+        "ledger": str(ledger.relative_to(root)),
+    })
+
+
 def _semantic_status(root: Path) -> dict[str, Any]:
     from universal_research_mcp.indexing import semantic_status
 
@@ -493,6 +553,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     build_index = subparsers.add_parser("build-index", help="Compatibility alias for lexical index ensure.")
     build_index.add_argument("--root", type=Path)
+
+    source = subparsers.add_parser("source", help="Register immutable project-contained source revisions.")
+    source_actions = source.add_subparsers(dest="source_action", required=True)
+    source_register = source_actions.add_parser("register", help="Append one new SHA-256 source revision.")
+    source_register.add_argument("path", help="Project-relative source file path.")
+    source_register.add_argument("--root", type=Path)
+    source_register.add_argument("--source-id", required=True, help="Stable source ID beginning with src_.")
+    source_register.add_argument("--source-type", required=True, help="Source format, for example markdown or text.")
+
+    record = subparsers.add_parser("record", help="Validate or append governed canonical core records.")
+    record_actions = record.add_subparsers(dest="record_action", required=True)
+    record_actions.add_parser("template", help="Print a standard core record JSON example.")
+    record_validate = record_actions.add_parser("validate", help="Validate JSON/JSONL without writing.")
+    record_validate.add_argument("input", type=Path)
+    record_validate.add_argument("--root", type=Path)
+    record_append = record_actions.add_parser("append", help="Append one non-approval record with a prior approval.")
+    record_append.add_argument("input", type=Path)
+    record_append.add_argument("--root", type=Path)
+    record_append.add_argument("--approval-ref", required=True)
+    record_approve = record_actions.add_parser("approve", help="Bootstrap one human approval record.")
+    record_approve.add_argument("input", type=Path)
+    record_approve.add_argument("--root", type=Path)
+    record_approve.add_argument("--confirm", required=True, help="Exact approval record ID to append.")
 
     usage = subparsers.add_parser(
         "usage", help="Summarize observed token usage without estimates.",
@@ -664,9 +747,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "usage":
         return _usage_command(_root(args.root), args)
 
+    if args.command == "source":
+        return _source_command(_root(args.root), args)
+
+    if args.command == "record":
+        return _record_command(_root(getattr(args, "root", None)), args)
+
     from universal_research_mcp.indexing import (
         ensure_lexical_index,
-        ensure_semantic_index,
         index_status,
         initialize_project,
         semantic_status,
@@ -724,7 +812,7 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     """Preserve ``universal-research-mcp --root ...`` while adding subcommands."""
 
     materialized = list(sys.argv[1:] if argv is None else argv)
-    commands = {"serve", "init", "index", "build-index", "doctor", "validate", "usage"}
+    commands = {"serve", "init", "index", "build-index", "doctor", "validate", "usage", "source", "record"}
     if _internal_provider_preview_enabled():
         commands.update({"provider", "harness", "agent"})
     if materialized and materialized[0] in commands:

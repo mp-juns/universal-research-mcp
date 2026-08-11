@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from core.ledger import ValidationIssue, read_jsonl, validate_core_record
+from universal_research_mcp.core.ledger import ValidationIssue, read_jsonl, validate_core_record
 
 
 def _approval_allows(record: dict[str, Any], approval: dict[str, Any]) -> str | None:

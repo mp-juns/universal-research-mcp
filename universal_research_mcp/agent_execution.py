@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from pathlib import Path
 from typing import Any
 
-from governance.hashing import artifact_hash
+from universal_research_mcp.governance.hashing import artifact_hash
 from universal_research_mcp.harness import ProviderAgentExecutor, UsageRecorder
 from universal_research_mcp.providers import (
     AnthropicProvider,

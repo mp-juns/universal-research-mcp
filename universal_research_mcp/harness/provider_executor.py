@@ -9,7 +9,7 @@ from math import isfinite
 import threading
 from typing import Any, Callable, Mapping
 
-from governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
 from universal_research_mcp.agent_runtime.reservations import (
     RuntimeDispatchReservationConsumer,
 )
