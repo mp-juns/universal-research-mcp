@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.build_research_ledger_index import build
-from scripts.query_research_ledger import query
+from universal_research_mcp.tools.build_research_ledger_index import build
+from universal_research_mcp.tools.query_research_ledger import query
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:

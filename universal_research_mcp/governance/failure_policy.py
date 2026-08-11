@@ -7,7 +7,7 @@ import os
 import re
 from typing import Any, Mapping
 
-from governance.hashing import artifact_hash
+from universal_research_mcp.governance.hashing import artifact_hash
 
 
 STOP_VALUES = frozenset({"always", "blocking_only", "current_step"})

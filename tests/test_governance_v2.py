@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from governance.errors import COST_EXCEEDED, PLAN_REQUIRED, USER_OPT_IN_MISSING
-from governance.failure_policy import build_failure_record, failure_directive, resolve_failure_policy
-from governance.hashing import artifact_hash
-from governance.registry import load_registry, manifest_hash
-from governance.scope_policy import (
+from universal_research_mcp.governance.errors import COST_EXCEEDED, PLAN_REQUIRED, USER_OPT_IN_MISSING
+from universal_research_mcp.governance.failure_policy import build_failure_record, failure_directive, resolve_failure_policy
+from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.registry import load_registry, manifest_hash
+from universal_research_mcp.governance.scope_policy import (
     DATA_PLOT_GENERATION,
     HOST_VISUALIZATION,
     assess_plan_necessity,
@@ -14,7 +14,7 @@ from governance.scope_policy import (
     task_scope_hash,
     validate_operation_scope,
 )
-from governance.validation import validate_scope_governor_decision
+from universal_research_mcp.governance.validation import validate_scope_governor_decision
 
 
 def packet(*, capabilities: list[str] | None = None, opt_ins: list[str] | None = None, plan_refs: list[str] | None = None) -> dict:

@@ -10,10 +10,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-from governance.hashing import artifact_hash, canonical_json, hash_without
-from governance.prompts import load_prompt_pack, render_prompt_pack
-from governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR, load_registry, manifest_hash
-from governance.validation import (
+from universal_research_mcp.governance.hashing import artifact_hash, canonical_json, hash_without
+from universal_research_mcp.governance.prompts import load_prompt_pack, render_prompt_pack
+from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR, load_registry, manifest_hash
+from universal_research_mcp.governance.validation import (
     validate_decision,
     validate_scope_governor_decision,
     validate_task_packet,
@@ -435,12 +435,12 @@ def validate_dispatch_manifest(
     if not isinstance(dispatch, dict):
         return [_issue("dispatch manifest must be an object")]
     if dispatch.get("schema_version") == "urag-codex-dispatch/2.0":
-        issues = _validate_single_dispatch(dispatch)
+        single_issues = _validate_single_dispatch(dispatch)
         if not _is_artifact_hash(expected_manifest_hash):
-            issues.append(_issue("a valid host-pinned dispatch hash is required"))
+            single_issues.append(_issue("a valid host-pinned dispatch hash is required"))
         elif dispatch.get("dispatch_hash") != expected_manifest_hash:
-            issues.append(_issue("dispatch does not match the host-pinned build-time hash"))
-        return issues
+            single_issues.append(_issue("dispatch does not match the host-pinned build-time hash"))
+        return single_issues
     if dispatch.get("schema_version") != "urag-codex-critical-batch/1.0":
         return [_issue("unsupported dispatch manifest schema")]
 

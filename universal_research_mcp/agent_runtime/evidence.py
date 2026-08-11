@@ -17,10 +17,10 @@ import re
 import stat
 from typing import Any, Protocol
 
-from core.amendments import resolve_core_amendments
-from core.ledger import validate_records
-from governance.hashing import artifact_hash
-from governance.registry import load_registry
+from universal_research_mcp.core.amendments import resolve_core_amendments
+from universal_research_mcp.core.ledger import validate_records
+from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.registry import load_registry
 from universal_research_mcp.runtime import ProjectPaths
 
 
@@ -246,14 +246,14 @@ class ProjectEvidenceBundleBuilder:
         }
         boundary_hash = artifact_hash(boundary_material)
         if not requested:
-            passages: tuple[EvidencePassage, ...] = ()
-            authority_records: tuple[dict[str, Any], ...] = ()
-            self._require_passages_for_role(packet, passages)
+            empty_passages: tuple[EvidencePassage, ...] = ()
+            empty_authority_records: tuple[dict[str, Any], ...] = ()
+            self._require_passages_for_role(packet, empty_passages)
             return self._finalize_bundle(
                 boundary["snapshot_hash"],
                 boundary_hash,
-                passages,
-                authority_records,
+                empty_passages,
+                empty_authority_records,
                 require_declared_snapshot=require_declared_snapshot,
             )
 
@@ -264,8 +264,8 @@ class ProjectEvidenceBundleBuilder:
         if missing:
             raise ValueError("evidence records are missing: " + ", ".join(missing))
 
-        passages: list[EvidencePassage] = []
-        authority_records: list[dict[str, Any]] = []
+        collected_passages: list[EvidencePassage] = []
+        collected_authority_records: list[dict[str, Any]] = []
         seen: set[tuple[str, str, int, int]] = set()
         total_bytes = 0
         source_cache: dict[str, tuple[str, list[str], str]] = {}
@@ -296,7 +296,7 @@ class ProjectEvidenceBundleBuilder:
                 if key in seen:
                     continue
                 seen.add(key)
-                if len(passages) >= self.max_passages:
+                if len(collected_passages) >= self.max_passages:
                     raise ValueError("evidence passage limit exceeded")
                 line_count = reference["line_end"] - reference["line_start"] + 1
                 if line_count > self.max_lines_per_passage:
@@ -374,8 +374,8 @@ class ProjectEvidenceBundleBuilder:
                     line_end=reference["line_end"],
                     content=content,
                 )
-                passages.append(passage)
-                authority_records.append(
+                collected_passages.append(passage)
+                collected_authority_records.append(
                     self._authority_material(
                         view,
                         reference,
@@ -385,8 +385,8 @@ class ProjectEvidenceBundleBuilder:
                     )
                 )
 
-        materialized = tuple(passages)
-        authority = tuple(authority_records)
+        materialized = tuple(collected_passages)
+        authority = tuple(collected_authority_records)
         self._require_passages_for_role(packet, materialized)
         return self._finalize_bundle(
             boundary["snapshot_hash"],

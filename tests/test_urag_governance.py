@@ -1,12 +1,12 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from governance.escalation import evaluate_gate
-from governance.hashing import artifact_hash, hash_without
-from governance.registry import CRITICAL, FIXED_ROSTER, load_registry, manifest_hash, validate_registry
-from governance.scope_policy import task_scope_hash
-from governance.validation import validate_decision, validate_task_packet
-from governance.workflow import initial_state, transition
+from universal_research_mcp.governance.escalation import evaluate_gate
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.registry import CRITICAL, FIXED_ROSTER, load_registry, manifest_hash, validate_registry
+from universal_research_mcp.governance.scope_policy import task_scope_hash
+from universal_research_mcp.governance.validation import validate_decision, validate_task_packet
+from universal_research_mcp.governance.workflow import initial_state, transition
 
 
 def packet() -> dict:

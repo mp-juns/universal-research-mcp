@@ -7,7 +7,8 @@ import sqlite3
 import tempfile
 import unittest
 
-from scripts.build_research_ledger_index import build
+from universal_research_mcp.tools.build_research_ledger_index import build
+from universal_research_mcp.indexing import ensure_lexical_index
 
 
 class ResearchMemoryEndToEndTests(unittest.TestCase):
@@ -55,6 +56,7 @@ class ResearchMemoryEndToEndTests(unittest.TestCase):
             )
             lexical_db = root / "data/index/research.sqlite"
             build(events_root, lexical_db)
+            ensure_lexical_index(root)
             index = sqlite3.connect(lexical_db)
             try:
                 relation = index.execute(
@@ -106,6 +108,19 @@ class ResearchMemoryEndToEndTests(unittest.TestCase):
             self.assertEqual(changed["indexed_sha256"], source_sha256)
             self.assertNotEqual(changed["current_sha256"], source_sha256)
             self.assertEqual(changed["integrity_status"], "mismatched")
+            self.assertTrue(changed["content_withheld"])
+            self.assertNotIn("content", changed)
+            second_prior_environment = dict(os.environ)
+            try:
+                os.environ["UNIVERSAL_RESEARCH_ROOT"] = str(root)
+                os.environ["UNIVERSAL_RESEARCH_LEXICAL_DB"] = str(lexical_db)
+                loaded = runpy.run_path(str(Path(__file__).resolve().parents[1] / "mcp/research_memory/mcp_server.py"))
+                diagnostic = loaded["memory_fetch_evidence"]("docs/evidence.md", 1, 1, 0, allow_mismatched_content=True)
+            finally:
+                os.environ.clear()
+                os.environ.update(second_prior_environment)
+            self.assertTrue(diagnostic["diagnostic_mode"])
+            self.assertIn("Changed evidence", diagnostic["content"])
 
 
 if __name__ == "__main__":

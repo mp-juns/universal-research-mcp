@@ -8,10 +8,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from scripts import build_research_semantic_index as semantic_builder
-from scripts import query_research_ledger as query_module
-from scripts.build_research_ledger_index import build as build_ledger
-from scripts.build_research_semantic_index import (
+import universal_research_mcp.tools.build_research_semantic_index as semantic_builder
+import universal_research_mcp.tools.query_research_ledger as query_module
+from universal_research_mcp.tools.build_research_ledger_index import build as build_ledger
+from universal_research_mcp.tools.build_research_semantic_index import (
     ENCODER_ORACLE_EXPECTED,
     checkpoint_bridge_layout,
     encode_texts,
@@ -25,7 +25,7 @@ from scripts.build_research_semantic_index import (
     source_passages,
     validate_encoder_model_card_oracle,
 )
-from scripts.query_research_ledger import hybrid_query, semantic_query
+from universal_research_mcp.tools.query_research_ledger import hybrid_query, semantic_query
 
 
 torch = pytest.importorskip(

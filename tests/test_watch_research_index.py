@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from scripts import watch_research_index as watcher
-from scripts.build_research_semantic_index import initialize
+from universal_research_mcp.tools.build_research_semantic_index import initialize
 
 
 class _FakeEncoder:

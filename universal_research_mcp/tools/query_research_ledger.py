@@ -17,8 +17,8 @@ if __package__ in (None, ""):
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.research_device import DEVICE_CHOICES, resolve_torch_device
-from scripts.build_research_semantic_index import (
+from universal_research_mcp.tools.research_device import DEVICE_CHOICES, resolve_torch_device
+from universal_research_mcp.tools.build_research_semantic_index import (
     ENCODER_COMPATIBILITY_BRIDGE_VERSION,
     apply_encoder_compatibility_bridge,
     normalize_vectors,

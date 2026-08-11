@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from scripts.research_event_corrections import (
+from universal_research_mcp.tools.research_event_corrections import (
     SUPPORTED_SOURCE_POINTERS,
     source_range_correction_count,
 )

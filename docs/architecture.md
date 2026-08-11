@@ -1,6 +1,6 @@
 # Universal Research Framework Architecture
 
-> Public integration scope for 0.3.1 is Codex only. Provider-backed runtime
+> Public integration scope for 0.4.0 is Codex only. Provider-backed runtime
 > modules below are retained as internal prototypes and are not registered by
 > the plugin, exposed as distribution entry points, or covered by a public
 > compatibility promise.
@@ -22,17 +22,17 @@ revision and a line, page, row, or structured-data locator.
 ## Implemented boundaries
 
 - `schemas/` defines the versioned core, pack, and project-profile contracts.
-- `core/ledger.py` validates core records and legacy event compatibility without
+- `universal_research_mcp/core/ledger.py` validates core records and legacy event compatibility without
   writing data.
-- `core/amendments.py` creates a narrow, fail-closed resolved view for completed
+- `universal_research_mcp/core/amendments.py` creates a narrow, fail-closed resolved view for completed
   payload amendments without changing canonical records.
-- `core/proposals.py` supplies an explicit approval-checked append boundary;
+- `universal_research_mcp/core/input.py` supplies the host-owned approval-checked append boundary;
   it resolves the referenced approval record and requires approved, human,
   explicitly scoped authority. The MCP intentionally does not call it.
-- `core/audit.py` derives read-only findings with record-addressable evidence.
-- `scripts/validate_research_ledger.py` is a read-only ledger validation entry
+- `universal_research_mcp/core/audit.py` derives read-only findings with record-addressable evidence.
+- `scripts/validate_research_ledger.py` is a repository-only ledger validation entry
   point.
-- `core/indexing.py` projects Core 1.0 records into a compatibility retrieval
+- `universal_research_mcp/core/indexing.py` projects Core 1.0 records into a compatibility retrieval
   document; canonical JSONL remains unchanged and is retained as `raw_json`.
 - `mcp/research_memory/` is the source-tree compatibility launcher for the
   unified installable MCP. Evidence fetch is allowlisted to indexed source
@@ -69,14 +69,14 @@ revision and a line, page, row, or structured-data locator.
 
 ## Governed multi-agent foundation
 
-`core/governance.py` adds an execution-backend-independent control plane for a
+`universal_research_mcp/core/governance.py` adds an execution-backend-independent control plane for a
 fixed eleven-role research roster. It validates task packets and decision records,
 enforces Lightweight/Benchmark/Final-review activation, blocks reviewer
 execution authority, and derives user-decision claim gates from critical/high
 findings. Provider-neutral execution is isolated in the bounded harness rather
 than granted to the governance role itself.
 
-`core/index_refresh.py` separates a canonical research event from its derived
+`universal_research_mcp/core/index_refresh.py` separates a canonical research event from its derived
 search projection: it decides whether a recorded event is eligible to trigger a
 refresh and validates the resulting index-health record, but it does not write
 an index. `docs/multi-agent-governance.md` specifies the full policy.

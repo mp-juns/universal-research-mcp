@@ -7,8 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
-from core.audit import audit_report
-from core.ledger import read_jsonl
+from universal_research_mcp.core.audit import audit_report
+from universal_research_mcp.core.ledger import read_jsonl
 
 
 def main() -> int:

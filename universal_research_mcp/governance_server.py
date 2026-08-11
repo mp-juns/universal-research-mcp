@@ -6,13 +6,13 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from governance.escalation import evaluate_gate
-from governance.failure_policy import build_failure_record, resolve_failure_policy
-from governance.prompts import load_prompt_pack, prompt_registry_report
-from governance.registry import GOVERNANCE_VERSION, load_registry, manifest_hash, registry_report
-from governance.scope_policy import assess_plan_necessity, operation_gate
-from governance.validation import validate_decision, validate_task_packet
-from integrations.codex.adapter import (
+from universal_research_mcp.governance.escalation import evaluate_gate
+from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
+from universal_research_mcp.governance.prompts import load_prompt_pack, prompt_registry_report
+from universal_research_mcp.governance.registry import GOVERNANCE_VERSION, load_registry, manifest_hash, registry_report
+from universal_research_mcp.governance.scope_policy import assess_plan_necessity, operation_gate
+from universal_research_mcp.governance.validation import validate_decision, validate_task_packet
+from universal_research_mcp.integrations.codex.adapter import (
     build_critical_review_batch,
     build_dispatch_request,
     build_scope_governor_receipt,

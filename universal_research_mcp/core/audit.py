@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from core.ledger import validate_records
+from universal_research_mcp.core.ledger import validate_records
 
 
 @dataclass(frozen=True)

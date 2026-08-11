@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 from universal_research_mcp import runtime_server
-from governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
 from universal_research_mcp.runtime.agent_approval import (
     AgentApprovalError,
     AgentApprovalStore,

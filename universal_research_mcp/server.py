@@ -14,16 +14,16 @@ from typing import Any, Literal, Sequence
 
 from mcp.server.fastmcp import FastMCP
 
-from core.audit import audit_report
-from core.ledger import read_jsonl
-from core.search import safe_fts_query
-from governance.escalation import evaluate_gate
-from governance.failure_policy import build_failure_record, resolve_failure_policy
-from governance.prompts import load_prompt_pack, prompt_registry_report
-from governance.registry import GOVERNANCE_VERSION, load_registry, manifest_hash, registry_report
-from governance.scope_policy import assess_plan_necessity, operation_gate
-from governance.validation import validate_decision, validate_task_packet
-from integrations.codex.adapter import (
+from universal_research_mcp.core.audit import audit_report
+from universal_research_mcp.core.ledger import read_jsonl
+from universal_research_mcp.core.search import safe_fts_query
+from universal_research_mcp.governance.escalation import evaluate_gate
+from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
+from universal_research_mcp.governance.prompts import load_prompt_pack, prompt_registry_report
+from universal_research_mcp.governance.registry import GOVERNANCE_VERSION, load_registry, manifest_hash, registry_report
+from universal_research_mcp.governance.scope_policy import assess_plan_necessity, operation_gate
+from universal_research_mcp.governance.validation import validate_decision, validate_task_packet
+from universal_research_mcp.integrations.codex.adapter import (
     build_critical_review_batch,
     build_dispatch_request,
     build_scope_governor_receipt,
@@ -81,6 +81,19 @@ def open_readonly(path: Path) -> sqlite3.Connection:
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA query_only = ON")
     return connection
+
+
+def _require_current_lexical_index() -> None:
+    """Refuse candidate/evidence reads from a stale derived view."""
+
+    from universal_research_mcp.indexing import index_status
+
+    status = index_status(ROOT)
+    if status.get("status") != "current":
+        raise RuntimeError(
+            "derived lexical index is stale; run `universal-research index ensure "
+            "--kind lexical --root <project-root>` before retrieval"
+        )
 
 
 def resolve_safe_path(relative_path: str) -> Path:
@@ -186,6 +199,7 @@ def memory_search_candidates(
 
     if mode != "lexical":
         raise ValueError("query-time semantic and hybrid retrieval are not exposed by this MCP")
+    _require_current_lexical_index()
     top_k = max(1, min(int(top_k), 100))
     return {"query": query, "mode": "lexical", "candidate_only": True, "results": search_lexical(query, top_k, status)}
 
@@ -194,6 +208,7 @@ def memory_search_candidates(
 def memory_latest(top_k: int = 5) -> dict[str, Any]:
     """Return latest non-reference records, ordered by recorded event time."""
 
+    _require_current_lexical_index()
     with closing(open_readonly(RESEARCH_DB)) as db:
         rows = db.execute("SELECT event_id, event_type, status, date, summary, raw_json FROM events WHERE event_type <> 'reference_document'").fetchall()
     ordered = sorted(rows, key=lambda row: (_recency_key(row), row["event_id"]), reverse=True)[: max(1, min(int(top_k), 100))]
@@ -208,9 +223,11 @@ def memory_fetch_evidence(
     context_lines: int = 8,
     event_id: str | None = None,
     expected_sha256: str | None = None,
+    allow_mismatched_content: bool = False,
 ) -> dict[str, Any]:
     """Fetch registered evidence and verify the exact candidate hash when supplied."""
 
+    _require_current_lexical_index()
     hashes = indexed_source_hashes(path, event_id)
     if not hashes:
         qualifier = f" for event {event_id}" if event_id else ""
@@ -236,7 +253,7 @@ def memory_fetch_evidence(
     content = "\n".join(f"{number}: {text}" for number, text in enumerate(lines[start - 1:end], start))
     current_sha256 = hashlib.sha256(snapshot).hexdigest()
     integrity_status = "matched" if expected_sha256 == current_sha256 else "mismatched"
-    return {
+    result = {
         "event_id": event_id,
         "path": str(resolved.relative_to(ROOT)),
         "start_line": start,
@@ -246,8 +263,13 @@ def memory_fetch_evidence(
         "expected_sha256": expected_sha256,
         "current_sha256": current_sha256,
         "integrity_status": integrity_status,
-        "content": content,
+        "content_withheld": integrity_status == "mismatched" and not allow_mismatched_content,
     }
+    if integrity_status == "matched" or allow_mismatched_content:
+        result["content"] = content
+    if integrity_status == "mismatched" and allow_mismatched_content:
+        result["diagnostic_mode"] = True
+    return result
 
 
 @mcp.tool()
@@ -282,6 +304,7 @@ def research_fetch(
     context_lines: int = 8,
     event_id: str | None = None,
     expected_sha256: str | None = None,
+    allow_mismatched_content: bool = False,
 ) -> dict[str, Any]:
     """Compatibility alias for ``memory_fetch_evidence``."""
 
@@ -292,6 +315,7 @@ def research_fetch(
         context_lines=context_lines,
         event_id=event_id,
         expected_sha256=expected_sha256,
+        allow_mismatched_content=allow_mismatched_content,
     )
 
 

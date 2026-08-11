@@ -1,6 +1,6 @@
 import unittest
 
-from core.governance import (
+from universal_research_mcp.core.governance import (
     AGENT_IDS,
     active_agents,
     claim_gate,
@@ -8,7 +8,7 @@ from core.governance import (
     validate_decision_record,
     validate_task_packet,
 )
-from core.index_refresh import refresh_eligibility, validate_index_health_record
+from universal_research_mcp.core.index_refresh import refresh_eligibility, validate_index_health_record
 
 
 def task_packet(agent_id: str = "retrieval_governor") -> dict:

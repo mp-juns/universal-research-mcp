@@ -101,7 +101,7 @@ class AnthropicProvider:
         if not isinstance(content, list):
             raise ProviderRequestError("Anthropic returned malformed generation content")
         texts = [
-            item.get("text")
+            str(item["text"])
             for item in content
             if isinstance(item, Mapping) and item.get("type") == "text" and isinstance(item.get("text"), str)
         ]

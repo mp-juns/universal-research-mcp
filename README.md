@@ -5,7 +5,7 @@ framework and read-only MCP. It records plans, approvals, observations, claims,
 failures, amendments, and contributions with traceable sources. Canonical JSONL
 is authoritative; SQLite search indexes are verified, replaceable derived views.
 
-> **Supported integration (0.3.1 preview): Codex only.** Codex owns model
+> **Supported integration (0.4.0): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
@@ -31,6 +31,31 @@ refresh that does not alter canonical JSONL is staged, validated, and atomically
 replaced. Select the research root with `--root` or
 `UNIVERSAL_RESEARCH_ROOT`.
 
+See the full [canonical input tutorial](docs/input-cli-tutorial.md) for a
+source → human approval → record append → lexical search workflow.
+
+### First searchable input
+
+The MCP remains read-only. A host-owned CLI is the only canonical write path:
+
+```bash
+universal-research init ./my-research
+# Create ./my-research/docs/note.md yourself, then register that immutable path.
+universal-research source register docs/note.md --root ./my-research \
+  --source-id src_note_v1 --source-type markdown
+universal-research record template > protocol.json
+universal-research record validate protocol.json --root ./my-research
+```
+
+For a governed record, first append a human `record_kind=approval` record with
+`record approve --confirm <record-id>`, then append exactly one non-approval
+record with its matching `--approval-ref`. `recorded_at` determines the
+append-only `data/events/daily/YYYY-MM-DD/events.jsonl` destination. Each
+successful append refreshes lexical search; a refresh failure leaves the
+canonical append intact, reports stale state, and prints the recovery command.
+Registered paths are immutable revisions: editing or re-registering one is
+rejected; register a new project-contained path instead.
+
 The default `universal_research` MCP provides only:
 
 - candidate search and event/hash-bound source re-verification;
@@ -53,7 +78,10 @@ with event_id + expected_sha256 → current-hash check → bounded claim
 Search results are candidates, not evidence. For a consequential conclusion,
 retain the evidence fetch's event ID, path, line range, expected and current
 hashes, and `integrity_status`. Files not registered in the index cannot be
-fetched.
+fetched. Search, latest, and evidence fetch fail closed while the lexical index
+is stale and require `universal-research index ensure --kind lexical`. When a
+file's current hash differs, content is withheld by default; only the explicit
+diagnostic `allow_mismatched_content=true` response includes current content.
 
 ## Governed Codex agents
 
@@ -82,32 +110,18 @@ normal data plot does not imply permission to invoke a host visualization skill.
 
 Token accounting uses only exact counts supplied by a provider or host. If the
 host does not expose an exact count for commands, code generation, Skills, or
-visualization, that category is `unavailable`, not zero or an estimate. See
-[the benchmark disclosure](docs/benchmark-disclosure.md) for the one archived
-development measurement published with this preview.
+visualization, that category is `unavailable`, not zero or an estimate.
 
-## Development benchmark disclosure
+## Benchmark status
 
-An archived paired Codex-host measurement compared direct file lookup with
-evidence that the real read-only MCP had already searched and hash-verified.
-It used **10 public synthetic lexical questions** (20 paired calls),
-`gpt-5.6-terra` at high reasoning effort, and no external provider API.
-
-| Observed development measurement | Direct file | Verified MCP prefetch |
-| --- | ---: | ---: |
-| Source-text fact matches on the later non-mutating audit | 10 / 10 | 10 / 10 |
-| Host-reported non-overlapping tokens | 229,372 | 113,931 |
-| Shell command events after treatment prefetch | 20 | 0 |
-
-Under that exact fixture and accounting definition, the prefetch treatment
-reported 115,441 fewer non-overlapping tokens (50.3%). This is **not** a price,
-latency, general-capability, or research-quality claim. The original strict
-scorer recorded the run as `terminal_failed` because its answer-format contract
-rejected otherwise source-matching outputs; the table uses a separately
-recorded, non-mutating source-text audit. The fixture was deliberately simple,
-and the treatment received centrally pre-fetched evidence, so it is not an
-end-to-end agent-runtime comparison. Full limitations and result status are in
-[the benchmark disclosure](docs/benchmark-disclosure.md).
+The repository provides a paired A/B protocol, fixture contracts, and scoring
+contracts. No confirmatory live A/B result is currently available. Future runs
+must use the same model, prompt, tasks, permissions, and source snapshot within
+each pair; retain failures; use paired repetitions; and preserve raw host
+telemetry. The only reportable public metrics are citation correctness,
+unsupported-claim rate, evidence retrieval success, total tokens, tool calls,
+latency, cost, and paired differences. Missing telemetry is `unavailable`,
+never inferred. See [the benchmark disclosure](docs/benchmark-disclosure.md).
 
 ## Boundaries and data authority
 
@@ -131,6 +145,7 @@ distributed with the package.
 ```text
 universal_research_mcp/
   plugin/          Codex plugin and Skills
+  core/            canonical-input and record contracts
   governance/      fixed-role governance contracts and validators
   integrations/    host-specific dispatch adapters
   data/events/     independent canonical append-only events
@@ -151,6 +166,7 @@ source-grounded evidence fetch, eleven-role governance, and non-executing Codex
 dispatch preparation. Installation, MCP startup, and CI do not invoke an API,
 local model, model download, benchmark, or background watcher.
 
-Next work is deliberately separate: a namespace migration for compatibility
-packages, stronger Codex host-dispatch installation fixtures, and independently
-reviewed adapters for local/OpenAI/Anthropic/Moonshot providers or other hosts.
+The 0.4.0 namespace is intentionally breaking: public Python modules live under
+`universal_research_mcp.*`; legacy general top-level package imports are not
+provided as shims. Independently reviewed adapters for other hosts remain
+separate work.

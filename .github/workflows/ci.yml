@@ -8,27 +8,69 @@ permissions:
   contents: read
 
 jobs:
-  core-contracts:
+  tests:
+    name: tests (${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install ".[test]"
+      - run: python -m pytest -q
+
+  static:
+    name: static (3.13)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install package, test, and build dependencies
-        run: python -m pip install ".[test]" build
-      - name: Run the complete test suite
-        run: python -m pytest -q
-      - name: Build and inspect distribution artifacts
-        run: |
-          python -m build
-          python scripts/validate_distribution_artifact.py dist/*.whl
-      - name: Install the wheel and initialize a fresh project
-        run: |
-          python -m venv --system-site-packages "$RUNNER_TEMP/universal-research-wheel-venv"
-          "$RUNNER_TEMP/universal-research-wheel-venv/bin/python" -m pip install --no-deps --force-reinstall dist/*.whl
-          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" --version
-          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research-mcp" --version
-          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" --help
-          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" init "$RUNNER_TEMP/universal-research-smoke"
-          "$RUNNER_TEMP/universal-research-wheel-venv/bin/universal-research" doctor --root "$RUNNER_TEMP/universal-research-smoke"
+          python-version: "3.13"
+      - run: python -m pip install ruff "mypy==1.17.1"
+      - run: ruff check universal_research_mcp
+      - run: mypy --no-incremental universal_research_mcp
+
+  smoke:
+    name: smoke (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.11"
+            validate_wheel: true
+          - os: macos-latest
+            python: "3.12"
+            validate_wheel: false
+          - os: windows-latest
+            python: "3.12"
+            validate_wheel: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install build
+      - run: python -m build
+      - if: matrix.validate_wheel
+        run: python scripts/validate_distribution_artifact.py dist/*.whl
+      - run: python scripts/ci_smoke.py dist/*.whl
+
+  release-gate:
+    name: release-gate
+    runs-on: ubuntu-latest
+    needs: [tests, static, smoke]
+    if: always()
+    steps:
+      - name: Require every matrix and static gate
+        env:
+          TESTS: ${{ needs.tests.result }}
+          STATIC: ${{ needs.static.result }}
+          SMOKE: ${{ needs.smoke.result }}
+        run: test "$TESTS" = success && test "$STATIC" = success && test "$SMOKE" = success

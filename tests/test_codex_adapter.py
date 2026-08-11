@@ -1,10 +1,10 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from governance.hashing import artifact_hash, hash_without
-from governance.registry import CRITICAL, load_registry, manifest_hash
-from governance.scope_policy import task_scope_hash
-from integrations.codex.adapter import (
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.registry import CRITICAL, load_registry, manifest_hash
+from universal_research_mcp.governance.scope_policy import task_scope_hash
+from universal_research_mcp.integrations.codex.adapter import (
     build_critical_review_batch,
     build_dispatch_request,
     build_scope_governor_receipt,

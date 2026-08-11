@@ -198,6 +198,7 @@ def _build_empty(output: Path) -> dict[str, Any]:
         }
         connection.executemany("INSERT INTO metadata VALUES (?, ?)", metadata.items())
         connection.commit()
+    connection.close()
     return {"output": str(output), **metadata}
 
 
@@ -208,7 +209,7 @@ def _existing_builder(
 ) -> dict[str, Any]:
     # Imported lazily so fresh empty bootstrap has no optional document/runtime
     # dependency and populated ledgers retain the existing compatibility rules.
-    from scripts.build_research_ledger_index import build
+    from universal_research_mcp.tools.build_research_ledger_index import build
 
     return build(events_root, output, project_root=project_root)
 
@@ -225,6 +226,7 @@ def _record_fingerprint(database: Path, fingerprint: dict[str, Any]) -> None:
             "INSERT OR REPLACE INTO metadata VALUES (?, ?)", metadata.items()
         )
         connection.commit()
+    connection.close()
 
 
 def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str, Any]:
@@ -276,7 +278,6 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
                 )
             retrieved_event_id = str(retrieved[0])
 
-        canonical_count = int(metadata.get("event_count", event_count))
         eligible_count = int(
             db.execute(
                 """
@@ -307,10 +308,6 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
         if ineligible_source_count:
             raise RuntimeError(
                 "canonical events reference unregistered or hash-ineligible evidence"
-            )
-        if canonical_count > 0 and eligible_count == 0:
-            raise RuntimeError(
-                "populated canonical ledger has no source-evidence-eligible event"
             )
     return {
         "integrity": integrity,
@@ -385,7 +382,8 @@ def index_status(root: str | Path) -> dict[str, Any]:
 
 
 def _sync_file(path: Path) -> None:
-    with path.open("rb") as handle:
+    # Windows rejects fsync on a read-only file descriptor.
+    with path.open("r+b") as handle:
         os.fsync(handle.fileno())
 
 

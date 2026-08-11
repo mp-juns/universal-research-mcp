@@ -8,9 +8,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from core.index_refresh import validate_index_health_record
+from universal_research_mcp.core.index_refresh import validate_index_health_record
 from jsonschema import Draft202012Validator
-from scripts import build_research_ledger_index as ledger_builder
+import universal_research_mcp.tools.build_research_ledger_index as ledger_builder
 from universal_research_mcp.indexing.lexical import (
     ensure_lexical_index,
     index_status,
@@ -221,7 +221,7 @@ class LexicalIndexFoundationTests(unittest.TestCase):
             _, daily, _ = write_populated_fixture(root)
 
             def changing_builder(_events_root: Path, output: Path) -> dict:
-                from scripts.build_research_ledger_index import initialize
+                from universal_research_mcp.tools.build_research_ledger_index import initialize
 
                 with sqlite3.connect(output) as db:
                     initialize(db)

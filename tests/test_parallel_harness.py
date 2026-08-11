@@ -8,9 +8,9 @@ import time
 
 import pytest
 
-from governance.hashing import artifact_hash, hash_without
-from governance.registry import CRITICAL, load_registry, manifest_hash
-from governance.scope_policy import task_scope_hash
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.registry import CRITICAL, load_registry, manifest_hash
+from universal_research_mcp.governance.scope_policy import task_scope_hash
 from universal_research_mcp.agent_runtime import RuntimeDispatchReservationAuthority
 from universal_research_mcp.harness import ParallelResearchHarness
 from universal_research_mcp.harness import (
@@ -27,7 +27,7 @@ from universal_research_mcp.providers import (
     RemoteBudget,
     RemotePolicy,
 )
-from integrations.codex.adapter import build_dispatch_request
+from universal_research_mcp.integrations.codex.adapter import build_dispatch_request
 
 
 def packet(

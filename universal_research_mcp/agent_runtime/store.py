@@ -13,7 +13,7 @@ import stat
 import threading
 from typing import Any, Iterator
 
-from governance.hashing import artifact_hash, canonical_json, hash_without
+from universal_research_mcp.governance.hashing import artifact_hash, canonical_json, hash_without
 from universal_research_mcp.runtime import ProjectPaths
 
 try:  # pragma: no cover - Windows is not a supported execution host today.

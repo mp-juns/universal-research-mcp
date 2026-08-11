@@ -2,7 +2,7 @@
 
 This directory contains a preregistration-ready, provider-neutral benchmark
 contract. It prepares the experiment but does not authorize or execute live
-model/API calls.
+model/API calls. No confirmatory live A/B result exists for this repository.
 
 Primary comparison:
 
@@ -25,7 +25,8 @@ Files:
 - `schemas/`: task/run/trace JSON Schema contracts
 - `fixtures/`: synthetic contract fixtures, never project research data
 - `contracts.py`: fail-closed dependency-free validation
-- `scoring.py`: paired quality, token, call, latency, and cost summaries
+- `scoring.py`: paired quality, token, call, latency, and cost summaries; any
+  missing host/provider telemetry remains `unavailable`, never estimated
 
 Before a live run, a human must approve the final task-set fingerprint, model,
 provider, pricing snapshot, budgets, source-bundle fingerprint, and execution

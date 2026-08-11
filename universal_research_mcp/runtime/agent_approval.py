@@ -11,7 +11,7 @@ import re
 import stat
 from typing import Any, Mapping
 
-from governance.hashing import artifact_hash, canonical_json, hash_without
+from universal_research_mcp.governance.hashing import artifact_hash, canonical_json, hash_without
 
 
 GRANT_VERSION = "agent-execution-approval/2.0"

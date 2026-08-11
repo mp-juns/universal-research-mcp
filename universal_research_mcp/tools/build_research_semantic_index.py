@@ -24,15 +24,15 @@ if __package__ in (None, ""):
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.research_device import DEVICE_CHOICES, resolve_torch_device
-from scripts.research_event_corrections import (
+from universal_research_mcp.tools.research_device import DEVICE_CHOICES, resolve_torch_device
+from universal_research_mcp.tools.research_event_corrections import (
     apply_source_range_corrections,
     source_range_correction_count,
 )
-from scripts.research_reference_corpus import REFERENCE_EVENT_TYPE, build_reference_corpus
-from core.ledger import validate_records
-from core.amendments import resolve_core_amendments
-from core.indexing import index_document, index_document_id, is_core_record
+from universal_research_mcp.tools.research_reference_corpus import REFERENCE_EVENT_TYPE, build_reference_corpus
+from universal_research_mcp.core.ledger import validate_records
+from universal_research_mcp.core.amendments import resolve_core_amendments
+from universal_research_mcp.core.indexing import index_document, index_document_id, is_core_record
 
 
 SCHEMA_VERSION = "1.0"

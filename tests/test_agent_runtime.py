@@ -11,9 +11,9 @@ from typing import Any
 
 import pytest
 
-from governance.hashing import artifact_hash, hash_without
-from governance.registry import load_registry, manifest_hash
-from governance.scope_policy import task_scope_hash
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.registry import load_registry, manifest_hash
+from universal_research_mcp.governance.scope_policy import task_scope_hash
 from universal_research_mcp.agent_runtime import (
     AgentRuntime,
     EvidenceBundle,

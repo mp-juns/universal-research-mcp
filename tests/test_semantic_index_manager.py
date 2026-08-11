@@ -10,7 +10,7 @@ import struct
 import tempfile
 import unittest
 
-from core.index_refresh import validate_index_health_record
+from universal_research_mcp.core.index_refresh import validate_index_health_record
 from jsonschema import Draft202012Validator
 from universal_research_mcp.indexing import ensure_lexical_index, initialize_project
 from universal_research_mcp.indexing.semantic import (

@@ -5,6 +5,7 @@ import hashlib
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from universal_research_mcp import server
 
@@ -71,13 +72,14 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
                 )
             server.configure_runtime(root, database)
 
-            evidence = server.memory_fetch_evidence(
-                "docs/evidence.md", 1, 1, 0, "event_1", digest,
-            )
+            with patch.object(server, "_require_current_lexical_index"):
+                evidence = server.memory_fetch_evidence(
+                    "docs/evidence.md", 1, 1, 0, "event_1", digest,
+                )
+                with self.assertRaisesRegex(ValueError, "not registered"):
+                    server.memory_fetch_evidence("docs/personal.txt", 1, 1, 0)
             self.assertEqual(evidence["integrity_status"], "matched")
             self.assertEqual(evidence["expected_sha256"], digest)
-            with self.assertRaisesRegex(ValueError, "not registered"):
-                server.memory_fetch_evidence("docs/personal.txt", 1, 1, 0)
 
     def test_fetch_requires_revision_when_one_path_has_multiple_hashes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -100,11 +102,12 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
                 )
             server.configure_runtime(root, database)
 
-            with self.assertRaisesRegex(ValueError, "multiple indexed revisions"):
-                server.memory_fetch_evidence("docs/evidence.md", 1, 1, 0)
-            evidence = server.memory_fetch_evidence(
-                "docs/evidence.md", 1, 1, 0, "event_current", current,
-            )
+            with patch.object(server, "_require_current_lexical_index"):
+                with self.assertRaisesRegex(ValueError, "multiple indexed revisions"):
+                    server.memory_fetch_evidence("docs/evidence.md", 1, 1, 0)
+                evidence = server.memory_fetch_evidence(
+                    "docs/evidence.md", 1, 1, 0, "event_current", current,
+                )
             self.assertEqual(evidence["integrity_status"], "matched")
 
 

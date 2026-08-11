@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from governance.hashing import artifact_hash
+from universal_research_mcp.governance.hashing import artifact_hash
 from universal_research_mcp.agent_runtime import ProjectEvidenceBundleBuilder
 
 

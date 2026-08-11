@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 from pathlib import Path
-from typing import Any, Iterable, Literal, Mapping
+from typing import Any, Iterable, Literal, Mapping, cast
 
 from universal_research_mcp.runtime import ProjectPaths
 
@@ -182,11 +182,11 @@ def validate_usage_observation(value: Mapping[str, Any]) -> dict[str, Any]:
         raise UsageObservationError("token_usage must be an object")
     source = value.get("source")
     return usage_observation(
-        run_id=value.get("run_id"),
-        workflow_id=value.get("workflow_id"),
-        agent_id=value.get("agent_id"),
-        activity_category=value.get("activity_category"),
-        source=source,
+        run_id=cast(str, value["run_id"]),
+        workflow_id=cast(str, value["workflow_id"]),
+        agent_id=cast(str, value["agent_id"]),
+        activity_category=cast(str, value["activity_category"]),
+        source=cast(UsageSource, source),
         total_tokens=token_usage.get("total_tokens"),
         input_tokens=token_usage.get("input_tokens"),
         output_tokens=token_usage.get("output_tokens"),

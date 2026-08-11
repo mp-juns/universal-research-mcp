@@ -5,7 +5,7 @@ import unittest
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from core.ledger import validate_core_record, validate_records
+from universal_research_mcp.core.ledger import validate_core_record, validate_records
 
 
 ROOT = Path(__file__).resolve().parents[1]

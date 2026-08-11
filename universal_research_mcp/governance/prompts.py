@@ -12,8 +12,8 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, Mapping
 
-from governance.hashing import artifact_hash
-from governance.registry import FIXED_ROSTER, GOVERNANCE_VERSION
+from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.registry import FIXED_ROSTER, GOVERNANCE_VERSION
 
 
 PROMPT_PACK_SCHEMA_VERSION = "role-prompt-pack/1.0"
@@ -165,7 +165,9 @@ def _read_prompt_pack(agent_id: str, roles_root: Path | None) -> str:
             return path.read_text(encoding="utf-8")
         except OSError as exc:
             raise PromptPackError(f"cannot read prompt pack for {agent_id}") from exc
-    resource = resources.files("governance").joinpath("roles", agent_id, "instructions.md")
+    resource = resources.files("universal_research_mcp.governance").joinpath(
+        "roles", agent_id, "instructions.md",
+    )
     try:
         return resource.read_text(encoding="utf-8")
     except (FileNotFoundError, OSError) as exc:
