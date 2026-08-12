@@ -3,8 +3,12 @@
 ## Status
 
 The repository contains a paired A/B protocol, fixtures, schemas, and scoring
-contracts. It has no confirmatory live A/B result. This release neither runs a
-benchmark nor publishes a measured effect.
+contracts. It also publishes one exploratory, live Codex diagnostic in
+[`benchmarks/results/codex-directional-v1.md`](../benchmarks/results/codex-directional-v1.md).
+That diagnostic is not a confirmatory benchmark: it has four ordinary tasks,
+one adversarial integrity task, one run per condition, synthetic source data,
+and a Codex-specific execution boundary. It must not be presented as a general
+quality, cost, latency, or provider comparison.
 
 ## Required future protocol
 

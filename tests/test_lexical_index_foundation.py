@@ -11,6 +11,7 @@ from unittest.mock import patch
 from universal_research_mcp.core.index_refresh import validate_index_health_record
 from jsonschema import Draft202012Validator
 import universal_research_mcp.tools.build_research_ledger_index as ledger_builder
+from universal_research_mcp import server
 from universal_research_mcp.indexing.lexical import (
     ensure_lexical_index,
     index_status,
@@ -136,6 +137,53 @@ class LexicalIndexFoundationTests(unittest.TestCase):
             self.assertEqual(
                 report["verification"]["source_evidence_eligible_count"], 1
             )
+
+    def test_registered_source_passage_is_searchable_with_exact_range(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            events_root, _daily, digest = write_populated_fixture(root)
+            event_path = events_root / "daily/2026-08-04/events.jsonl"
+            row = json.loads(event_path.read_text(encoding="utf-8"))
+            row["summary"] = "Generic governed observation"
+            row["source"]["line_start"] = 3
+            row["source"]["line_end"] = 3
+            source = root / "docs/evidence.md"
+            source.write_text("# Evidence\n\nNeedle protocol token.\n", encoding="utf-8")
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            row["source"]["source_sha256"] = digest
+            event_path.write_text(json.dumps(row) + "\n", encoding="utf-8")
+            (events_root / "sources.jsonl").write_text(
+                json.dumps({
+                    "source_id": "src_fixture", "source_path": "docs/evidence.md",
+                    "source_sha256": digest, "source_type": "markdown", "legacy_import": False,
+                }) + "\n",
+                encoding="utf-8",
+            )
+            ensure_lexical_index(root)
+            previous = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+            try:
+                server.configure_runtime(root)
+                results = server.memory_search_candidates("Needle protocol")["results"]
+                self.assertEqual(results[0]["path"], "docs/evidence.md")
+                self.assertEqual((results[0]["start_line"], results[0]["end_line"]), (3, 3))
+                evidence = server.memory_fetch_evidence(
+                    "docs/evidence.md", 3, 3, 0,
+                    event_id=results[0]["event_id"], expected_sha256=results[0]["source_sha256"],
+                )
+                self.assertEqual(evidence["integrity_status"], "matched")
+                self.assertIn("Needle protocol token.", evidence["content"])
+            finally:
+                server.configure_runtime(*previous)
+
+    def test_source_passage_build_rejects_changed_registered_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_populated_fixture(root)
+            (root / "docs/evidence.md").write_text(
+                "# Evidence\n\nChanged after registration.\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                ensure_lexical_index(root)
 
     def test_packaged_manager_passes_actual_project_root_to_reference_corpus(
         self,
