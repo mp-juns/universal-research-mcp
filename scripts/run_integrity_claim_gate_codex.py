@@ -136,7 +136,7 @@ def _prompt(task: Mapping[str, Any], condition: str) -> str:
 def _command(*, codex: str, model: str, reasoning_effort: str, fixture_root: Path, repo_root: Path,
              condition: str, output: Path, prompt: str) -> list[str]:
     command = [
-        codex, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--model", model,
+        codex, "exec", "--ephemeral", "--ignore-user-config", "--approve-for-me", "--json", "--sandbox", "read-only", "--model", model,
         "-c", f'model_reasoning_effort="{reasoning_effort}"', "-C", str(fixture_root), "-o", str(output),
     ]
     if condition.startswith("mcp"):
@@ -270,6 +270,8 @@ def main() -> int:
         "model": args.model, "reasoning_effort": args.reasoning_effort,
         "planned_run_count": len(planned), "conditions": selected_conditions,
         "development_only": True, "evaluation_policy": "pending_blinded_evaluation_required",
+        "host_user_config_loaded": False,
+        "read_only_mcp_auto_approval": True,
     })
     runs: list[dict[str, Any]] = []
     for task, condition in planned:

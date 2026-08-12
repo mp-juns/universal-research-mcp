@@ -8,7 +8,7 @@ from benchmarks.integrity_claim_gate import (
     integrity_claim_gate_report,
     validate_bundle,
 )
-from scripts.run_integrity_claim_gate_codex import _configuration_fingerprint
+from scripts.run_integrity_claim_gate_codex import _command, _configuration_fingerprint
 from scripts.run_integrity_claim_gate_codex import _telemetry
 
 
@@ -121,3 +121,12 @@ def test_execution_configuration_fingerprint_is_a_schema_safe_digest() -> None:
 def test_usage_limit_is_marked_as_a_terminal_execution_blocker_signal() -> None:
     telemetry = _telemetry([{"type": "error", "message": "You've hit your usage limit."}])
     assert telemetry["usage_limit_reached"] is True
+
+
+def test_runner_excludes_user_config_to_keep_mcp_arms_isolated(tmp_path: Path) -> None:
+    command = _command(
+        codex="codex", model="gpt-5.6-terra", reasoning_effort="low", fixture_root=tmp_path,
+        repo_root=ROOT, condition="mcp_claim_gate", output=tmp_path / "answer.txt", prompt="task",
+    )
+    assert "--ignore-user-config" in command
+    assert "--approve-for-me" in command
