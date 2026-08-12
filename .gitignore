@@ -17,6 +17,8 @@ data/governance/runs/
 # Local research-operation records and agent instructions are not package source.
 AGENTS.md
 agents/
+TODO.md
+WORK_LOG.md
 
 # Generated benchmark outputs are not package source.
 benchmarks/live_v*/
