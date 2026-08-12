@@ -111,7 +111,8 @@ def test_pending_execution_telemetry_is_valid_but_not_scored() -> None:
 def test_execution_configuration_fingerprint_is_a_schema_safe_digest() -> None:
     task = read_jsonl(TASKS)[0]
     fingerprint = _configuration_fingerprint(
-        task, "filesystem", "gpt-5.6-terra", "prompt", {"post_setup_source_sha256": {}, "index_fingerprint": "digest"},
+        task, "filesystem", "gpt-5.6-terra", "low", "prompt",
+        {"post_setup_source_sha256": {}, "index_fingerprint": "digest"},
     )
     assert fingerprint.startswith("sha256.")
     assert len(fingerprint) == len("sha256.") + 64

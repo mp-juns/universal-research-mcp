@@ -133,8 +133,12 @@ def _prompt(task: Mapping[str, Any], condition: str) -> str:
     raise ValueError(f"unsupported condition: {condition}")
 
 
-def _command(*, codex: str, model: str, fixture_root: Path, repo_root: Path, condition: str, output: Path, prompt: str) -> list[str]:
-    command = [codex, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--model", model, "-C", str(fixture_root), "-o", str(output)]
+def _command(*, codex: str, model: str, reasoning_effort: str, fixture_root: Path, repo_root: Path,
+             condition: str, output: Path, prompt: str) -> list[str]:
+    command = [
+        codex, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--model", model,
+        "-c", f'model_reasoning_effort="{reasoning_effort}"', "-C", str(fixture_root), "-o", str(output),
+    ]
     if condition.startswith("mcp"):
         command.extend([
             "-c", f'mcp_servers.urtrial.command="{sys.executable}"',
@@ -145,9 +149,10 @@ def _command(*, codex: str, model: str, fixture_root: Path, repo_root: Path, con
     return command
 
 
-def _configuration_fingerprint(task: Mapping[str, Any], condition: str, model: str, prompt: str, fixture: Mapping[str, Any]) -> str:
+def _configuration_fingerprint(task: Mapping[str, Any], condition: str, model: str, reasoning_effort: str,
+                               prompt: str, fixture: Mapping[str, Any]) -> str:
     canonical = json.dumps({
-        "task_id": task["task_id"], "condition": condition, "model": model,
+        "task_id": task["task_id"], "condition": condition, "model": model, "reasoning_effort": reasoning_effort,
         "prompt": prompt, "fixture": fixture["post_setup_source_sha256"],
         "index_fingerprint": fixture["index_fingerprint"],
     }, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
@@ -157,7 +162,7 @@ def _configuration_fingerprint(task: Mapping[str, Any], condition: str, model: s
     return "sha256." + _sha256_bytes(canonical)
 
 
-def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: str, model: str, codex: str,
+def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: str, model: str, reasoning_effort: str, codex: str,
              repo_root: Path, output_root: Path, timeout_seconds: int) -> dict[str, Any]:
     fixture_root = Path(str(fixture["root"]))
     if condition == "filesystem_manifest":
@@ -168,7 +173,7 @@ def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: 
     events_path = trial_dir / "events.jsonl"
     final_path = trial_dir / "final.txt"
     prompt = _prompt(task, condition)
-    command = _command(codex=codex, model=model, fixture_root=fixture_root, repo_root=repo_root,
+    command = _command(codex=codex, model=model, reasoning_effort=reasoning_effort, fixture_root=fixture_root, repo_root=repo_root,
                        condition=condition, output=final_path, prompt=prompt)
     started = time.monotonic()
     try:
@@ -199,8 +204,11 @@ def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: 
         "condition": condition,
         "repetition": 1,
         "run_status": run_status,
-        "configuration_fingerprint": _configuration_fingerprint(task, condition, model, prompt, fixture),
-        "model": {"provider": "openai_codex", "requested_model": model},
+        "configuration_fingerprint": _configuration_fingerprint(task, condition, model, reasoning_effort, prompt, fixture),
+        "model": {
+            "provider": "openai_codex", "requested_model": model,
+            "requested_reasoning_effort": reasoning_effort,
+        },
         "usage": summary["usage"],
         "latency_ms": elapsed_ms,
         "calls": summary["calls"],
@@ -228,6 +236,10 @@ def main() -> int:
     parser.add_argument("--tasks", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True, help="New, empty directory outside the repository")
     parser.add_argument("--model", required=True, help="Explicit Codex model identifier recorded in every run")
+    parser.add_argument(
+        "--reasoning-effort", choices=("low", "medium", "high", "xhigh"), default="low",
+        help="Explicit Codex reasoning setting; it is held fixed across paired conditions",
+    )
     parser.add_argument("--approval-ref", required=True, help="Explicit human approval reference for this development execution")
     parser.add_argument("--codex", default="codex")
     parser.add_argument("--timeout-seconds", type=int, default=240)
@@ -252,13 +264,14 @@ def main() -> int:
     _write_json(args.output / "execution-manifest.json", {
         "schema_version": RUNNER_SCHEMA, "benchmark_id": BENCHMARK_ID,
         "created_at": datetime.now(UTC).isoformat(), "approval_ref": args.approval_ref,
-        "model": args.model, "planned_run_count": len(planned), "conditions": selected_conditions,
+        "model": args.model, "reasoning_effort": args.reasoning_effort,
+        "planned_run_count": len(planned), "conditions": selected_conditions,
         "development_only": True, "evaluation_policy": "pending_blinded_evaluation_required",
     })
     runs: list[dict[str, Any]] = []
     for task, condition in planned:
         runs.append(_run_one(task=task, fixture=fixture_by_task[str(task["task_id"])], condition=condition,
-                             model=args.model, codex=args.codex, repo_root=repo_root,
+                             model=args.model, reasoning_effort=args.reasoning_effort, codex=args.codex, repo_root=repo_root,
                              output_root=args.output, timeout_seconds=args.timeout_seconds))
         with (args.output / "runs.pending.jsonl").open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(runs[-1], ensure_ascii=False, sort_keys=True) + "\n")
