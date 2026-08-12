@@ -177,7 +177,10 @@ def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: 
                        condition=condition, output=final_path, prompt=prompt)
     started = time.monotonic()
     try:
-        completed = subprocess.run(command, cwd=repo_root, capture_output=True, text=True, timeout=timeout_seconds, check=False)
+        completed = subprocess.run(
+            command, cwd=repo_root, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+            timeout=timeout_seconds, check=False,
+        )
         events_path.write_text(completed.stdout, encoding="utf-8")
         (trial_dir / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
         run_status = "completed" if completed.returncode == 0 else "failed"
