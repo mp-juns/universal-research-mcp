@@ -129,4 +129,5 @@ def test_runner_excludes_user_config_to_keep_mcp_arms_isolated(tmp_path: Path) -
         repo_root=ROOT, condition="mcp_claim_gate", output=tmp_path / "answer.txt", prompt="task",
     )
     assert "--ignore-user-config" in command
-    assert "--approve-for-me" in command
+    assert "--approve-for-me" not in command
+    assert 'approvals_reviewer="auto_review"' in command

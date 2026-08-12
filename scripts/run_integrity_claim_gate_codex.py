@@ -136,8 +136,9 @@ def _prompt(task: Mapping[str, Any], condition: str) -> str:
 def _command(*, codex: str, model: str, reasoning_effort: str, fixture_root: Path, repo_root: Path,
              condition: str, output: Path, prompt: str) -> list[str]:
     command = [
-        codex, "exec", "--ephemeral", "--ignore-user-config", "--approve-for-me", "--json", "--sandbox", "read-only", "--model", model,
-        "-c", f'model_reasoning_effort="{reasoning_effort}"', "-C", str(fixture_root), "-o", str(output),
+        codex, "exec", "--ephemeral", "--ignore-user-config", "--json", "--sandbox", "read-only", "--model", model,
+        "-c", 'approvals_reviewer="auto_review"', "-c", f'model_reasoning_effort="{reasoning_effort}"',
+        "-C", str(fixture_root), "-o", str(output),
     ]
     if condition.startswith("mcp"):
         command.extend([
@@ -271,7 +272,7 @@ def main() -> int:
         "planned_run_count": len(planned), "conditions": selected_conditions,
         "development_only": True, "evaluation_policy": "pending_blinded_evaluation_required",
         "host_user_config_loaded": False,
-        "read_only_mcp_auto_approval": True,
+        "read_only_mcp_auto_approval": "approvals_reviewer_auto_review",
     })
     runs: list[dict[str, Any]] = []
     for task, condition in planned:
