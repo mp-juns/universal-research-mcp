@@ -8,6 +8,8 @@ from benchmarks.integrity_claim_gate import (
     integrity_claim_gate_report,
     validate_bundle,
 )
+from scripts.run_integrity_claim_gate_codex import _configuration_fingerprint
+from scripts.run_integrity_claim_gate_codex import _telemetry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,3 +94,29 @@ def test_rejects_clean_task_with_fault_injection() -> None:
         assert "current evidence" in str(exc)
     else:
         raise AssertionError("clean task with fault injection was accepted")
+
+
+def test_pending_execution_telemetry_is_valid_but_not_scored() -> None:
+    task = read_jsonl(TASKS)[0]
+    run = _run(task, "mcp_claim_gate")
+    run["evaluation_status"] = "pending"
+    run["evaluation"] = None
+    validate_bundle([task], [run])
+    report = integrity_claim_gate_report([task], [run])
+    condition = report["conditions"]["mcp_claim_gate"]
+    assert condition["run_count"] == 0
+    assert condition["unscored_completed_run_count"] == 1
+
+
+def test_execution_configuration_fingerprint_is_a_schema_safe_digest() -> None:
+    task = read_jsonl(TASKS)[0]
+    fingerprint = _configuration_fingerprint(
+        task, "filesystem", "gpt-5.6-terra", "prompt", {"post_setup_source_sha256": {}, "index_fingerprint": "digest"},
+    )
+    assert fingerprint.startswith("sha256.")
+    assert len(fingerprint) == len("sha256.") + 64
+
+
+def test_usage_limit_is_marked_as_a_terminal_execution_blocker_signal() -> None:
+    telemetry = _telemetry([{"type": "error", "message": "You've hit your usage limit."}])
+    assert telemetry["usage_limit_reached"] is True
