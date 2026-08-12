@@ -170,6 +170,11 @@ def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: 
         _checksum_manifest(fixture, fixture_root / "checksum-manifest.json")
     trial_id = f"{task['task_id']}.{condition}.r1"
     trial_dir = output_root / "trials" / trial_id
+    if trial_dir.exists():
+        raise RuntimeError(
+            f"refusing to overwrite an incomplete or unrecorded trial artifact: {trial_dir}; "
+            "preserve it and start a new execution root"
+        )
     trial_dir.mkdir(parents=True, exist_ok=False)
     events_path = trial_dir / "events.jsonl"
     final_path = trial_dir / "final.txt"
@@ -276,13 +281,14 @@ def main() -> int:
     parser.add_argument("--codex", default="codex")
     parser.add_argument("--timeout-seconds", type=int, default=240)
     parser.add_argument("--condition", action="append", choices=sorted(CONDITIONS))
-    parser.add_argument("--max-runs", type=int)
+    parser.add_argument("--max-runs", type=int, help="Limit the total planned matrix; intended for single-trial smoke tests")
+    parser.add_argument("--max-new-runs", type=int, help="Limit only new trials when creating or resuming an execution")
     parser.add_argument("--resume", action="store_true", help="Continue a matching interrupted execution without replacing records")
     args = parser.parse_args()
     if not args.resume and args.output.exists() and any(args.output.iterdir()):
         raise SystemExit(f"refusing non-empty output directory: {args.output}")
-    if args.timeout_seconds < 1 or args.max_runs is not None and args.max_runs < 1:
-        raise SystemExit("timeout and max-runs must be positive")
+    if args.timeout_seconds < 1 or any(value is not None and value < 1 for value in (args.max_runs, args.max_new_runs)):
+        raise SystemExit("timeout and run limits must be positive")
     repo_root = Path(__file__).resolve().parents[1]
     tasks = read_jsonl(args.tasks)
     validate_bundle(tasks, [])
@@ -311,6 +317,8 @@ def main() -> int:
     fixture_by_task = {str(item["task_id"]): item for item in fixtures}
     existing_keys = {_run_key(run) for run in runs}
     remaining = [(task, condition) for task, condition in planned if (str(task["task_id"]), condition, 1) not in existing_keys]
+    if args.max_new_runs is not None:
+        remaining = remaining[:args.max_new_runs]
     new_runs: list[dict[str, Any]] = []
     for task, condition in remaining:
         new_runs.append(_run_one(task=task, fixture=fixture_by_task[str(task["task_id"])], condition=condition,
@@ -328,6 +336,7 @@ def main() -> int:
     _write_json(args.output / "execution-summary.json", {
         "schema_version": "integrity-claim-gate-execution-summary/1.0",
         "planned_run_count": len(planned), "attempted_run_count": len(runs),
+        "new_run_count": len(new_runs),
         "completed_run_count": sum(row["run_status"] == "completed" for row in runs),
         "terminal_blocker": terminal_blockers[0] if terminal_blockers else None,
         "evaluation_status": "pending",
