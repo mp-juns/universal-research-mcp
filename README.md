@@ -142,6 +142,14 @@ improvement, or model superiority. See the machine-readable
 [directional source diagnostic](benchmarks/results/codex-directional-v1.json)
 and the [claim-safety pilot](benchmarks/results/codex-claim-safety-v3.md).
 
+The next, narrower benchmark is the public development protocol
+[`integrity-claim-gate-v1`](benchmarks/protocols/integrity-claim-gate-v1.md).
+It measures invalid material assertions under evidence faults, clean supported
+claim coverage, and resource burden as separate endpoints across filesystem,
+checksum-manifest, MCP-evidence-only, and MCP+gate conditions. Its 24 public
+tasks are instrumentation material rather than a confirmatory holdout; no
+effect result is reported until the separately frozen evaluation is run.
+
 Future runs must use the same model, prompt, tasks, permissions, and source
 snapshot within each pair; retain failures; use paired repetitions; and
 preserve raw host telemetry. The only reportable public metrics are citation

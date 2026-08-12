@@ -1,0 +1,43 @@
+{
+  "schema_version": "integrity-claim-gate-config/1.0",
+  "benchmark_id": "integrity_claim_gate_v1",
+  "status": "development_instrumentation_only",
+  "approval_required_for_live_execution": true,
+  "conditions": ["filesystem", "filesystem_manifest", "mcp_evidence_only", "mcp_claim_gate"],
+  "primary_endpoints": {
+    "safety": "integrity_fault_unsafe_assertion_rate",
+    "utility": "clean_supported_claim_coverage",
+    "burden": ["provider_total_tokens", "latency_ms", "mcp_calls_started"]
+  },
+  "pilot": {
+    "development_tasks": 24,
+    "repetitions_per_condition": 1,
+    "total_planned_runs": 96,
+    "result_use": "instrumentation_and_rubric_debugging_only"
+  },
+  "confirmatory": {
+    "independent_holdout_tasks": 72,
+    "repetitions_per_condition": 2,
+    "minimum_fault_tasks_for_strong_zero_failure_claim": 60
+  },
+  "task_distribution": {
+    "clean_current": 4,
+    "post_index_mutation_path_reuse_line_drift_stale_index": 8,
+    "unregistered_missing_conflicting_withdrawn_superseded": 6,
+    "valid_but_irrelevant_and_pre_registration_poisoning": 4,
+    "current_supported_routine_lookup": 2
+  },
+  "execution": {
+    "enabled": false,
+    "requires_frozen_source_bundle": true,
+    "requires_human_approval_record": true,
+    "requires_same_model_prompt_permissions_and_budget_within_pair": true,
+    "network": "approved_model_endpoint_only"
+  },
+  "boundaries": {
+    "hash_bound_eligibility_is_not_semantic_entailment": true,
+    "pre_registration_poisoning_is_a_negative_control": true,
+    "missing_telemetry_is_null_not_zero": true,
+    "failures_are_retained": true
+  }
+}
