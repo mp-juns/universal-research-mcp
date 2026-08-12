@@ -91,6 +91,8 @@ def test_claim_gate_is_exposed_and_requires_two_current_records_for_release(tmp_
         assert eligible["claim_eligibility"] == "eligible"
         assert eligible["claim_text_included"] is False
         assert len(eligible["evidence"]) == 2
+        fetched = server.memory_fetch_evidence(**references[0], context_lines=0)
+        assert fetched["claim_gate_reference"] == references[0]
     finally:
         server.configure_runtime(*prior)
 

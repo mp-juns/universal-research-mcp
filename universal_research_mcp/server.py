@@ -289,6 +289,17 @@ def memory_fetch_evidence(
         "current_sha256": current_sha256,
         "integrity_status": integrity_status,
         "content_withheld": integrity_status == "mismatched" and not allow_mismatched_content,
+        # Deliberately separate from ``sha256`` (the current file snapshot).
+        # This is the exact object accepted by memory_gate_claim, so an agent
+        # cannot accidentally turn a mismatched current hash into a claim-gate
+        # reference after a successful evidence fetch.
+        "claim_gate_reference": {
+            "event_id": event_id,
+            "path": str(resolved.relative_to(ROOT)),
+            "start_line": start,
+            "end_line": end,
+            "expected_sha256": expected_sha256,
+        },
     }
     if integrity_status == "matched" or allow_mismatched_content:
         result["content"] = content
