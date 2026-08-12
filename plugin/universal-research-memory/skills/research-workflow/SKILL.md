@@ -15,9 +15,10 @@ decisions, results, failures, or artifacts managed by this project.
 3. For any material claim, call `memory_fetch_evidence` with the returned
    `event_id`, path, line range, and `source_sha256` as `expected_sha256`.
 4. Before reporting a material result, comparison, causal statement, release
-   decision, or other load-bearing fact, call `memory_gate_claim` with the
-   exact fetched `event_id`, path, line range, and `expected_sha256` for each
-   source. Use `materiality="material"` for a load-bearing factual statement.
+   decision, or other load-bearing fact, pass each evidence fetch response's
+   `claim_gate_reference` object unchanged to `memory_gate_claim`. Use
+   `materiality="material"` for a load-bearing factual statement. Do not
+   substitute the fetch response's current `sha256` for `expected_sha256`.
 5. Do not state a claim when the gate returns `blocked`; state the blocker and
    uncertainty instead. A routine lookup does not need the gate.
 6. State the verified path, line range, and uncertainty with the conclusion.
