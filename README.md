@@ -125,13 +125,29 @@ visualization, that category is `unavailable`, not zero or an estimate.
 ## Benchmark status
 
 The repository provides a paired A/B protocol, fixture contracts, and scoring
-contracts. No confirmatory live A/B result is currently available. Future runs
-must use the same model, prompt, tasks, permissions, and source snapshot within
-each pair; retain failures; use paired repetitions; and preserve raw host
-telemetry. The only reportable public metrics are citation correctness,
-unsupported-claim rate, evidence retrieval success, total tokens, tool calls,
-latency, cost, and paired differences. Missing telemetry is `unavailable`,
-never inferred. See [the benchmark disclosure](docs/benchmark-disclosure.md).
+contracts. No confirmatory live A/B result is currently available.
+
+![Exploratory measured claim-safety diagnostics: ordinary task token and latency overhead, plus post-index mutation outcomes](docs/assets/exploratory-claim-safety-diagnostic-v1.png)
+
+The graphic reports two public, exploratory live diagnostics using synthetic
+sources, `gpt-5.6-terra`, low reasoning effort, and one run per condition. On
+four ordinary single-source tasks, both conditions achieved 4/4 factual answers
+with evidence-line citations; the MCP condition used 2.26× input tokens and
+2.02× wall latency. In the separate six-trial post-index source-mutation
+diagnostic, direct filesystem retrieval accepted the changed source as verified
+evidence in 6/6 trials, while MCP-gated retrieval accepted it in 0/6 and
+abstained correctly in 6/6. This is bounded evidence for stale-source
+protection, not evidence of general hallucination reduction, research-quality
+improvement, or model superiority. See the machine-readable
+[directional source diagnostic](benchmarks/results/codex-directional-v1.json)
+and the [claim-safety pilot](benchmarks/results/codex-claim-safety-v3.md).
+
+Future runs must use the same model, prompt, tasks, permissions, and source
+snapshot within each pair; retain failures; use paired repetitions; and
+preserve raw host telemetry. The only reportable public metrics are citation
+correctness, unsupported-claim rate, evidence retrieval success, total tokens,
+tool calls, latency, cost, and paired differences. Missing telemetry is
+`unavailable`, never inferred. See [the benchmark disclosure](docs/benchmark-disclosure.md).
 
 ## Boundaries and data authority
 
