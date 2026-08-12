@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import sqlite3
 from pathlib import Path
 
@@ -96,6 +98,15 @@ def initialize(connection: sqlite3.Connection) -> None:
         CREATE INDEX events_status_idx ON events(status);
         CREATE INDEX events_type_idx ON events(event_type);
         CREATE INDEX relations_target_idx ON relations(target);
+        CREATE VIRTUAL TABLE source_passage_fts USING fts5(
+            event_id UNINDEXED,
+            source_path UNINDEXED,
+            source_sha256 UNINDEXED,
+            line_start UNINDEXED,
+            line_end UNINDEXED,
+            content,
+            tokenize = 'unicode61'
+        );
         CREATE VIRTUAL TABLE event_fts USING fts5(
             event_id UNINDEXED,
             summary,
@@ -116,6 +127,52 @@ def _infer_project_root(events_root: Path) -> Path:
     return resolved.parent
 
 
+def _source_passage(
+    project_root: Path,
+    source: dict,
+    registered_hashes: dict[str, set[str]],
+) -> tuple[str, str, int, int, str] | None:
+    """Return one registered, line-addressable passage for an indexed event.
+
+    The derived index never crawls arbitrary project files.  It reads only a
+    source path that both the event and canonical source registry bind to the
+    same SHA-256, then keeps the event's already-authorized line range.
+    """
+    path_text = source.get("source_path")
+    source_hash = source.get("source_sha256")
+    start = source.get("line_start")
+    end = source.get("line_end")
+    if not isinstance(path_text, str) or not isinstance(source_hash, str):
+        return None
+    if re.fullmatch(r"[0-9a-fA-F]{64}", source_hash) is None:
+        # Compatibility fixtures may carry legacy placeholder hashes. They are
+        # retained in the event projection but cannot become source passages.
+        return None
+    if source_hash.lower() not in registered_hashes.get(path_text, set()):
+        return None
+    if not isinstance(start, int) or not isinstance(end, int) or start < 1 or end < start:
+        return None
+    candidate = (project_root / path_text).resolve()
+    try:
+        candidate.relative_to(project_root)
+    except ValueError as exc:
+        raise ValueError(f"indexed source path escapes project root: {path_text}") from exc
+    if not candidate.is_file():
+        raise FileNotFoundError(f"indexed source is missing: {path_text}")
+    snapshot = candidate.read_bytes()
+    if hashlib.sha256(snapshot).hexdigest().lower() != source_hash.lower():
+        raise ValueError(f"indexed source hash does not match current file: {path_text}")
+    lines = snapshot.decode("utf-8", errors="replace").splitlines()
+    if start > len(lines):
+        raise ValueError(f"indexed source range begins after EOF: {path_text}:{start}")
+    if end > len(lines):
+        raise ValueError(f"indexed source range ends after EOF: {path_text}:{end}")
+    content = "\n".join(lines[start - 1:end])
+    if not content.strip():
+        return None
+    return path_text, source_hash, start, end, content
+
+
 def build(
     events_root: Path,
     output: Path,
@@ -134,6 +191,12 @@ def build(
     if not event_paths:
         raise FileNotFoundError(f"No daily event JSONL under: {events_root / 'daily'}")
     sources = read_jsonl(sources_path)
+    registered_hashes: dict[str, set[str]] = {}
+    for source in sources:
+        path_text = source.get("source_path")
+        source_hash = source.get("source_sha256")
+        if isinstance(path_text, str) and isinstance(source_hash, str):
+            registered_hashes.setdefault(path_text, set()).add(source_hash.lower())
     canonical_events = [event for path in event_paths for event in read_jsonl(path)]
     validation_issues = validate_records(canonical_events)
     if validation_issues:
@@ -202,6 +265,19 @@ def build(
                     json.dumps(event, ensure_ascii=False, sort_keys=True),
                 ),
             )
+            passage = _source_passage(project_root, source, registered_hashes)
+            if passage is not None:
+                connection.execute(
+                    "INSERT INTO source_passage_fts VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        effective_event["event_id"],
+                        passage[0],
+                        passage[1],
+                        passage[2],
+                        passage[3],
+                        passage[4],
+                    ),
+                )
             connection.execute(
                 "INSERT INTO event_fts VALUES (?, ?, ?, ?)",
                 (

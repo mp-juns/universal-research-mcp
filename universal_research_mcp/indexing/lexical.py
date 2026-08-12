@@ -24,7 +24,7 @@ from universal_research_mcp.runtime import ProjectPaths
 FINGERPRINT_VERSION = "canonical-jsonl-sha256-v1"
 FINGERPRINT_KEY = "canonical_bundle_sha256"
 REQUIRED_TABLES = frozenset(
-    {"metadata", "sources", "events", "relations", "artifacts", "event_fts"}
+    {"metadata", "sources", "events", "relations", "artifacts", "event_fts", "source_passage_fts"}
 )
 LexicalBuilder = Callable[[Path, Path], dict[str, Any]]
 
@@ -174,6 +174,15 @@ def _initialize_schema(connection: sqlite3.Connection) -> None:
         CREATE INDEX events_status_idx ON events(status);
         CREATE INDEX events_type_idx ON events(event_type);
         CREATE INDEX relations_target_idx ON relations(target);
+        CREATE VIRTUAL TABLE source_passage_fts USING fts5(
+            event_id UNINDEXED,
+            source_path UNINDEXED,
+            source_sha256 UNINDEXED,
+            line_start UNINDEXED,
+            line_end UNINDEXED,
+            content,
+            tokenize = 'unicode61'
+        );
         CREATE VIRTUAL TABLE event_fts USING fts5(
             event_id UNINDEXED,
             summary,
@@ -353,6 +362,12 @@ def index_status(root: str | Path) -> dict[str, Any]:
         ) as db:
             integrity = str(db.execute("PRAGMA integrity_check").fetchone()[0])
             metadata = dict(db.execute("SELECT key, value FROM metadata"))
+            tables = {
+                str(row[0])
+                for row in db.execute(
+                    "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')"
+                )
+            }
     except (OSError, sqlite3.Error, ValueError) as exc:
         return {
             **result,
@@ -362,6 +377,7 @@ def index_status(root: str | Path) -> dict[str, Any]:
             "reason": f"{type(exc).__name__}: {exc}",
         }
     indexed = metadata.get(FINGERPRINT_KEY)
+    missing_tables = sorted(REQUIRED_TABLES - tables)
     failed_current_health = bool(
         health
         and health.get("index_revision") == fingerprint["sha256"]
@@ -370,6 +386,7 @@ def index_status(root: str | Path) -> dict[str, Any]:
     current = (
         integrity == "ok"
         and indexed == fingerprint["sha256"]
+        and not missing_tables
         and not failed_current_health
     )
     return {
@@ -378,6 +395,7 @@ def index_status(root: str | Path) -> dict[str, Any]:
         "stale": not current,
         "indexed_fingerprint": indexed,
         "integrity": integrity,
+        **({"reason": f"lexical index is missing required tables: {missing_tables}"} if missing_tables else {}),
     }
 
 

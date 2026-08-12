@@ -133,6 +133,17 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
     params.append(top_k)
     where = " AND " + " AND ".join(filters) if filters else ""
     with closing(open_readonly(RESEARCH_DB)) as db:
+        passage_rows = db.execute(
+            f"""
+            SELECT e.event_id, e.event_type, e.status, e.date, e.summary,
+                   source_passage_fts.source_path, '' AS source_heading,
+                   source_passage_fts.line_start, source_passage_fts.line_end,
+                   source_passage_fts.source_sha256, bm25(source_passage_fts) AS bm25_raw
+            FROM source_passage_fts JOIN events AS e ON e.event_id = source_passage_fts.event_id
+            WHERE source_passage_fts MATCH ? {where}
+            ORDER BY bm25_raw ASC LIMIT ?
+            """, params,
+        ).fetchall()
         rows = db.execute(
             f"""
             SELECT e.event_id, e.event_type, e.status, e.date, e.summary,
@@ -143,7 +154,17 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
             ORDER BY bm25_raw ASC LIMIT ?
             """, params,
         ).fetchall()
-    return [_result(row, rank, -float(row["bm25_raw"])) for rank, row in enumerate(rows, 1)]
+    ordered = [*passage_rows, *rows]
+    unique: list[sqlite3.Row] = []
+    seen: set[tuple[Any, ...]] = set()
+    for row in ordered:
+        key = (row["event_id"], row["source_path"], row["line_start"], row["line_end"])
+        if key not in seen:
+            seen.add(key)
+            unique.append(row)
+        if len(unique) == top_k:
+            break
+    return [_result(row, rank, -float(row["bm25_raw"])) for rank, row in enumerate(unique, 1)]
 
 
 def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
