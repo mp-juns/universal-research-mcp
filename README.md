@@ -5,7 +5,7 @@ framework and read-only MCP. It records plans, approvals, observations, claims,
 failures, amendments, and contributions with traceable sources. Canonical JSONL
 is authoritative; SQLite search indexes are verified, replaceable derived views.
 
-> **Supported integration (0.4.0): Codex only.** Codex owns model
+> **Supported integration (0.4.1): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
@@ -59,6 +59,8 @@ rejected; register a new project-contained path instead.
 The default `universal_research` MCP provides only:
 
 - candidate search and event/hash-bound source re-verification;
+- deterministic claim eligibility receipts for material results, comparisons,
+  causal statements, release decisions, and explicitly material facts;
 - an eleven-role governance contract and Codex dispatch-manifest preparation;
 - scope/cost preflight, deterministic operation-gate, and failure-tombstone
   preparation; and
@@ -72,7 +74,8 @@ only in this release. Dense embeddings and provider fallback are future work.
 
 ```text
 canonical JSONL → staged/verified SQLite candidate → memory_fetch_evidence
-with event_id + expected_sha256 → current-hash check → bounded claim
+with event_id + expected_sha256 → current-hash check → memory_gate_claim →
+eligible or blocked material claim
 ```
 
 Search results are candidates, not evidence. For a consequential conclusion,
@@ -82,6 +85,13 @@ fetched. Search, latest, and evidence fetch fail closed while the lexical index
 is stale and require `universal-research index ensure --kind lexical`. When a
 file's current hash differs, content is withheld by default; only the explicit
 diagnostic `allow_mismatched_content=true` response includes current content.
+
+`memory_gate_claim` is a deterministic, fail-closed receipt for material
+claims. It re-fetches each supplied exact evidence reference and accepts only a
+current registered revision. Release, comparison, and causal claims require two
+distinct verified records; a material factual or result claim requires one.
+Routine lookups are not gated. The gate checks evidence eligibility, not the
+scientific truth of prose, and it does not invoke a model or write the ledger.
 
 ## Governed Codex agents
 
@@ -115,13 +125,29 @@ visualization, that category is `unavailable`, not zero or an estimate.
 ## Benchmark status
 
 The repository provides a paired A/B protocol, fixture contracts, and scoring
-contracts. No confirmatory live A/B result is currently available. Future runs
-must use the same model, prompt, tasks, permissions, and source snapshot within
-each pair; retain failures; use paired repetitions; and preserve raw host
-telemetry. The only reportable public metrics are citation correctness,
-unsupported-claim rate, evidence retrieval success, total tokens, tool calls,
-latency, cost, and paired differences. Missing telemetry is `unavailable`,
-never inferred. See [the benchmark disclosure](docs/benchmark-disclosure.md).
+contracts. No confirmatory live A/B result is currently available.
+
+![Exploratory measured claim-safety diagnostics: ordinary task token and latency overhead, plus post-index mutation outcomes](docs/assets/exploratory-claim-safety-diagnostic-v1.png)
+
+The graphic reports two public, exploratory live diagnostics using synthetic
+sources, `gpt-5.6-terra`, low reasoning effort, and one run per condition. On
+four ordinary single-source tasks, both conditions achieved 4/4 factual answers
+with evidence-line citations; the MCP condition used 2.26× input tokens and
+2.02× wall latency. In the separate six-trial post-index source-mutation
+diagnostic, direct filesystem retrieval accepted the changed source as verified
+evidence in 6/6 trials, while MCP-gated retrieval accepted it in 0/6 and
+abstained correctly in 6/6. This is bounded evidence for stale-source
+protection, not evidence of general hallucination reduction, research-quality
+improvement, or model superiority. See the machine-readable
+[directional source diagnostic](benchmarks/results/codex-directional-v1.json)
+and the [claim-safety pilot](benchmarks/results/codex-claim-safety-v3.md).
+
+Future runs must use the same model, prompt, tasks, permissions, and source
+snapshot within each pair; retain failures; use paired repetitions; and
+preserve raw host telemetry. The only reportable public metrics are citation
+correctness, unsupported-claim rate, evidence retrieval success, total tokens,
+tool calls, latency, cost, and paired differences. Missing telemetry is
+`unavailable`, never inferred. See [the benchmark disclosure](docs/benchmark-disclosure.md).
 
 ## Boundaries and data authority
 
