@@ -5,7 +5,7 @@ framework and read-only MCP. It records plans, approvals, observations, claims,
 failures, amendments, and contributions with traceable sources. Canonical JSONL
 is authoritative; SQLite search indexes are verified, replaceable derived views.
 
-> **Supported integration (0.4.0): Codex only.** Codex owns model
+> **Supported integration (0.4.1): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
@@ -59,6 +59,8 @@ rejected; register a new project-contained path instead.
 The default `universal_research` MCP provides only:
 
 - candidate search and event/hash-bound source re-verification;
+- deterministic claim eligibility receipts for material results, comparisons,
+  causal statements, release decisions, and explicitly material facts;
 - an eleven-role governance contract and Codex dispatch-manifest preparation;
 - scope/cost preflight, deterministic operation-gate, and failure-tombstone
   preparation; and
@@ -72,7 +74,8 @@ only in this release. Dense embeddings and provider fallback are future work.
 
 ```text
 canonical JSONL → staged/verified SQLite candidate → memory_fetch_evidence
-with event_id + expected_sha256 → current-hash check → bounded claim
+with event_id + expected_sha256 → current-hash check → memory_gate_claim →
+eligible or blocked material claim
 ```
 
 Search results are candidates, not evidence. For a consequential conclusion,
@@ -82,6 +85,13 @@ fetched. Search, latest, and evidence fetch fail closed while the lexical index
 is stale and require `universal-research index ensure --kind lexical`. When a
 file's current hash differs, content is withheld by default; only the explicit
 diagnostic `allow_mismatched_content=true` response includes current content.
+
+`memory_gate_claim` is a deterministic, fail-closed receipt for material
+claims. It re-fetches each supplied exact evidence reference and accepts only a
+current registered revision. Release, comparison, and causal claims require two
+distinct verified records; a material factual or result claim requires one.
+Routine lookups are not gated. The gate checks evidence eligibility, not the
+scientific truth of prose, and it does not invoke a model or write the ledger.
 
 ## Governed Codex agents
 
