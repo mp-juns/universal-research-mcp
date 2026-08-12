@@ -111,3 +111,20 @@ def test_claim_gate_blocks_a_changed_registered_source_and_skips_routine_lookup(
         assert blocked["claim_eligibility"] == "blocked"
     finally:
         server.configure_runtime(*prior)
+
+
+def test_claim_gate_is_deterministic_and_rejects_mixed_event_path_hash_bindings(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _root, references = _configured_project(tmp_path / "research")
+        first = server.memory_gate_claim("The release is ready.", "release", "auto", references)
+        second = server.memory_gate_claim("The release is ready.", "release", "auto", references)
+        assert first == second
+
+        mixed = [dict(references[0]), dict(references[1])]
+        mixed[0]["path"] = str(references[1]["path"])
+        blocked = server.memory_gate_claim("The release is ready.", "release", "auto", mixed)
+        assert blocked["status"] == "blocked"
+        assert any(item["code"] == "CLAIM-EVIDENCE-INVALID" for item in blocked["blockers"])
+    finally:
+        server.configure_runtime(*prior)

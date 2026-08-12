@@ -28,6 +28,36 @@ Files:
 - `scoring.py`: paired quality, token, call, latency, and cost summaries; any
   missing host/provider telemetry remains `unavailable`, never estimated
 
+## Integrity & Claim-Gating v1
+
+`integrity-claim-gate-v1` is a separate development-instrumentation protocol.
+It does not replace the broad `mcp-ab-v1` benchmark or claim a measured product
+effect. Its co-primary measurements are deliberately narrower:
+
+- **Integrity-fault Unsafe Assertion Rate**: invalid material assertions when
+  evidence is changed, stale, missing, conflicting, withdrawn, or otherwise
+  ineligible; and
+- **Clean Supported Claim Coverage**: correct, complete, source-bound answers
+  when current evidence is sufficient.
+
+It also reports provider tokens, latency, tool calls, false blocks,
+gate-invocation recall, routine over-gating, exact evidence binding, and
+citation support separately. Four arms distinguish filesystem retrieval,
+filesystem plus checksum manifest, MCP evidence flow, and MCP plus material
+claim gate.
+
+Files:
+
+- `protocols/integrity-claim-gate-v1.md`: the scoped protocol and reporting
+  boundary;
+- `config/integrity-claim-gate-v1.json`: the frozen 24-task/96-run development
+  instrumentation design; and
+- `fixtures/integrity-claim-gate-v1/tasks.development.jsonl`: public task
+  metadata for harness/evaluator calibration only, never a confirmatory holdout.
+
+Use `scripts/validate_integrity_claim_gate_benchmark.py` to validate a run file
+or emit its safety–coverage–burden report.
+
 Before a live run, a human must approve the final task-set fingerprint, model,
 provider, pricing snapshot, budgets, source-bundle fingerprint, and execution
 command. API credentials may be supplied only through the process environment
