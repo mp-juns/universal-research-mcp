@@ -23,5 +23,10 @@ WORK_LOG.md
 # Generated benchmark outputs are not package source.
 benchmarks/live_v*/
 benchmarks/results/
+# Public result summaries are source-controlled only when deliberately named
+# below; raw outputs and unreviewed results remain excluded.
+!benchmarks/results/
+!benchmarks/results/integrity-claim-gate-v1-development-20260813.json
+!benchmarks/results/integrity-claim-gate-v1-development-20260813.md
 data/events/daily/
 data/events/sources.jsonl

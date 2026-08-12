@@ -124,8 +124,8 @@ visualization, that category is `unavailable`, not zero or an estimate.
 
 ## Benchmark status
 
-The repository provides a paired A/B protocol, fixture contracts, and scoring
-contracts. No confirmatory live A/B result is currently available.
+The repository provides paired A/B protocols, fixture contracts, and scoring
+contracts. No confirmatory live A/B result is available.
 
 ![Exploratory measured claim-safety diagnostics: ordinary task token and latency overhead, plus post-index mutation outcomes](docs/assets/exploratory-claim-safety-diagnostic-v1.png)
 
@@ -142,13 +142,20 @@ improvement, or model superiority. See the machine-readable
 [directional source diagnostic](benchmarks/results/codex-directional-v1.json)
 and the [claim-safety pilot](benchmarks/results/codex-claim-safety-v3.md).
 
-The next, narrower benchmark is the public development protocol
-[`integrity-claim-gate-v1`](benchmarks/protocols/integrity-claim-gate-v1.md).
-It measures invalid material assertions under evidence faults, clean supported
-claim coverage, and resource burden as separate endpoints across filesystem,
-checksum-manifest, MCP-evidence-only, and MCP+gate conditions. Its 24 public
-tasks are instrumentation material rather than a confirmatory holdout; no
-effect result is reported until the separately frozen evaluation is run.
+The narrower public development protocol
+[`integrity-claim-gate-v1`](benchmarks/protocols/integrity-claim-gate-v1.md)
+has now been executed once: 24 public synthetic tasks × 4 conditions = 96
+participant runs, with a separate condition-blinded evaluator. The observed
+MCP + Claim Gate condition had 2/18 unsafe material assertions on fault tasks
+(11.1%), versus 4/18 (22.2%) for direct filesystem; clean supported-claim
+coverage was 100.0% versus 66.7%. It cost 1.55× mean execution tokens and
+1.61× mean latency. The paired 95% interval for the unsafe-assertion
+difference includes zero, so this is **not** proof of an effect. It is a
+development-sample signal plus a measured burden and known semantic failure
+modes. See the complete
+[development result](benchmarks/results/integrity-claim-gate-v1-development-20260813.md).
+
+![Integrity & Claim-Gating v1 development results: safety, clean coverage, and execution burden](docs/assets/integrity-claim-gate-v1-development-20260813.png)
 
 Future runs must use the same model, prompt, tasks, permissions, and source
 snapshot within each pair; retain failures; use paired repetitions; and

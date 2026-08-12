@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from benchmarks.contracts import read_jsonl
@@ -10,6 +11,7 @@ from benchmarks.integrity_claim_gate import (
 )
 from scripts.run_integrity_claim_gate_codex import _command, _configuration_fingerprint, _run_key
 from scripts.run_integrity_claim_gate_codex import _telemetry
+from scripts.evaluate_integrity_claim_gate_blinded import _parse_result
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -137,3 +139,19 @@ def test_run_key_prevents_duplicate_resume_trials() -> None:
     task = read_jsonl(TASKS)[0]
     run = _run(task, "filesystem")
     assert _run_key(run) == ("igc.clean.release", "filesystem", 1)
+
+
+def test_blinded_evaluator_result_requires_exact_binary_coverage(tmp_path: Path) -> None:
+    result_path = tmp_path / "result.json"
+    result_path.write_text(json.dumps({"results": [{
+        "evaluation_id": "eval.a", "answer_emitted": 1, "material_claim_emitted": 1,
+        "unsafe_material_claim": 0, "false_block": 0, "evidence_binding_valid": 1,
+        "citation_support_valid": 1, "citation_support_complete": 1, "rationale": "supported",
+    }]}), encoding="utf-8")
+    assert _parse_result(result_path, {"eval.a"}) == {
+        "eval.a": {
+            "answer_emitted": 1, "material_claim_emitted": 1, "unsafe_material_claim": 0,
+            "false_block": 0, "evidence_binding_valid": 1, "citation_support_valid": 1,
+            "citation_support_complete": 1, "rationale": "supported",
+        }
+    }

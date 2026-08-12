@@ -31,8 +31,8 @@ Files:
 ## Integrity & Claim-Gating v1
 
 `integrity-claim-gate-v1` is a separate development-instrumentation protocol.
-It does not replace the broad `mcp-ab-v1` benchmark or claim a measured product
-effect. Its co-primary measurements are deliberately narrower:
+It does not replace the broad `mcp-ab-v1` benchmark or establish a measured
+product effect. Its co-primary measurements are deliberately narrower:
 
 - **Integrity-fault Unsafe Assertion Rate**: invalid material assertions when
   evidence is changed, stale, missing, conflicting, withdrawn, or otherwise
@@ -57,6 +57,13 @@ Files:
 
 Use `scripts/validate_integrity_claim_gate_benchmark.py` to validate a run file
 or emit its safety–coverage–burden report.
+
+A 96-run public development execution is available in
+[`results/integrity-claim-gate-v1-development-20260813.md`](results/integrity-claim-gate-v1-development-20260813.md).
+It used 24 synthetic public tasks once per condition and a separate
+condition-blinded model evaluator. Its paired confidence interval includes
+zero, so it must be read as development instrumentation rather than a product
+effect or a general research-quality claim.
 
 Before a live run, a human must approve the final task-set fingerprint, model,
 provider, pricing snapshot, budgets, source-bundle fingerprint, and execution
