@@ -8,7 +8,7 @@ from benchmarks.integrity_claim_gate import (
     integrity_claim_gate_report,
     validate_bundle,
 )
-from scripts.run_integrity_claim_gate_codex import _command, _configuration_fingerprint
+from scripts.run_integrity_claim_gate_codex import _command, _configuration_fingerprint, _run_key
 from scripts.run_integrity_claim_gate_codex import _telemetry
 
 
@@ -131,3 +131,9 @@ def test_runner_excludes_user_config_to_keep_mcp_arms_isolated(tmp_path: Path) -
     assert "--ignore-user-config" in command
     assert "--approve-for-me" not in command
     assert 'approvals_reviewer="auto_review"' in command
+
+
+def test_run_key_prevents_duplicate_resume_trials() -> None:
+    task = read_jsonl(TASKS)[0]
+    run = _run(task, "filesystem")
+    assert _run_key(run) == ("igc.clean.release", "filesystem", 1)

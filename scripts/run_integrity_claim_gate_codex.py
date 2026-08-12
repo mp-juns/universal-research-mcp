@@ -235,6 +235,34 @@ def _run_one(*, task: Mapping[str, Any], fixture: Mapping[str, Any], condition: 
     return record
 
 
+def _run_key(run: Mapping[str, Any]) -> tuple[str, str, int]:
+    return (str(run["task_id"]), str(run["condition"]), int(run["repetition"]))
+
+
+def _load_resume_state(output: Path, tasks: list[dict[str, Any]], *, model: str, reasoning_effort: str,
+                       approval_ref: str, conditions: list[str]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    manifest_path = output / "execution-manifest.json"
+    fixture_manifest_path = output / "fixtures" / "fixture-manifest.json"
+    runs_path = output / "runs.pending.jsonl"
+    if not manifest_path.is_file() or not fixture_manifest_path.is_file() or not runs_path.is_file():
+        raise SystemExit("resume requires the prior manifest, fixture manifest, and pending run record")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected = {
+        "benchmark_id": BENCHMARK_ID, "model": model, "reasoning_effort": reasoning_effort,
+        "approval_ref": approval_ref, "conditions": conditions, "host_user_config_loaded": False,
+        "read_only_mcp_auto_approval": "approvals_reviewer_auto_review",
+    }
+    if any(manifest.get(key) != value for key, value in expected.items()):
+        raise SystemExit("resume manifest does not match the requested execution contract")
+    runs = read_jsonl(runs_path)
+    validate_bundle(tasks, runs)
+    fixtures_payload = json.loads(fixture_manifest_path.read_text(encoding="utf-8"))
+    fixtures = fixtures_payload.get("fixtures")
+    if not isinstance(fixtures, list) or len(fixtures) != len(tasks):
+        raise SystemExit("resume fixture manifest is incomplete")
+    return runs, fixtures
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tasks", type=Path, required=True)
@@ -249,39 +277,49 @@ def main() -> int:
     parser.add_argument("--timeout-seconds", type=int, default=240)
     parser.add_argument("--condition", action="append", choices=sorted(CONDITIONS))
     parser.add_argument("--max-runs", type=int)
+    parser.add_argument("--resume", action="store_true", help="Continue a matching interrupted execution without replacing records")
     args = parser.parse_args()
-    if args.output.exists() and any(args.output.iterdir()):
+    if not args.resume and args.output.exists() and any(args.output.iterdir()):
         raise SystemExit(f"refusing non-empty output directory: {args.output}")
     if args.timeout_seconds < 1 or args.max_runs is not None and args.max_runs < 1:
         raise SystemExit("timeout and max-runs must be positive")
     repo_root = Path(__file__).resolve().parents[1]
     tasks = read_jsonl(args.tasks)
     validate_bundle(tasks, [])
-    args.output.mkdir(parents=True, exist_ok=True)
-    fixtures_root = args.output / "fixtures"
-    fixtures = build_development_fixtures(tasks, fixtures_root)
-    fixture_by_task = {str(item["task_id"]): item for item in fixtures}
     selected_conditions = args.condition or sorted(CONDITIONS)
     planned = [(task, condition) for task in tasks for condition in selected_conditions]
     if args.max_runs is not None:
         planned = planned[:args.max_runs]
-    _write_json(args.output / "execution-manifest.json", {
-        "schema_version": RUNNER_SCHEMA, "benchmark_id": BENCHMARK_ID,
-        "created_at": datetime.now(UTC).isoformat(), "approval_ref": args.approval_ref,
-        "model": args.model, "reasoning_effort": args.reasoning_effort,
-        "planned_run_count": len(planned), "conditions": selected_conditions,
-        "development_only": True, "evaluation_policy": "pending_blinded_evaluation_required",
-        "host_user_config_loaded": False,
-        "read_only_mcp_auto_approval": "approvals_reviewer_auto_review",
-    })
-    runs: list[dict[str, Any]] = []
-    for task, condition in planned:
-        runs.append(_run_one(task=task, fixture=fixture_by_task[str(task["task_id"])], condition=condition,
-                             model=args.model, reasoning_effort=args.reasoning_effort, codex=args.codex, repo_root=repo_root,
-                             output_root=args.output, timeout_seconds=args.timeout_seconds))
+    if args.resume:
+        runs, fixtures = _load_resume_state(
+            args.output, tasks, model=args.model, reasoning_effort=args.reasoning_effort,
+            approval_ref=args.approval_ref, conditions=selected_conditions,
+        )
+    else:
+        args.output.mkdir(parents=True, exist_ok=True)
+        fixtures = build_development_fixtures(tasks, args.output / "fixtures")
+        runs = []
+        _write_json(args.output / "execution-manifest.json", {
+            "schema_version": RUNNER_SCHEMA, "benchmark_id": BENCHMARK_ID,
+            "created_at": datetime.now(UTC).isoformat(), "approval_ref": args.approval_ref,
+            "model": args.model, "reasoning_effort": args.reasoning_effort,
+            "planned_run_count": len(planned), "conditions": selected_conditions,
+            "development_only": True, "evaluation_policy": "pending_blinded_evaluation_required",
+            "host_user_config_loaded": False,
+            "read_only_mcp_auto_approval": "approvals_reviewer_auto_review",
+        })
+    fixture_by_task = {str(item["task_id"]): item for item in fixtures}
+    existing_keys = {_run_key(run) for run in runs}
+    remaining = [(task, condition) for task, condition in planned if (str(task["task_id"]), condition, 1) not in existing_keys]
+    new_runs: list[dict[str, Any]] = []
+    for task, condition in remaining:
+        new_runs.append(_run_one(task=task, fixture=fixture_by_task[str(task["task_id"])], condition=condition,
+                                 model=args.model, reasoning_effort=args.reasoning_effort, codex=args.codex, repo_root=repo_root,
+                                 output_root=args.output, timeout_seconds=args.timeout_seconds))
+        runs.append(new_runs[-1])
         with (args.output / "runs.pending.jsonl").open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(runs[-1], ensure_ascii=False, sort_keys=True) + "\n")
-        if runs[-1]["execution_notes"]["terminal_execution_blocker"] is not None:
+            handle.write(json.dumps(new_runs[-1], ensure_ascii=False, sort_keys=True) + "\n")
+        if new_runs[-1]["execution_notes"]["terminal_execution_blocker"] is not None:
             break
     terminal_blockers = [
         row["execution_notes"]["terminal_execution_blocker"]
@@ -294,7 +332,7 @@ def main() -> int:
         "terminal_blocker": terminal_blockers[0] if terminal_blockers else None,
         "evaluation_status": "pending",
     })
-    print(json.dumps({"run_count": len(runs), "output": str(args.output), "evaluation_status": "pending",
+    print(json.dumps({"run_count": len(runs), "new_run_count": len(new_runs), "output": str(args.output), "evaluation_status": "pending",
                       "terminal_blocker": terminal_blockers[0] if terminal_blockers else None}, sort_keys=True))
     return 0
 
