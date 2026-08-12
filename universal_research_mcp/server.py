@@ -15,6 +15,7 @@ from typing import Any, Literal, Sequence
 from mcp.server.fastmcp import FastMCP
 
 from universal_research_mcp.core.audit import audit_report
+from universal_research_mcp.core.claim_gate import evaluate_claim_gate
 from universal_research_mcp.core.ledger import read_jsonl
 from universal_research_mcp.core.search import safe_fts_query
 from universal_research_mcp.governance.escalation import evaluate_gate
@@ -49,9 +50,12 @@ INSTRUCTIONS = """
 Use memory_search_candidates to find candidate research records. A search score
 is not evidence. Before making an important claim, call memory_fetch_evidence
 with the exact path and line range returned by search, then report that source
-range and its hash. Governance tools validate plans, authority, and returned
-decisions but cannot approve work on the user's behalf. Provider secrets must
-never be pasted into chat, command arguments, research records, or tool input.
+range and its hash. Before reporting a material result, comparison, causal,
+release, or other load-bearing factual claim, call memory_gate_claim with the
+exact fetched evidence references; do not state the claim when the gate blocks
+it. Governance tools validate plans, authority, and returned decisions but
+cannot approve work on the user's behalf. Provider secrets must never be pasted
+into chat, command arguments, research records, or tool input.
 """.strip()
 
 mcp = FastMCP("Universal Research", instructions=INSTRUCTIONS)
@@ -291,6 +295,95 @@ def memory_fetch_evidence(
     if integrity_status == "mismatched" and allow_mismatched_content:
         result["diagnostic_mode"] = True
     return result
+
+
+def _claim_evidence_check(reference: Any) -> dict[str, Any]:
+    """Resolve one model-supplied reference without returning source content."""
+
+    if not isinstance(reference, dict):
+        return {"verified": False, "reason": "evidence reference must be an object"}
+    allowed = {"event_id", "path", "start_line", "end_line", "expected_sha256"}
+    unexpected = sorted(set(reference) - allowed)
+    if unexpected:
+        return {"verified": False, "reason": f"unsupported evidence fields: {', '.join(unexpected)}"}
+    event_id = reference.get("event_id")
+    path = reference.get("path")
+    start_line = reference.get("start_line")
+    end_line = reference.get("end_line")
+    expected_sha256 = reference.get("expected_sha256")
+    if not isinstance(event_id, str) or not event_id:
+        return {"verified": False, "reason": "event_id is required"}
+    if not isinstance(path, str) or not path:
+        return {"verified": False, "reason": "path is required"}
+    if not isinstance(start_line, int) or start_line < 1:
+        return {"verified": False, "reason": "start_line must be a positive integer"}
+    if not isinstance(end_line, int) or end_line < start_line:
+        return {"verified": False, "reason": "end_line must be no smaller than start_line"}
+    if not isinstance(expected_sha256, str) or len(expected_sha256) != 64:
+        return {"verified": False, "reason": "expected_sha256 must be a SHA-256 digest"}
+    try:
+        fetched = memory_fetch_evidence(
+            path=path,
+            start_line=start_line,
+            end_line=end_line,
+            context_lines=0,
+            event_id=event_id,
+            expected_sha256=expected_sha256,
+        )
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        return {
+            "event_id": event_id,
+            "path": path,
+            "start_line": start_line,
+            "end_line": end_line,
+            "expected_sha256": expected_sha256,
+            "verified": False,
+            "reason": str(exc),
+        }
+    verified = fetched.get("integrity_status") == "matched"
+    return {
+        "event_id": event_id,
+        "path": path,
+        "start_line": fetched.get("start_line"),
+        "end_line": fetched.get("end_line"),
+        "expected_sha256": expected_sha256,
+        "current_sha256": fetched.get("current_sha256"),
+        "integrity_status": fetched.get("integrity_status"),
+        "verified": verified,
+        "reason": "" if verified else "source content hash does not match the registered revision",
+    }
+
+
+@mcp.tool()
+def memory_gate_claim(
+    claim: str,
+    claim_type: Literal[
+        "factual", "result", "comparative", "causal", "release",
+        "recommendation", "creative",
+    ] = "factual",
+    materiality: Literal["auto", "routine", "material"] = "auto",
+    evidence: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Fail closed when a material claim lacks current, exact source evidence.
+
+    Candidate search output alone never satisfies this gate.  Each supplied
+    reference is re-fetched against its registered event ID and source hash;
+    the gate returns no source content, only the eligibility receipt.
+    """
+
+    if not isinstance(claim, str) or not claim.strip():
+        raise ValueError("claim must be a non-empty string")
+    checks = [_claim_evidence_check(item) for item in (evidence or [])]
+    result = evaluate_claim_gate(
+        claim_type=claim_type,
+        materiality=materiality,
+        evidence_checks=checks,
+    )
+    return {
+        **result,
+        "claim_sha256": hashlib.sha256(claim.encode("utf-8")).hexdigest(),
+        "claim_text_included": False,
+    }
 
 
 @mcp.tool()
