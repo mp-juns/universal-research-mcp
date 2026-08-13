@@ -1,8 +1,7 @@
-"""Host-owned, append-only canonical-input helpers.
+"""Append-only canonical-input validation and persistence helpers.
 
-The MCP server never imports this module. It is used exclusively by the
-separate CLI to register immutable source revisions and append validated core
-records before rebuilding derived indexes.
+The management CLI and the explicitly gated MCP ingestion service share these
+helpers.  Neither caller may rewrite prior canonical records.
 """
 
 from __future__ import annotations
@@ -129,6 +128,22 @@ def _source_issues(
 
 
 def validate_candidate_records(root: str | Path, records: list[dict[str, Any]]) -> list[ValidationIssue]:
+    return validate_candidate_records_with_sources(root, records, sources=None)
+
+
+def validate_candidate_records_with_sources(
+    root: str | Path,
+    records: list[dict[str, Any]],
+    *,
+    sources: list[dict[str, Any]] | None,
+) -> list[ValidationIssue]:
+    """Validate records against registered or explicitly staged sources.
+
+    ``sources`` is used by a prepare/commit boundary to validate a future
+    append without first mutating the canonical source manifest.  Every staged
+    source must still be rechecked before it is actually registered.
+    """
+
     paths = ProjectPaths.from_root(root)
     existing = all_records(paths)
     combined = [*existing, *records]
@@ -140,7 +155,8 @@ def validate_candidate_records(root: str | Path, records: list[dict[str, Any]]) 
         if identifier in existing_ids or identifier in candidate_ids:
             issues.append(ValidationIssue(identifier or "<unknown>", "/record_id", "record ID already exists"))
         candidate_ids.add(identifier)
-    issues.extend(_source_issues(paths, records, _registered_sources(paths)))
+    effective_sources = _registered_sources(paths) if sources is None else sources
+    issues.extend(_source_issues(paths, records, effective_sources))
     approvals = {str(item.get("record_id")): item for item in [*existing, *records]}
     for record in records:
         if record.get("record_kind") == "approval":

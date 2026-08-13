@@ -10,13 +10,23 @@ request role activation, render scoped instructions, and return a structured
 decision. It cannot create a role, forge an approval, weaken a finding, or turn
 an inconclusive result into a positive conclusion.
 
-Codex integration uses the repository-local read-only memory MCP and plugin
-Skills. `integrations.codex.adapter` renders a
+Codex integration uses the repository-local research-memory MCP and plugin
+Skills. Its normal retrieval and governance tools are read-only. The narrow
+`research_prepare_ingest` and `research_commit_ingest` tools are explicitly
+marked mutating and non-idempotent; compatible hosts must surface their normal
+write-tool permission flow. `integrations.codex.adapter` renders a
 validated packet plus a hash-bound scope-governor receipt into a host-owned dispatch request and refuses malformed output
 without promoting it to research evidence. It intentionally cannot call Codex's
 private scheduler; the current Codex host must dispatch the request under its
 own entitlement. Critical-review batches share one snapshot but expose no first
 verdict to another reviewer.
+
+The server does not receive a portable cryptographic receipt of a Codex UI
+approval, and must not claim it did. It independently requires an immutable
+prepared draft, its exact SHA-256, unchanged canonical/source state, one-time
+consumption, and a prior human approval record whose scope includes the record.
+If a host is configured to auto-approve writes, that is the host owner's policy
+choice and not a bypass the server can silently convert into human authority.
 
 Use the non-executing governance tools to prepare a dispatch manifest or the `urgov
 dispatch` commands to print one. Manifest export does not write a project file

@@ -24,7 +24,7 @@ class PublicDistributionTests(unittest.TestCase):
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         self.assertEqual(project["project"]["name"], "universal-research-mcp")
-        self.assertEqual(project["project"]["version"], "0.4.3")
+        self.assertEqual(project["project"]["version"], "0.5.0")
         self.assertEqual(project["project"]["license"], "MIT")
         self.assertEqual(project["project"]["license-files"], ["LICENSE"])
         self.assertEqual(project["project"]["authors"], [{"name": "mp-juns"}])
@@ -69,6 +69,7 @@ class PublicDistributionTests(unittest.TestCase):
 
     def test_wheel_validator_requires_every_role_prompt_pack_member(self) -> None:
         self.assertEqual(set(GOVERNANCE_ROLE_IDS), FIXED_ROSTER)
+        self.assertIn("universal_research_mcp/core/ingest.py", REQUIRED_RUNTIME_FILES)
         self.assertIn("universal_research_mcp/integrations/codex/adapter.py", REQUIRED_RUNTIME_FILES)
         self.assertNotIn("universal_research_mcp/runtime_server.py", REQUIRED_RUNTIME_FILES)
         self.assertIn("docs/host-integration.md", REQUIRED_BUNDLE_FILES)
@@ -105,7 +106,7 @@ class PublicDistributionTests(unittest.TestCase):
             *REQUIRED_RUNTIME_FILES,
             *REQUIRED_GOVERNANCE_FILES,
             *(BUNDLE_PREFIX + name for name in REQUIRED_BUNDLE_FILES),
-            "universal_research_mcp-0.4.0.dist-info/entry_points.txt",
+            "universal_research_mcp-0.5.0.dist-info/entry_points.txt",
         }
         wheel_members.remove(omitted)
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -134,7 +135,7 @@ class PublicDistributionTests(unittest.TestCase):
                 ROOT / "plugin/universal-research-memory/.codex-plugin/plugin.json"
             ).read_text(encoding="utf-8")
         )
-        self.assertTrue(manifest["version"].startswith("0.4.3+codex."))
+        self.assertTrue(manifest["version"].startswith("0.5.0+codex."))
         self.assertEqual(manifest["author"]["name"], "mp-juns")
         self.assertEqual(manifest["interface"]["developerName"], "mp-juns")
         self.assertIn("Codex-only", manifest["description"])

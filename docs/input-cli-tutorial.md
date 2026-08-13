@@ -1,7 +1,8 @@
 # Canonical Input CLI Tutorial
 
-The MCP server is read-only. Run these host-owned commands from a trusted
-shell; they write only inside the selected project root.
+The management CLI is an explicit administrative path. It writes only inside
+the selected project root. The unified MCP also supports the narrower
+prepare/commit flow described below; it cannot create approval records.
 
 ```bash
 universal-research init ./my-research
@@ -50,7 +51,20 @@ stale state plus `universal-research index ensure --kind lexical --root
 ./my-research` for recovery. `record template` prints a minimal valid core
 record; it is a starting point, not an approval bypass.
 
-After a current index is available, start the read-only MCP and use
+After a current index is available, start the MCP and use
 `memory_search_candidates`, then `memory_fetch_evidence` with the candidate's
 event ID, line range, and SHA-256. A current content-hash mismatch withholds
 content unless diagnostic opt-in is explicitly requested.
+
+## Host-approved MCP ingestion
+
+Use `research_prepare_ingest` to validate one non-approval Core record against
+an existing human approval and to store a pending immutable draft. Include new
+source registrations as `{path, source_id, source_type}` objects. Preparation
+does not alter canonical JSONL.
+
+Review the returned `draft_id`, `draft_sha256`, record ID, canonical-head hash,
+and source count. Only then allow the mutating `research_commit_ingest` tool
+with that exact pair. Commit rechecks all of those bindings, consumes the draft
+once, appends the canonical record, and reports lexical/semantic refresh status.
+It accepts neither a replacement record body nor a model-supplied approval flag.

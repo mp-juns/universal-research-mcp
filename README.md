@@ -1,7 +1,7 @@
 # Universal Research MCP
 
 Universal Research MCP is a provenance-first, append-only research operations
-framework and read-only MCP. It records plans, approvals, observations, claims,
+framework and governed MCP. It records plans, approvals, observations, claims,
 failures, amendments, and contributions with traceable sources. Canonical JSONL
 is authoritative; SQLite search indexes are verified, replaceable derived views.
 
@@ -70,11 +70,12 @@ it stale and print a recovery command. Remote embedding remains unsupported by
 the public MCP and is never invoked by `serve`.
 
 See the full [canonical input tutorial](docs/input-cli-tutorial.md) for a
-source → human approval → record append → lexical search workflow.
+source → human approval → guarded record append → lexical search workflow.
 
 ### First searchable input
 
-The MCP remains read-only. A host-owned CLI is the only canonical write path:
+The management CLI remains available for explicit administration. In 0.5.0,
+the same `universal_research` MCP can also perform a bounded two-step ingest:
 
 ```bash
 universal-research init ./my-research
@@ -86,11 +87,19 @@ universal-research record validate protocol.json --root ./my-research
 ```
 
 For a governed record, first append a human `record_kind=approval` record with
-`record approve --confirm <record-id>`, then append exactly one non-approval
-record with its matching `--approval-ref`. `recorded_at` determines the
-append-only `data/events/daily/YYYY-MM-DD/events.jsonl` destination. Each
-successful append refreshes lexical search; a refresh failure leaves the
-canonical append intact, reports stale state, and prints the recovery command.
+`record approve --confirm <record-id>`. Then have Codex call
+`research_prepare_ingest` with the record, that approval ID, and any new
+project-contained source registrations. It stores an immutable non-canonical
+pending draft and returns its ID and SHA-256. After reviewing the intended
+append, allow the host-visible mutating `research_commit_ingest` call with only
+that exact ID and hash.
+
+Commit does not accept a replacement record body or `approved=true` flag. It
+requires the existing human scope approval, checks the draft hash, refuses any
+canonical-head or source-file change since preparation, consumes the draft once,
+then appends the record and refreshes lexical plus an explicitly configured
+auto-refresh semantic index. A derived-index failure never hides a successful
+canonical append; it is reported as stale/partial in the commit audit result.
 Registered paths are immutable revisions: editing or re-registering one is
 rejected; register a new project-contained path instead.
 
@@ -105,10 +114,14 @@ The default `universal_research` MCP provides:
 - lexical, semantic, and RRF hybrid candidate retrieval plus derived-index
   status.
 
-It never approves work for a user, writes a canonical ledger, invokes a remote
-API, downloads a model, or starts a benchmark or daemon. Query-time semantic
-search uses only the explicitly configured offline backend; an unconfigured or
-stale semantic view fails closed. Provider fallback is future work.
+It never creates human approval records, treats an agent assertion as approval,
+silently updates canonical history, invokes a remote API, downloads a model,
+or starts a benchmark or daemon. The MCP protocol does not carry a portable,
+signed proof of a specific Codex approval click: the client owns that tool
+permission boundary, while the server independently enforces exact draft,
+state, and pre-existing human-scope checks. Query-time semantic search uses
+only the explicitly configured offline backend; an unconfigured or stale
+semantic view fails closed. Provider fallback is future work.
 
 ## Evidence flow
 
@@ -249,16 +262,17 @@ universal_research_mcp/
 
 The core schema defines immutable records and typed relations. Study-type and
 domain packs may add restrictions but may not relax core policy. A project
-profile selects paths, adapters, and reference boundaries. The read-only MCP
-returns candidate metadata and exact source evidence; it is not an execution or
-ledger-write interface.
+profile selects paths, adapters, and reference boundaries. The MCP normally
+returns candidate metadata and exact source evidence; its only canonical-write
+surface is the host-visible, hash-bound two-step ingest boundary.
 
 ## Current support and next steps
 
 This release supports the Codex plugin, local lexical lifecycle,
-source-grounded evidence fetch, eleven-role governance, and non-executing Codex
-dispatch preparation. Installation, MCP startup, and CI do not invoke an API,
-local model, model download, benchmark, or background watcher.
+source-grounded evidence fetch, guarded canonical ingestion, eleven-role
+governance, and non-executing Codex dispatch preparation. Installation, MCP
+startup, and CI do not invoke an API, local model, model download, benchmark,
+or background watcher.
 
 The 0.4.0 namespace is intentionally breaking: public Python modules live under
 `universal_research_mcp.*`; legacy general top-level package imports are not

@@ -29,9 +29,14 @@ activation receipt, and prompt-pack hash must describe the same run, workflow,
 role, and scope. Revalidate all four critical reviewers if their shared evidence
 snapshot changes.
 
-Keep the research-memory MCP read-only. It prepares validated Codex dispatch
-manifests but does not itself start an agent. Let Codex create and display native
-subagent work under host permissions and the user's entitlement. Keep
+Keep retrieval, evidence, governance, and dispatch preparation read-only by
+default. The only canonical-write exception is the two-step ingest boundary:
+`research_prepare_ingest` creates an immutable pending draft, while the
+host-visible mutating `research_commit_ingest` consumes only its exact returned
+hash after host approval and pre-existing human scope validation. Never create
+an approval record through MCP, pass an `approved=true` flag, substitute record
+content at commit, or retry a consumed draft. Let Codex create and display
+native subagent work under host permissions and the user's entitlement. Keep
 visualization off unless its separate capability scope and explicit user opt-in
 are both present.
 

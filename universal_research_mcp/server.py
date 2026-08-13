@@ -16,9 +16,11 @@ import struct
 from typing import Any, Literal, Sequence
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from universal_research_mcp.core.audit import audit_report
 from universal_research_mcp.core.claim_gate import evaluate_claim_gate
+from universal_research_mcp.core.ingest import commit_ingest, pending_ingest_status, prepare_ingest
 from universal_research_mcp.core.ledger import read_jsonl
 from universal_research_mcp.core.search import safe_fts_query
 from universal_research_mcp.governance.escalation import evaluate_gate
@@ -61,9 +63,37 @@ exact fetched evidence references; do not state the claim when the gate blocks
 it. Governance tools validate plans, authority, and returned decisions but
 cannot approve work on the user's behalf. Provider secrets must never be pasted
 into chat, command arguments, research records, or tool input.
+
+For new canonical research input, first call research_prepare_ingest. It writes
+only an immutable pending draft and never appends a record. Commit only the
+returned exact draft ID and hash through research_commit_ingest after the host
+has approved that mutating tool call. Never invent an approval flag: the commit
+also requires a pre-existing, human-created approval record with matching scope.
 """.strip()
 
 mcp = FastMCP("Universal Research", instructions=INSTRUCTIONS)
+
+INGEST_PREPARE_ANNOTATIONS = ToolAnnotations(
+    title="Prepare immutable research-ingestion draft",
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=False,
+)
+INGEST_COMMIT_ANNOTATIONS = ToolAnnotations(
+    title="Commit approved immutable research-ingestion draft",
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=False,
+)
+INGEST_STATUS_ANNOTATIONS = ToolAnnotations(
+    title="Inspect immutable research-ingestion draft metadata",
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
+)
 
 
 def _startup_reporter(enabled: bool):
@@ -585,6 +615,49 @@ def memory_audit_ledger() -> dict[str, Any]:
 
     records = [record for event_path in sorted((EVENTS_ROOT / "daily").glob("*/events.jsonl")) for record in read_jsonl(event_path)]
     return audit_report(records)
+
+
+@mcp.tool(annotations=INGEST_PREPARE_ANNOTATIONS)
+def research_prepare_ingest(
+    record: dict[str, Any],
+    approval_ref: str,
+    source_registrations: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Validate input and create an immutable pending draft, never a canonical record.
+
+    Each new source registration contains only ``path``, ``source_id``, and
+    ``source_type``. The path must be project-contained and is hash-bound at
+    preparation and commit. A canonical human approval record must already
+    exist and cover this record's study and kind.
+    """
+
+    return prepare_ingest(
+        ROOT,
+        record=record,
+        approval_ref=approval_ref,
+        source_registrations=source_registrations,
+    )
+
+
+@mcp.tool(annotations=INGEST_COMMIT_ANNOTATIONS)
+def research_commit_ingest(draft_id: str, draft_sha256: str) -> dict[str, Any]:
+    """Append exactly one approved pending draft and refresh derived indexes.
+
+    This is a mutating, non-idempotent host-approved tool. It accepts no record
+    body and no model-supplied approval boolean. It refuses a replay, any change
+    to the canonical ledger or staged source files, or an invalid human scope
+    approval. Canonical append success is reported separately from derived-index
+    refresh status.
+    """
+
+    return commit_ingest(ROOT, draft_id=draft_id, draft_sha256=draft_sha256)
+
+
+@mcp.tool(annotations=INGEST_STATUS_ANNOTATIONS)
+def research_pending_ingest_status(draft_id: str) -> dict[str, Any]:
+    """Return metadata for one pending immutable ingest draft without its content."""
+
+    return pending_ingest_status(ROOT, draft_id=draft_id)
 
 
 def research_search(
