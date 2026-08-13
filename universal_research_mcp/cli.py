@@ -525,6 +525,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--lexical-db", type=Path)
     serve.add_argument("--events-root", type=Path)
     serve.add_argument("--auto-index", action=argparse.BooleanOptionalAction, default=True)
+    serve.add_argument("--startup-progress", action=argparse.BooleanOptionalAction, default=None)
     serve.add_argument("--legacy-tools", action="store_true")
 
     initialize = subparsers.add_parser("init", help="Initialize an independent research store.")
@@ -700,6 +701,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 forwarded.extend((option, str(value)))
         if args.auto_index:
             forwarded.append("--auto-index")
+        if args.startup_progress is True:
+            forwarded.append("--startup-progress")
+        elif args.startup_progress is False:
+            forwarded.append("--no-startup-progress")
         if args.legacy_tools:
             forwarded.append("--legacy-tools")
         return serve_main(forwarded)

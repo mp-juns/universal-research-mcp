@@ -24,7 +24,7 @@ class PublicDistributionTests(unittest.TestCase):
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         self.assertEqual(project["project"]["name"], "universal-research-mcp")
-        self.assertEqual(project["project"]["version"], "0.4.1")
+        self.assertEqual(project["project"]["version"], "0.4.2")
         self.assertEqual(project["project"]["license"], "MIT")
         self.assertEqual(project["project"]["license-files"], ["LICENSE"])
         self.assertEqual(project["project"]["authors"], [{"name": "mp-juns"}])

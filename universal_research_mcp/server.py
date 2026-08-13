@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -59,6 +60,20 @@ into chat, command arguments, research records, or tool input.
 """.strip()
 
 mcp = FastMCP("Universal Research", instructions=INSTRUCTIONS)
+
+
+def _startup_reporter(enabled: bool):
+    """Return a stderr-only startup reporter that cannot corrupt MCP stdio."""
+
+    def report(percent: int, message: str) -> None:
+        if enabled:
+            print(
+                f"Universal Research MCP startup [{percent:3d}%] {message}",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    return report
 
 
 def configure_runtime(
@@ -630,6 +645,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Create or refresh the local lexical derived index before serving.",
     )
     parser.add_argument(
+        "--startup-progress",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Show stderr-only server startup phases. Defaults to enabled in an "
+            "interactive terminal and disabled for non-interactive MCP hosts."
+        ),
+    )
+    parser.add_argument(
         "--legacy-tools",
         action="store_true",
         help="Expose the deprecated research_* compatibility tool aliases.",
@@ -641,18 +665,26 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     global INDEX_STARTUP_STATUS
     args = parse_args(argv)
+    show_progress = sys.stderr.isatty() if args.startup_progress is None else args.startup_progress
+    report = _startup_reporter(show_progress)
+    report(5, "resolving the research workspace")
     configure_runtime(args.root, args.lexical_db, args.events_root)
+    report(15, f"workspace ready: {ROOT}")
     if args.legacy_tools or os.environ.get("UNIVERSAL_RESEARCH_ENABLE_LEGACY_TOOLS") == "1":
         _register_legacy_tools()
     if args.auto_index:
         try:
             from universal_research_mcp.indexing import ensure_lexical_index
 
-            INDEX_STARTUP_STATUS = ensure_lexical_index(ROOT)
+            INDEX_STARTUP_STATUS = ensure_lexical_index(ROOT, progress=report)
         except (ImportError, OSError, RuntimeError, ValueError) as exc:
             # Keep the MCP available for diagnostics and canonical-ledger audit.
             # The index manager is responsible for preserving the previous good
             # database and recording partial/stale health when a rebuild fails.
             INDEX_STARTUP_STATUS = {"status": "partial", "reason": str(exc)}
+            report(100, "lexical index needs repair; server is starting in diagnostic mode")
+    else:
+        report(75, "automatic lexical-index refresh is disabled")
+    report(100, "ready for MCP requests")
     mcp.run()
     return 0

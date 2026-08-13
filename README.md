@@ -24,6 +24,13 @@ universal-research init ./my-research
 universal-research serve --root ./my-research
 ```
 
+When run directly in a terminal, `serve` shows its startup phases on the
+terminal's status stream—for example index check, staged rebuild, verification,
+and `100% ready for MCP requests`. This never writes to the MCP protocol
+stream. It is enabled by default for an interactive terminal and disabled by
+default for a non-interactive MCP host. Override it with
+`--startup-progress` or `--no-startup-progress`.
+
 `init` creates an independent empty canonical source registry and a verified
 FTS5 lexical index. It reports the semantic index as `missing`; it does not
 silently create an empty semantic database or download a model. A lexical
