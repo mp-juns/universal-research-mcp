@@ -24,7 +24,7 @@ class PublicDistributionTests(unittest.TestCase):
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         self.assertEqual(project["project"]["name"], "universal-research-mcp")
-        self.assertEqual(project["project"]["version"], "0.4.2")
+        self.assertEqual(project["project"]["version"], "0.4.3")
         self.assertEqual(project["project"]["license"], "MIT")
         self.assertEqual(project["project"]["license-files"], ["LICENSE"])
         self.assertEqual(project["project"]["authors"], [{"name": "mp-juns"}])
@@ -134,7 +134,7 @@ class PublicDistributionTests(unittest.TestCase):
                 ROOT / "plugin/universal-research-memory/.codex-plugin/plugin.json"
             ).read_text(encoding="utf-8")
         )
-        self.assertTrue(manifest["version"].startswith("0.4.0+codex."))
+        self.assertTrue(manifest["version"].startswith("0.4.3+codex."))
         self.assertEqual(manifest["author"]["name"], "mp-juns")
         self.assertEqual(manifest["interface"]["developerName"], "mp-juns")
         self.assertIn("Codex-only", manifest["description"])
