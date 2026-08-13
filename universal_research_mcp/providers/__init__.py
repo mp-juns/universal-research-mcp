@@ -22,6 +22,7 @@ from .credentials import CredentialRef, CredentialResolver, SecretValue
 from .http import HttpResponse, HttpTransport, HttpTransportError, UrllibTransport
 from .local import LocalProvider
 from .local_embedding import LocalSentenceTransformerEmbedder
+from .deterministic_embedding import SignedHashingEmbedder, encode_signed_hashing
 from .loopback import (
     LOOPBACK_PROVIDER_ID,
     LoopbackJsonTransport,
@@ -49,6 +50,7 @@ __all__ = [
     "HttpTransportError",
     "LocalProvider",
     "LocalSentenceTransformerEmbedder",
+    "SignedHashingEmbedder",
     "LOOPBACK_PROVIDER_ID",
     "LoopbackJsonTransport",
     "Message",
@@ -66,5 +68,6 @@ __all__ = [
     "RoutedSemanticEmbedder",
     "SecretValue",
     "UrllibTransport",
+    "encode_signed_hashing",
     "validate_loopback_endpoint",
 ]

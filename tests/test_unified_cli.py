@@ -23,7 +23,7 @@ def test_default_cli_surface_is_codex_only(monkeypatch: pytest.MonkeyPatch) -> N
     parser = build_parser()
     help_text = parser.format_help()
     assert "provider" not in help_text
-    assert "harness" not in help_text
+    assert "harness" in help_text
     assert "agent" not in help_text
     with pytest.raises(SystemExit):
         parser.parse_args(["provider", "status"])
@@ -343,7 +343,7 @@ def test_legacy_harness_run_is_fail_closed_before_packet_or_provider_access(
     report = json.loads(capsys.readouterr().out)
     assert report["status"] == "blocked"
     assert report["executed"] is False
-    assert "agent preflight" in report["reason"]
+    assert report["reason"] == "explicit_execution_confirmation_missing"
 
 
 def test_agent_cli_inspect_whitelists_inventory_and_never_returns_artifact_contents(

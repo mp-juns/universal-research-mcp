@@ -16,6 +16,16 @@ package entry points, and are not a compatibility promise.
 
 ## Quick start
 
+### Secure Codex/Docker harness preview
+
+The opt-in secure harness keeps Codex on the host and runs only sealed test,
+build, and experiment recipes in offline, resource-bounded Docker workers. The
+original project is never mounted into a worker, visualization is disabled, and
+edits stay quarantined until their exact diff hash is approved. See
+[the secure harness guide](docs/secure-harness.md). This preview does not claim
+to be a custom Codex runtime or a complete multi-provider agent scheduler.
+
+
 Python 3.11 or newer is required.
 
 ```bash
@@ -33,10 +43,31 @@ default for a non-interactive MCP host. Override it with
 
 `init` creates an independent empty canonical source registry and a verified
 FTS5 lexical index. It reports the semantic index as `missing`; it does not
-silently create an empty semantic database or download a model. A lexical
-refresh that does not alter canonical JSONL is staged, validated, and atomically
-replaced. Select the research root with `--root` or
+silently create an empty semantic database, download a model, or contact an
+embedding API. A lexical refresh that does not alter canonical JSONL is staged,
+validated, and atomically replaced. Select the research root with `--root` or
 `UNIVERSAL_RESEARCH_ROOT`.
+
+### Optional semantic and hybrid candidate retrieval
+
+After canonical records exist, semantic retrieval is an explicit project-level
+choice. The offline demo backend creates no download, GPU, credential, or
+network request, and is useful for checking the full semantic/hybrid workflow:
+
+```bash
+universal-research semantic configure --backend demo --root ./my-research
+universal-research semantic build --root ./my-research
+universal-research semantic status --root ./my-research
+```
+
+The demo identifies itself as `backend_class=deterministic_demo` and
+`trained_embedding_model=false`. It is a reproducible retrieval fixture, **not**
+a learned embedding model or a quality claim. For a pinned model already present
+on disk, configure `--backend local --model-path /absolute/path/to/model`; the
+command never downloads a snapshot. A configured semantic view is rebuilt only
+when `--auto-refresh` was explicitly selected; otherwise canonical writes leave
+it stale and print a recovery command. Remote embedding remains unsupported by
+the public MCP and is never invoked by `serve`.
 
 See the full [canonical input tutorial](docs/input-cli-tutorial.md) for a
 source → human approval → record append → lexical search workflow.
@@ -63,7 +94,7 @@ canonical append intact, reports stale state, and prints the recovery command.
 Registered paths are immutable revisions: editing or re-registering one is
 rejected; register a new project-contained path instead.
 
-The default `universal_research` MCP provides only:
+The default `universal_research` MCP provides:
 
 - candidate search and event/hash-bound source re-verification;
 - deterministic claim eligibility receipts for material results, comparisons,
@@ -71,11 +102,13 @@ The default `universal_research` MCP provides only:
 - an eleven-role governance contract and Codex dispatch-manifest preparation;
 - scope/cost preflight, deterministic operation-gate, and failure-tombstone
   preparation; and
-- lexical and semantic derived-index status.
+- lexical, semantic, and RRF hybrid candidate retrieval plus derived-index
+  status.
 
-It never approves work for a user, writes a canonical ledger, or invokes a
-model, API, benchmark, daemon, or remote provider. Query-time search is lexical
-only in this release. Dense embeddings and provider fallback are future work.
+It never approves work for a user, writes a canonical ledger, invokes a remote
+API, downloads a model, or starts a benchmark or daemon. Query-time semantic
+search uses only the explicitly configured offline backend; an unconfigured or
+stale semantic view fails closed. Provider fallback is future work.
 
 ## Evidence flow
 
@@ -84,6 +117,14 @@ canonical JSONL → staged/verified SQLite candidate → memory_fetch_evidence
 with event_id + expected_sha256 → current-hash check → memory_gate_claim →
 eligible or blocked material claim
 ```
+
+`memory_search_candidates` accepts `mode="lexical"`, `"semantic"`, or
+`"hybrid"`. Hybrid search independently ranks lexical and semantic candidates
+and fuses ranks with reciprocal-rank fusion (0.45 lexical / 0.55 semantic,
+`k=60`). Every result remains `candidate_only=true`; semantic similarity cannot
+establish a fact, cause, comparison, or release claim. A semantic passage may
+choose the returned path and exact line range, but it still must go through
+`memory_fetch_evidence` and `memory_gate_claim`.
 
 Search results are candidates, not evidence. For a consequential conclusion,
 retain the evidence fetch's event ID, path, line range, expected and current
@@ -178,6 +219,11 @@ create, modify, delete, move, or append their files, event logs, databases,
 results, or session records. Their embedding databases may be read only to
 understand a schema, metadata, or adapter design. The new project never copies
 or shares a reference runtime database.
+
+Semantic/hybrid retrieval is a hardened successor to the public
+[Evidence-First Research Memory predecessor prototype](https://github.com/mp-juns/evidence-first-research-memory): it retains separate lexical/semantic
+ranking and source-range candidates, while adding registered-file SHA-256
+re-verification, stale fail-closed behavior, and deterministic claim gating.
 
 1. `data/events/` JSONL is the canonical event ledger.
 2. `data/index/` SQLite and any embedding index are rebuildable derived views.

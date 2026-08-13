@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mp-juns/universal-research-mcp/schemas/worker-result.schema.json",
+  "title": "Bounded worker result",
+  "type": "object",
+  "required": ["schema_version", "operation_id", "success", "exit_code", "stdout", "stderr", "command_hash"],
+  "properties": {
+    "schema_version": {"const": "worker-result/1.0"},
+    "operation_id": {"type": "string", "minLength": 1},
+    "success": {"type": "boolean"},
+    "exit_code": {"type": "integer"},
+    "stdout": {"type": "string"},
+    "stderr": {"type": "string"},
+    "command_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -5,12 +5,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import sys
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
+import struct
 from typing import Any, Literal, Sequence
 
 from mcp.server.fastmcp import FastMCP
@@ -49,7 +51,9 @@ DENIED_FRAGMENTS = {"secret", "token", "credential", "private_key", "api_key", "
 
 INSTRUCTIONS = """
 Use memory_search_candidates to find candidate research records. A search score
-is not evidence. Before making an important claim, call memory_fetch_evidence
+is not evidence. Its lexical, semantic, and hybrid modes are candidate-only;
+semantic and hybrid require a current explicitly configured offline index.
+Before making an important claim, call memory_fetch_evidence
 with the exact path and line range returned by search, then report that source
 range and its hash. Before reporting a material result, comparison, causal,
 release, or other load-bearing factual claim, call memory_gate_claim with the
@@ -113,6 +117,36 @@ def _require_current_lexical_index() -> None:
             "derived lexical index is stale; run `universal-research index ensure "
             "--kind lexical --root <project-root>` before retrieval"
         )
+
+
+def _require_current_semantic_index():
+    """Return the configured offline backend only when its view is current."""
+
+    from universal_research_mcp.indexing import semantic_status
+    from universal_research_mcp.semantic_runtime import configured_backend
+
+    backend = configured_backend(ROOT)
+    if backend is None:
+        raise RuntimeError(
+            "semantic retrieval is not configured; run `universal-research semantic "
+            "configure --backend demo --root <project-root>` and build the index"
+        )
+    if backend.provider_id == "local":
+        readiness = backend.embedder.preflight()
+        if not readiness.available:
+            raise RuntimeError(f"configured local semantic backend is unavailable: {readiness.reason}")
+    status = semantic_status(
+        ROOT,
+        provider_id=backend.provider_id,
+        model=backend.model,
+        dimensions=backend.dimensions,
+    )
+    if status.get("status") != "current":
+        raise RuntimeError(
+            "derived semantic index is stale or missing; run `universal-research semantic "
+            "build --root <project-root>` before semantic or hybrid retrieval"
+        )
+    return backend
 
 
 def resolve_safe_path(relative_path: str) -> Path:
@@ -186,6 +220,135 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
     return [_result(row, rank, -float(row["bm25_raw"])) for rank, row in enumerate(unique, 1)]
 
 
+def _dot(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    if len(left) != len(right):
+        raise RuntimeError("semantic query and index dimensions do not match")
+    return math.fsum(a * b for a, b in zip(left, right, strict=True))
+
+
+def _read_vector(blob: bytes, dimensions: int) -> tuple[float, ...]:
+    if dimensions < 1 or len(blob) != dimensions * 4:
+        raise RuntimeError("semantic index vector shape is invalid")
+    vector = struct.unpack(f"<{dimensions}f", blob)
+    if not all(math.isfinite(value) for value in vector):
+        raise RuntimeError("semantic index contains a non-finite vector")
+    return vector
+
+
+def _semantic_query_vector(query: str, backend: Any) -> tuple[float, ...]:
+    result = backend.embedder.embed(
+        (query,), model=backend.model, dimensions=backend.dimensions,
+    )
+    vectors = tuple(getattr(result, "vectors", result))
+    if len(vectors) != 1:
+        raise RuntimeError("semantic backend did not return one query vector")
+    from universal_research_mcp.indexing import normalize_vector
+
+    return normalize_vector(vectors[0], dimensions=backend.dimensions)
+
+
+def search_semantic(query: str, top_k: int, status: str | None = None) -> list[dict[str, Any]]:
+    """Return source-grounded semantic candidates from a current offline view."""
+
+    backend = _require_current_semantic_index()
+    query_vector = _semantic_query_vector(query, backend)
+    semantic_db = ROOT / "data/index/semantic.sqlite"
+    scored: dict[str, dict[str, Any]] = {}
+    with closing(open_readonly(semantic_db)) as semantic:
+        event_rows = semantic.execute(
+            "SELECT event_id, dimensions, vector FROM embeddings"
+        ).fetchall()
+        passage_rows = semantic.execute(
+            """
+            SELECT passage_id, event_id, source_path, source_heading, line_start,
+                   line_end, dimensions, vector
+            FROM passage_embeddings
+            """
+        ).fetchall()
+    for row in event_rows:
+        score = _dot(query_vector, _read_vector(bytes(row["vector"]), int(row["dimensions"])))
+        scored[str(row["event_id"])] = {"score": score, "passage": None}
+    for row in passage_rows:
+        score = _dot(query_vector, _read_vector(bytes(row["vector"]), int(row["dimensions"])))
+        event_id = str(row["event_id"])
+        current = scored.get(event_id)
+        if current is None or score > float(current["score"]):
+            scored[event_id] = {"score": score, "passage": row}
+    ordered = sorted(scored.items(), key=lambda item: (-float(item[1]["score"]), item[0]))
+    results: list[dict[str, Any]] = []
+    with closing(open_readonly(RESEARCH_DB)) as lexical:
+        for event_id, details in ordered:
+            row = lexical.execute(
+                """
+                SELECT event_id, event_type, status, date, summary, source_path,
+                       source_heading, line_start, line_end, source_sha256
+                FROM events WHERE event_id = ?
+                """,
+                (event_id,),
+            ).fetchone()
+            if row is None or (status is not None and row["status"] != status):
+                continue
+            passage = details["passage"]
+            candidate = _result(row, len(results) + 1)
+            candidate["lexical_score"] = None
+            if passage is not None:
+                candidate.update({
+                    "path": passage["source_path"],
+                    "heading": passage["source_heading"],
+                    "start_line": passage["line_start"],
+                    "end_line": passage["line_end"],
+                })
+            candidate["semantic_score"] = float(details["score"])
+            candidate["retrieval"] = {
+                "semantic_rank": candidate["rank"],
+                "cosine_similarity": float(details["score"]),
+                "semantic_passage_id": None if passage is None else passage["passage_id"],
+            }
+            results.append(candidate)
+            if len(results) == top_k:
+                break
+    return results
+
+
+def search_hybrid(query: str, top_k: int, status: str | None = None) -> list[dict[str, Any]]:
+    """Fuse independently ranked lexical and semantic candidates with RRF."""
+
+    candidate_limit = max(top_k * 3, 20)
+    lexical = search_lexical(query, candidate_limit, status)
+    semantic = search_semantic(query, candidate_limit, status)
+    combined: dict[str, dict[str, Any]] = {}
+    for candidate in lexical:
+        combined.setdefault(candidate["event_id"], {})["lexical"] = candidate
+    for candidate in semantic:
+        combined.setdefault(candidate["event_id"], {})["semantic"] = candidate
+    ranked: list[dict[str, Any]] = []
+    for event_id, sources in combined.items():
+        lexical_candidate = sources.get("lexical")
+        semantic_candidate = sources.get("semantic")
+        lexical_rank = None if lexical_candidate is None else int(lexical_candidate["rank"])
+        semantic_rank = None if semantic_candidate is None else int(semantic_candidate["rank"])
+        score = (
+            (0.45 / (60 + lexical_rank) if lexical_rank is not None else 0.0)
+            + (0.55 / (60 + semantic_rank) if semantic_rank is not None else 0.0)
+        )
+        base = dict(semantic_candidate or lexical_candidate)
+        semantic_retrieval = (semantic_candidate or {}).get("retrieval") or {}
+        base["retrieval"] = {
+            "lexical_rank": lexical_rank,
+            "lexical_score": None if lexical_candidate is None else lexical_candidate["lexical_score"],
+            "semantic_rank": semantic_rank,
+            "cosine_similarity": semantic_retrieval.get("cosine_similarity"),
+            "semantic_passage_id": semantic_retrieval.get("semantic_passage_id"),
+            "rrf_score": score,
+        }
+        base["rrf_score"] = score
+        ranked.append(base)
+    ranked.sort(key=lambda item: (-float(item["rrf_score"]), item["event_id"]))
+    for rank, candidate in enumerate(ranked[:top_k], start=1):
+        candidate["rank"] = rank
+    return ranked[:top_k]
+
+
 def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
     """Return registered nonempty hashes for one source path or exact event."""
 
@@ -232,16 +395,20 @@ def _recency_key(row: sqlite3.Row) -> float:
 def memory_search_candidates(
     query: str,
     top_k: int = 8,
-    mode: Literal["lexical"] = "lexical",
+    mode: Literal["lexical", "semantic", "hybrid"] = "lexical",
     status: str | None = None,
 ) -> dict[str, Any]:
-    """Return lexical search candidates. Fetch original evidence before concluding."""
+    """Return provenance-bound candidates. Fetch original evidence before concluding."""
 
-    if mode != "lexical":
-        raise ValueError("query-time semantic and hybrid retrieval are not exposed by this MCP")
     _require_current_lexical_index()
     top_k = max(1, min(int(top_k), 100))
-    return {"query": query, "mode": "lexical", "candidate_only": True, "results": search_lexical(query, top_k, status)}
+    if mode == "lexical":
+        results = search_lexical(query, top_k, status)
+    elif mode == "semantic":
+        results = search_semantic(query, top_k, status)
+    else:
+        results = search_hybrid(query, top_k, status)
+    return {"query": query, "mode": mode, "candidate_only": True, "results": results}
 
 
 @mcp.tool()
