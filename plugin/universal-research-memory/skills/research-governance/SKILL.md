@@ -31,12 +31,13 @@ snapshot changes.
 
 Keep retrieval, evidence, governance, and dispatch preparation read-only by
 default. The only canonical-write exception is the two-step ingest boundary:
-`research_prepare_ingest` creates an immutable pending draft, while the
-host-visible mutating `research_commit_ingest` consumes only its exact returned
-hash after host approval and pre-existing human scope validation. Never create
-an approval record through MCP, pass an `approved=true` flag, substitute record
-content at commit, or retry a consumed draft. Let Codex create and display
-native subagent work under host permissions and the user's entitlement. Keep
+`research_prepare_ingest` creates an immutable pending draft. The user must
+then use the separate `universal-research ingest approve` authority to issue a
+one-time receipt. The host-visible mutating `research_commit_ingest` consumes
+only that receipt and its exact returned draft hash after human-scope
+validation. Never create an approval record through MCP, pass an `approved=true`
+flag, substitute record content at commit, or retry a consumed draft. Let Codex
+create and display native subagent work under host permissions and the user's entitlement. Keep
 visualization off unless its separate capability scope and explicit user opt-in
 are both present.
 

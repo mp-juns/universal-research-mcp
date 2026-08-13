@@ -107,6 +107,37 @@ def _load_draft(paths: ProjectPaths, draft_id: str) -> tuple[dict[str, Any], Pat
     return draft, path
 
 
+def ingest_approval_binding(
+    root: str | Path, *, draft_id: str, draft_sha256: str,
+) -> dict[str, str]:
+    """Return the exact immutable binding a host receipt may authorize.
+
+    This is deliberately metadata-only: it never returns a draft record body
+    and it refuses a draft that has already been consumed.
+    """
+
+    paths = ProjectPaths.from_root(root)
+    _pending, consumed, _audit = _draft_roots(paths)
+    safe_id = _safe_draft_id(draft_id)
+    if (consumed / f"{safe_id}.json").exists():
+        raise ValueError("ingest draft was already consumed and cannot be approved")
+    draft, _path = _load_draft(paths, safe_id)
+    if not isinstance(draft_sha256, str) or draft_sha256 != draft["draft_sha256"]:
+        raise ValueError("draft_sha256 does not match the immutable pending draft")
+    head = draft.get("canonical_head")
+    record = draft.get("record")
+    if not isinstance(head, dict) or not isinstance(head.get("sha256"), str):
+        raise ValueError("pending ingest draft canonical binding is invalid")
+    if not isinstance(record, dict) or not isinstance(record.get("record_id"), str):
+        raise ValueError("pending ingest draft record binding is invalid")
+    return {
+        "draft_id": safe_id,
+        "draft_sha256": draft["draft_sha256"],
+        "canonical_head_sha256": head["sha256"],
+        "record_id": record["record_id"],
+    }
+
+
 def _normalize_source_registrations(
     paths: ProjectPaths,
     source_registrations: list[dict[str, Any]] | None,
@@ -279,9 +310,9 @@ def prepare_ingest(
         "canonical_append": False,
         "commit_requires": [
             "a host-approved mutating research_commit_ingest tool call",
-            "the exact draft_id and draft_sha256",
+            "the exact draft_id, draft_sha256, and one-time approval_receipt_id",
             "an unchanged canonical head and source files",
-            "the referenced pre-existing human approval scope",
+            "a signed host receipt and the referenced pre-existing human approval scope",
         ],
     }
 
@@ -291,6 +322,7 @@ def _commit_ingest_locked(
     *,
     draft_id: str,
     draft_sha256: str,
+    approval_receipt_id: str,
 ) -> dict[str, Any]:
     """Consume exactly one prepared draft and append it after all rechecks."""
 
@@ -322,10 +354,22 @@ def _commit_ingest_locked(
             raise ValueError("source content changed after preparation; prepare a fresh draft")
     _validate_draft_record(paths, record, approval_ref, registrations)
 
+    from universal_research_mcp.runtime.ingest_approval import IngestApprovalStore
+
+    receipt = IngestApprovalStore(
+        paths.root,
+        state_root=os.environ.get("UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT"),
+    ).consume(
+        draft_id=draft_id,
+        draft_sha256=draft_sha256,
+        receipt_id=approval_receipt_id,
+    )
+
     consumption = {
         "schema_version": "mcp-ingest-consumption/1.0",
         "draft_id": draft_id,
         "draft_sha256": draft_sha256,
+        "approval_receipt_id": approval_receipt_id,
         "consumed_at": _now(),
         "record_id": record.get("record_id"),
     }
@@ -359,17 +403,20 @@ def _commit_ingest_locked(
         "draft_sha256": draft_sha256,
         "record_id": record.get("record_id"),
         "approval_ref": approval_ref,
+        "approval_receipt": receipt,
         "ledger_path": ledger.relative_to(paths.root).as_posix(),
         "registered_sources": registered,
         "canonical_head_before": before["sha256"],
         "canonical_head_after": after["sha256"],
         "derived_refresh": refresh,
-        "authority_basis": "host_mutating_tool_and_preexisting_human_scope_approval",
+        "authority_basis": "host_mutating_tool_signed_receipt_and_preexisting_human_scope_approval",
     }
     _append_audit(paths, {
         "timestamp": _now(), "event_type": "ingest_committed",
         "draft_id": draft_id, "draft_sha256": draft_sha256,
         "record_id": record.get("record_id"), "approval_ref": approval_ref,
+        "approval_receipt_id": approval_receipt_id,
+        "approval_receipt_signature": receipt["signature"],
         "canonical_head_before": before["sha256"], "canonical_head_after": after["sha256"],
         "authority_basis": result["authority_basis"],
         "lexical_status": refresh["lexical"].get("status"),
@@ -383,6 +430,7 @@ def commit_ingest(
     *,
     draft_id: str,
     draft_sha256: str,
+    approval_receipt_id: str,
 ) -> dict[str, Any]:
     """Consume exactly one prepared draft under a project-local commit lock."""
 
@@ -392,6 +440,7 @@ def commit_ingest(
             paths,
             draft_id=draft_id,
             draft_sha256=draft_sha256,
+            approval_receipt_id=approval_receipt_id,
         )
 
 
@@ -413,4 +462,7 @@ def pending_ingest_status(root: str | Path, *, draft_id: str) -> dict[str, Any]:
     }
 
 
-__all__ = ["commit_ingest", "pending_ingest_status", "prepare_ingest"]
+__all__ = [
+    "commit_ingest", "ingest_approval_binding", "pending_ingest_status",
+    "prepare_ingest",
+]

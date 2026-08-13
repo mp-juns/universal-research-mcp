@@ -37,6 +37,7 @@ REQUIRED_RUNTIME_FILES = (
     "universal_research_mcp/indexing/semantic.py", "universal_research_mcp/providers/redaction.py",
     "universal_research_mcp/providers/deterministic_embedding.py",
     "universal_research_mcp/runtime/paths.py", "universal_research_mcp/runtime/semantic_config.py",
+    "universal_research_mcp/runtime/ingest_approval.py",
     "universal_research_mcp/semantic_runtime.py", "universal_research_mcp/tools/distribution.py",
     "universal_research_mcp/secure_harness/controller.py",
     "universal_research_mcp/secure_harness/worker_server.py",

@@ -91,15 +91,25 @@ For a governed record, first append a human `record_kind=approval` record with
 `research_prepare_ingest` with the record, that approval ID, and any new
 project-contained source registrations. It stores an immutable non-canonical
 pending draft and returns its ID and SHA-256. After reviewing the intended
-append, allow the host-visible mutating `research_commit_ingest` call with only
-that exact ID and hash.
+append, issue a one-time local receipt outside the MCP process:
+
+```bash
+universal-research ingest approve --root ./my-research \
+  --draft-id ingest_... --draft-sha256 <draft-sha256> \
+  --confirm-draft-sha256 <draft-sha256> \
+  --expires-at 2026-08-15T00:00:00+00:00
+```
+
+Then allow the host-visible mutating `research_commit_ingest` call with only
+that exact draft ID, hash, and returned receipt ID.
 
 Commit does not accept a replacement record body or `approved=true` flag. It
-requires the existing human scope approval, checks the draft hash, refuses any
-canonical-head or source-file change since preparation, consumes the draft once,
-then appends the record and refreshes lexical plus an explicitly configured
-auto-refresh semantic index. A derived-index failure never hides a successful
-canonical append; it is reported as stale/partial in the commit audit result.
+requires the existing human scope approval plus a signed, one-time receipt
+stored outside the project; it checks the receipt, draft hash, canonical head,
+and source files, consumes the receipt and draft once, then appends the record
+and refreshes lexical plus an explicitly configured auto-refresh semantic index.
+A derived-index failure never hides a successful canonical append; it is
+reported as stale/partial in the commit audit result.
 Registered paths are immutable revisions: editing or re-registering one is
 rejected; register a new project-contained path instead.
 
@@ -117,11 +127,11 @@ The default `universal_research` MCP provides:
 It never creates human approval records, treats an agent assertion as approval,
 silently updates canonical history, invokes a remote API, downloads a model,
 or starts a benchmark or daemon. The MCP protocol does not carry a portable,
-signed proof of a specific Codex approval click: the client owns that tool
-permission boundary, while the server independently enforces exact draft,
-state, and pre-existing human-scope checks. Query-time semantic search uses
-only the explicitly configured offline backend; an unconfigured or stale
-semantic view fails closed. Provider fallback is future work.
+signed proof of a specific Codex approval click. The receipt authority therefore
+uses a separate user-state signing key and explicit CLI confirmation; the server
+also enforces exact draft/state and human-scope checks. Query-time semantic
+search uses only the explicitly configured offline backend; an unconfigured or
+stale semantic view fails closed. Provider fallback is future work.
 
 ## Evidence flow
 

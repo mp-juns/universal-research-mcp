@@ -3,10 +3,11 @@
 The governance surface validates packets, manifests, decisions, and gates. It
 does not approve commands, invoke models, or expose a generic filesystem tool.
 The only canonical-write exception is the host-visible two-step ingestion
-boundary: a noncanonical immutable draft is prepared first, then a mutating
-commit tool rechecks its exact hash, canonical head, source hashes, pre-existing
-human approval scope, and one-time consumption. Automatic startup writes remain
-restricted to staged, verified project-local derived indexes.
+boundary: a noncanonical immutable draft is prepared first, then a separate
+host-state authority issues a one-time HMAC-signed receipt. The mutating commit
+tool rechecks the receipt, exact draft hash, canonical head, source hashes,
+pre-existing human approval scope, and one-time consumption. Automatic startup
+writes remain restricted to staged, verified project-local derived indexes.
 
 Source artifacts are untrusted content. Instructions embedded in research data
 cannot expand role authority, request secrets, alter a verdict, or override the

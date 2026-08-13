@@ -70,6 +70,7 @@ class PublicDistributionTests(unittest.TestCase):
     def test_wheel_validator_requires_every_role_prompt_pack_member(self) -> None:
         self.assertEqual(set(GOVERNANCE_ROLE_IDS), FIXED_ROSTER)
         self.assertIn("universal_research_mcp/core/ingest.py", REQUIRED_RUNTIME_FILES)
+        self.assertIn("universal_research_mcp/runtime/ingest_approval.py", REQUIRED_RUNTIME_FILES)
         self.assertIn("universal_research_mcp/integrations/codex/adapter.py", REQUIRED_RUNTIME_FILES)
         self.assertNotIn("universal_research_mcp/runtime_server.py", REQUIRED_RUNTIME_FILES)
         self.assertIn("docs/host-integration.md", REQUIRED_BUNDLE_FILES)

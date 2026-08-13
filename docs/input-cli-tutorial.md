@@ -64,7 +64,17 @@ source registrations as `{path, source_id, source_type}` objects. Preparation
 does not alter canonical JSONL.
 
 Review the returned `draft_id`, `draft_sha256`, record ID, canonical-head hash,
-and source count. Only then allow the mutating `research_commit_ingest` tool
-with that exact pair. Commit rechecks all of those bindings, consumes the draft
-once, appends the canonical record, and reports lexical/semantic refresh status.
-It accepts neither a replacement record body nor a model-supplied approval flag.
+and source count. Issue a receipt through the separate host authority:
+
+```bash
+universal-research ingest approve --root ./my-research \
+  --draft-id ingest_... --draft-sha256 <draft-sha256> \
+  --confirm-draft-sha256 <draft-sha256> \
+  --expires-at 2026-08-15T00:00:00+00:00
+```
+
+Only then allow the mutating `research_commit_ingest` tool with that exact
+draft pair and returned receipt ID. Commit rechecks all of those bindings,
+verifies and consumes the signed receipt and draft once, appends the canonical
+record, and reports lexical/semantic refresh status. It accepts neither a
+replacement record body nor a model-supplied approval flag.

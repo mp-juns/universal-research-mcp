@@ -28,9 +28,11 @@ revision and a line, page, row, or structured-data locator.
   payload amendments without changing canonical records.
 - `universal_research_mcp/core/input.py` supplies approval-checked append
   validation and persistence. `universal_research_mcp/core/ingest.py` exposes
-  it to the unified MCP only through immutable prepare/commit drafts: exact
-  draft hash, canonical-head, source SHA-256, pre-existing human scope, and
-  one-time consumption are all rechecked before append.
+  it to the unified MCP only through immutable prepare/commit drafts. A
+  separate `runtime/ingest_approval.py` authority signs one-time receipts under
+  host state outside the project; exact draft hash, canonical-head, source
+  SHA-256, receipt, pre-existing human scope, and one-time consumption are all
+  rechecked before append.
 - `universal_research_mcp/core/audit.py` derives read-only findings with record-addressable evidence.
 - `scripts/validate_research_ledger.py` is a repository-only ledger validation entry
   point.

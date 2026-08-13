@@ -22,11 +22,14 @@ own entitlement. Critical-review batches share one snapshot but expose no first
 verdict to another reviewer.
 
 The server does not receive a portable cryptographic receipt of a Codex UI
-approval, and must not claim it did. It independently requires an immutable
-prepared draft, its exact SHA-256, unchanged canonical/source state, one-time
-consumption, and a prior human approval record whose scope includes the record.
-If a host is configured to auto-approve writes, that is the host owner's policy
-choice and not a bypass the server can silently convert into human authority.
+approval, and must not claim it did. Instead, the separate local
+`universal-research ingest approve` authority issues an HMAC-signed, expiring,
+one-time receipt for one exact pending draft. The server verifies and consumes
+that receipt together with the immutable draft SHA-256, unchanged
+canonical/source state, and prior human approval record whose scope includes the
+record. If a host is configured to auto-approve writes, that is the host
+owner's policy choice and not a bypass the server can silently convert into
+human authority.
 
 Use the non-executing governance tools to prepare a dispatch manifest or the `urgov
 dispatch` commands to print one. Manifest export does not write a project file

@@ -68,7 +68,8 @@ For new canonical research input, first call research_prepare_ingest. It writes
 only an immutable pending draft and never appends a record. Commit only the
 returned exact draft ID and hash through research_commit_ingest after the host
 has approved that mutating tool call. Never invent an approval flag: the commit
-also requires a pre-existing, human-created approval record with matching scope.
+also requires a one-time signed host receipt and a pre-existing, human-created
+approval record with matching scope.
 """.strip()
 
 mcp = FastMCP("Universal Research", instructions=INSTRUCTIONS)
@@ -640,7 +641,9 @@ def research_prepare_ingest(
 
 
 @mcp.tool(annotations=INGEST_COMMIT_ANNOTATIONS)
-def research_commit_ingest(draft_id: str, draft_sha256: str) -> dict[str, Any]:
+def research_commit_ingest(
+    draft_id: str, draft_sha256: str, approval_receipt_id: str,
+) -> dict[str, Any]:
     """Append exactly one approved pending draft and refresh derived indexes.
 
     This is a mutating, non-idempotent host-approved tool. It accepts no record
@@ -650,7 +653,12 @@ def research_commit_ingest(draft_id: str, draft_sha256: str) -> dict[str, Any]:
     refresh status.
     """
 
-    return commit_ingest(ROOT, draft_id=draft_id, draft_sha256=draft_sha256)
+    return commit_ingest(
+        ROOT,
+        draft_id=draft_id,
+        draft_sha256=draft_sha256,
+        approval_receipt_id=approval_receipt_id,
+    )
 
 
 @mcp.tool(annotations=INGEST_STATUS_ANNOTATIONS)
