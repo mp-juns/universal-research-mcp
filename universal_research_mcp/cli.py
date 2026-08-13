@@ -334,10 +334,91 @@ def _usage_command(root: Path, args: argparse.Namespace) -> int:
     return 0
 
 
+def _secure_harness_command(root: Path, args: argparse.Namespace) -> int:
+    from universal_research_mcp.secure_harness.approval import HarnessApprovalStore
+    from universal_research_mcp.secure_harness.controller import (
+        apply_changes,
+        build_plan_bundle,
+        change_review,
+        execute_codex,
+        load_bundle,
+        preflight,
+        review_run,
+    )
+    from universal_research_mcp.secure_harness.docker_backend import doctor
+
+    action = args.harness_action
+    state_root = getattr(args, "state_root", None)
+    if action == "doctor":
+        _emit(doctor())
+        return 0
+    if action == "plan":
+        value = json.loads(args.specification.read_text(encoding="utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError("harness plan specification must be a JSON object")
+        _emit(build_plan_bundle(root, value))
+        return 0
+    if action == "preflight":
+        report = preflight(root, load_bundle(args.bundle))
+        _emit(report)
+        return 0 if report["valid"] else 2
+    if action == "approve":
+        bundle = load_bundle(args.bundle)
+        report = preflight(root, bundle)
+        if not report["valid"]:
+            _emit(report)
+            return 2
+        _emit(HarnessApprovalStore(root, state_root=state_root).create(
+            bundle["plan"],
+            expected_plan_hash=args.expected_plan_hash,
+            expires_at=args.expires_at,
+        ))
+        return 0
+    if action == "run":
+        if not args.execute_approved:
+            _emit({
+                "schema_version": "secure-harness-run/1.0",
+                "status": "blocked",
+                "reason": "explicit_execution_confirmation_missing",
+                "executed": False,
+            })
+            return 2
+        if args.prompt is None:
+            raise ValueError("secure harness run requires --prompt")
+        bundle = load_bundle(args.bundle)
+        report = preflight(root, bundle)
+        if not report["valid"]:
+            _emit(report)
+            return 2
+        prompt = args.prompt.read_text(encoding="utf-8")
+        _emit(execute_codex(root, bundle, prompt=prompt, state_root=state_root))
+        return 0
+    if action == "review":
+        _emit(review_run(
+            root, args.run_id, receipts_path=args.receipts, state_root=state_root,
+        ))
+        return 0
+    if action == "changes":
+        _emit(change_review(root, args.run_id, state_root=state_root))
+        return 0
+    if action == "apply":
+        _emit(apply_changes(
+            root,
+            args.run_id,
+            confirm_diff_hash=args.confirm_diff_hash,
+            state_root=state_root,
+        ))
+        return 0
+    raise ValueError("unsupported secure harness command")
+
+
 def _refresh_after_canonical_append(root: Path, *, action: str, details: dict[str, Any]) -> int:
-    """Refresh derived lexical state, never concealing a successful append."""
+    """Refresh configured derived views, never concealing a successful append."""
 
     from universal_research_mcp.indexing import ensure_lexical_index, index_status
+    from universal_research_mcp.semantic_runtime import (
+        build_configured_semantic_index, configured_backend,
+    )
 
     try:
         index = ensure_lexical_index(root)
@@ -349,8 +430,25 @@ def _refresh_after_canonical_append(root: Path, *, action: str, details: dict[st
             "reason": str(exc),
         })
         return 2
+    backend = configured_backend(root)
+    semantic: dict[str, Any]
+    if backend is None:
+        semantic = {"status": "unconfigured", "executed": False}
+    elif not backend.auto_refresh:
+        semantic = {
+            "status": "stale", "executed": False,
+            "reason": "configured semantic refresh requires explicit build",
+        }
+    else:
+        try:
+            semantic = build_configured_semantic_index(root)
+        except (OSError, RuntimeError, ValueError) as exc:
+            semantic = {
+                "status": "stale", "executed": False, "reason": str(exc),
+                "recovery_command": f"universal-research semantic build --root {root}",
+            }
     _emit({"status": "ok", "canonical_append_succeeded": True, "action": action,
-           **details, "index": index})
+           **details, "index": index, "semantic": semantic})
     return 0
 
 
@@ -398,6 +496,77 @@ def _semantic_status(root: Path) -> dict[str, Any]:
     from universal_research_mcp.indexing import semantic_status
 
     return semantic_status(root)
+
+
+def _public_semantic_status(root: Path) -> dict[str, Any]:
+    """Report the configured offline backend without loading or downloading it."""
+
+    from universal_research_mcp.indexing import semantic_status
+    from universal_research_mcp.runtime.semantic_config import (
+        configuration_path, load_semantic_config,
+    )
+    from universal_research_mcp.semantic_runtime import configured_backend
+
+    config = load_semantic_config(root)
+    if config is None:
+        return {
+            "status": "unconfigured",
+            "configuration_path": str(configuration_path(root)),
+            "semantic": semantic_status(root),
+            "remote_used": False,
+        }
+    backend = configured_backend(root)
+    assert backend is not None
+    return {
+        "status": "configured",
+        "configuration_path": str(configuration_path(root)),
+        "backend": config["backend"],
+        "backend_class": backend.backend_class,
+        "trained_embedding_model": backend.trained_embedding_model,
+        "auto_refresh": backend.auto_refresh,
+        "remote_used": False,
+        "semantic": semantic_status(
+            root,
+            provider_id=backend.provider_id,
+            model=backend.model,
+            dimensions=backend.dimensions,
+        ),
+    }
+
+
+def _public_semantic_build(root: Path, args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    from universal_research_mcp.semantic_runtime import build_configured_semantic_index
+
+    report = build_configured_semantic_index(root, batch_size=args.batch_size)
+    return report, 0 if report.get("status") == "current" else 2
+
+
+def _semantic_command(root: Path, args: argparse.Namespace) -> int:
+    from universal_research_mcp.runtime.semantic_config import configure_demo, configure_local
+
+    if args.semantic_action == "status":
+        _emit(_public_semantic_status(root))
+        return 0
+    if args.semantic_action == "configure":
+        if args.backend == "demo":
+            _emit(configure_demo(
+                root, dimensions=args.dimensions or 256, auto_refresh=args.auto_refresh,
+            ))
+            return 0
+        if args.model_path is None:
+            raise ValueError("local semantic configuration requires --model-path")
+        _emit(configure_local(
+            root,
+            model_path=args.model_path,
+            device=args.device,
+            trust_local_model_code=args.trust_local_model_code,
+            dimensions=args.dimensions,
+            auto_refresh=args.auto_refresh,
+        ))
+        return 0
+    report, code = _public_semantic_build(root, args)
+    _emit(report)
+    return code
 
 
 def _ensure_semantic(root: Path, args: argparse.Namespace) -> tuple[dict[str, Any], int]:
@@ -525,6 +694,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--lexical-db", type=Path)
     serve.add_argument("--events-root", type=Path)
     serve.add_argument("--auto-index", action=argparse.BooleanOptionalAction, default=True)
+    serve.add_argument("--startup-progress", action=argparse.BooleanOptionalAction, default=None)
     serve.add_argument("--legacy-tools", action="store_true")
 
     initialize = subparsers.add_parser("init", help="Initialize an independent research store.")
@@ -553,6 +723,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     build_index = subparsers.add_parser("build-index", help="Compatibility alias for lexical index ensure.")
     build_index.add_argument("--root", type=Path)
+
+    semantic = subparsers.add_parser(
+        "semantic", help="Configure, build, or inspect offline semantic candidate retrieval.",
+    )
+    semantic_actions = semantic.add_subparsers(dest="semantic_action", required=True)
+    semantic_configure = semantic_actions.add_parser(
+        "configure", help="Select an explicit offline semantic backend without running it.",
+    )
+    semantic_configure.add_argument("--root", type=Path)
+    semantic_configure.add_argument("--backend", choices=("demo", "local"), required=True)
+    semantic_configure.add_argument("--dimensions", type=int)
+    semantic_configure.add_argument("--model-path", type=Path)
+    semantic_configure.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
+    semantic_configure.add_argument("--trust-local-model-code", action="store_true")
+    semantic_configure.add_argument("--auto-refresh", action=argparse.BooleanOptionalAction, default=False)
+    semantic_build = semantic_actions.add_parser(
+        "build", help="Build the configured semantic SQLite view without fallback.",
+    )
+    semantic_build.add_argument("--root", type=Path)
+    semantic_build.add_argument("--batch-size", type=int, default=32)
+    semantic_status = semantic_actions.add_parser("status", help="Inspect semantic configuration and index health.")
+    semantic_status.add_argument("--root", type=Path)
 
     source = subparsers.add_parser("source", help="Register immutable project-contained source revisions.")
     source_actions = source.add_subparsers(dest="source_action", required=True)
@@ -589,6 +781,41 @@ def build_parser() -> argparse.ArgumentParser:
         diagnostic = subparsers.add_parser(command, help="Report readiness without changing state.")
         diagnostic.add_argument("--root", type=Path)
 
+    harness = subparsers.add_parser(
+        "harness", help="Plan and run a hash-bound Codex session through isolated Docker workers.",
+    )
+    harness_actions = harness.add_subparsers(dest="harness_action", required=True)
+    harness_doctor = harness_actions.add_parser("doctor", help="Check the local Docker execution boundary without running a worker.")
+    harness_doctor.add_argument("--root", type=Path)
+    harness_plan = harness_actions.add_parser("plan", help="Build a sealed plan bundle without calling a model.")
+    harness_plan.add_argument("specification", type=Path)
+    harness_plan.add_argument("--root", type=Path)
+    for action in ("preflight", "approve", "run"):
+        command = harness_actions.add_parser(action)
+        command.add_argument("bundle", type=Path)
+        command.add_argument("--root", type=Path)
+        command.add_argument("--state-root", type=Path)
+        if action == "approve":
+            command.add_argument("--expected-plan-hash", required=True)
+            command.add_argument("--expires-at", required=True)
+        elif action == "run":
+            command.add_argument("--prompt", type=Path)
+            command.add_argument("--execute-approved", action="store_true")
+    harness_review = harness_actions.add_parser("review")
+    harness_review.add_argument("run_id")
+    harness_review.add_argument("--root", type=Path)
+    harness_review.add_argument("--state-root", type=Path)
+    harness_review.add_argument("--receipts", type=Path)
+    harness_changes = harness_actions.add_parser("changes")
+    harness_changes.add_argument("run_id")
+    harness_changes.add_argument("--root", type=Path)
+    harness_changes.add_argument("--state-root", type=Path)
+    harness_apply = harness_actions.add_parser("apply")
+    harness_apply.add_argument("run_id")
+    harness_apply.add_argument("--root", type=Path)
+    harness_apply.add_argument("--state-root", type=Path)
+    harness_apply.add_argument("--confirm-diff-hash", required=True)
+
     if _internal_provider_preview_enabled():
         provider = subparsers.add_parser("provider", help=argparse.SUPPRESS)
         provider_actions = provider.add_subparsers(dest="provider_action", required=True)
@@ -616,20 +843,6 @@ def build_parser() -> argparse.ArgumentParser:
             "--credential-ref",
             help="Optional env:NAME or keyring:SERVICE/ACCOUNT reference; never a key value.",
         )
-
-        harness = subparsers.add_parser("harness", help=argparse.SUPPRESS)
-        harness.add_argument("harness_action", choices=("preflight", "run"))
-        harness.add_argument("packets", type=Path)
-        harness.add_argument("--root", type=Path)
-        harness.add_argument("--max-workers", type=int, default=1)
-        harness.add_argument("--remote-approved", action="store_true")
-        harness.add_argument("--max-calls", type=int)
-        harness.add_argument("--max-input-tokens", type=int)
-        harness.add_argument("--max-total-output-tokens", type=int)
-        harness.add_argument("--max-output-tokens-per-agent", type=int)
-        harness.add_argument("--max-cost-usd")
-        harness.add_argument("--input-cost-per-million-tokens-usd")
-        harness.add_argument("--output-cost-per-million-tokens-usd")
 
         agent = subparsers.add_parser("agent", help=argparse.SUPPRESS)
         agent_actions = agent.add_subparsers(dest="agent_action", required=True)
@@ -700,6 +913,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 forwarded.extend((option, str(value)))
         if args.auto_index:
             forwarded.append("--auto-index")
+        if args.startup_progress is True:
+            forwarded.append("--startup-progress")
+        elif args.startup_progress is False:
+            forwarded.append("--no-startup-progress")
         if args.legacy_tools:
             forwarded.append("--legacy-tools")
         return serve_main(forwarded)
@@ -739,7 +956,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if args.command == "harness":
-        return _harness_command(_root(args.root), args)
+        return _secure_harness_command(_root(args.root), args)
 
     if args.command == "agent":
         return _agent_command(_root(args.root), args)
@@ -752,6 +969,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "record":
         return _record_command(_root(getattr(args, "root", None)), args)
+
+    if args.command == "semantic":
+        return _semantic_command(_root(getattr(args, "root", None)), args)
 
     from universal_research_mcp.indexing import (
         ensure_lexical_index,
@@ -786,7 +1006,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             report = ensure_lexical_index(root)
             _emit(report)
             return 0
-        report, code = _ensure_semantic(root, args)
+        report, code = _public_semantic_build(root, args)
         if args.kind == "semantic":
             report = {key: value for key, value in report.items() if key != "lexical"}
         _emit(report)
@@ -812,9 +1032,9 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     """Preserve ``universal-research-mcp --root ...`` while adding subcommands."""
 
     materialized = list(sys.argv[1:] if argv is None else argv)
-    commands = {"serve", "init", "index", "build-index", "doctor", "validate", "usage", "source", "record"}
+    commands = {"serve", "init", "index", "build-index", "semantic", "doctor", "validate", "usage", "source", "record", "harness"}
     if _internal_provider_preview_enabled():
-        commands.update({"provider", "harness", "agent"})
+        commands.update({"provider", "agent"})
     if materialized and materialized[0] in commands:
         return main(materialized)
     from universal_research_mcp.server import main as serve_main

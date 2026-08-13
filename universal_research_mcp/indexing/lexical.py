@@ -27,6 +27,7 @@ REQUIRED_TABLES = frozenset(
     {"metadata", "sources", "events", "relations", "artifacts", "event_fts", "source_passage_fts"}
 )
 LexicalBuilder = Callable[[Path, Path], dict[str, Any]]
+LexicalProgressReporter = Callable[[int, str], None]
 
 
 def _sha256_file(path: Path) -> str:
@@ -532,8 +533,13 @@ def ensure_lexical_index(
     root: str | Path,
     *,
     builder: LexicalBuilder | None = None,
+    progress: LexicalProgressReporter | None = None,
 ) -> dict[str, Any]:
     """Create or refresh the index without exposing a partial database."""
+
+    def report(percent: int, message: str) -> None:
+        if progress is not None:
+            progress(percent, message)
 
     paths = ProjectPaths.from_root(root)
     paths.events_root.mkdir(parents=True, exist_ok=True)
@@ -542,16 +548,21 @@ def ensure_lexical_index(
     fingerprint: dict[str, Any] | None = None
     staging: Path | None = None
     try:
+        report(20, "checking the existing lexical index")
         before = index_status(paths.root)
+        report(35, "fingerprinting canonical research records")
         fingerprint = canonical_fingerprint(paths.events_root)
         daily_events = sorted((paths.events_root / "daily").glob("*/events.jsonl"))
         if daily_events:
+            report(45, "validating registered source revisions")
             validate_registered_sources(paths.root, paths.events_root / "sources.jsonl")
 
         if before["status"] == "current":
+            report(70, "verifying lexical index integrity")
             verification = verify_lexical_index(paths.lexical_db, fingerprint["sha256"])
             health = _success_health(paths, fingerprint, verification)
             _atomic_write_health(paths.index_health, health)
+            report(100, "lexical index is current")
             return {
                 **before,
                 "executed": False,
@@ -568,21 +579,26 @@ def ensure_lexical_index(
         os.close(descriptor)
         staging = Path(staging_name)
         if daily_events:
+            report(60, "building a staged lexical search index")
             if builder is None:
                 _existing_builder(paths.root, paths.events_root, staging)
             else:
                 builder(paths.events_root, staging)
         else:
+            report(60, "creating an empty lexical search index")
             _build_empty(staging)
+        report(80, "validating the staged lexical search index")
         fingerprint_after_build = canonical_fingerprint(paths.events_root)
         if fingerprint_after_build["sha256"] != fingerprint["sha256"]:
             raise RuntimeError("canonical JSONL changed during lexical index build")
         _record_fingerprint(staging, fingerprint)
         verification = verify_lexical_index(staging, fingerprint["sha256"])
         _sync_file(staging)
+        report(92, "publishing the verified lexical index")
         os.replace(staging, paths.lexical_db)
         health = _success_health(paths, fingerprint, verification)
         _atomic_write_health(paths.index_health, health)
+        report(100, "lexical index is ready")
         return {
             "lexical_db": str(paths.lexical_db),
             "index_health": str(paths.index_health),

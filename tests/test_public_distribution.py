@@ -62,6 +62,7 @@ class PublicDistributionTests(unittest.TestCase):
             {
                 "docs/failure-policy.md",
                 "docs/host-integration.md",
+                "docs/secure-harness.md",
                 "docs/security.md",
             },
         )

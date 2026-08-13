@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mp-juns/universal-research-mcp/schemas/research-run-plan.schema.json",
+  "title": "Sealed research run plan",
+  "type": "object",
+  "required": ["schema_version", "run_id", "workflow_id", "project_root_hash", "snapshot_hash", "model", "reasoning_effort", "verification_mode", "approval_mode", "image", "resources", "operations", "created_at", "expires_at", "run_plan_hash"],
+  "properties": {
+    "schema_version": {"const": "research-run-plan/1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "workflow_id": {"type": "string", "minLength": 1},
+    "project_root_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "snapshot_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "model": {"type": "string", "minLength": 1},
+    "reasoning_effort": {"enum": ["low", "medium", "high", "xhigh", "max", "ultra"]},
+    "verification_mode": {"enum": ["adaptive", "strict"]},
+    "approval_mode": {"enum": ["plan_once", "sensitive_stage", "each_operation"]},
+    "image": {"type": "string", "pattern": "@sha256:[0-9a-f]{64}$"},
+    "resources": {"type": "object"},
+    "operations": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "run_plan_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

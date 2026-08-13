@@ -1,4 +1,5 @@
 import asyncio
+import io
 import os
 from pathlib import Path
 import hashlib
@@ -28,15 +29,22 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
         self.assertEqual(parsed.lexical_db, Path("fixture.sqlite"))
         self.assertEqual(parsed.events_root, Path("fixture-events"))
 
-    def test_default_tool_surface_is_lexical_and_hides_legacy_aliases(self) -> None:
+    def test_server_startup_progress_uses_stderr_only(self) -> None:
+        output = io.StringIO()
+        with tempfile.TemporaryDirectory() as temporary, patch.object(server.mcp, "run"):
+            with patch.object(server.sys, "stderr", output):
+                self.assertEqual(server.main(["--root", temporary, "--auto-index", "--startup-progress"]), 0)
+        rendered = output.getvalue()
+        self.assertIn("startup [  5%] resolving the research workspace", rendered)
+        self.assertIn("startup [100%] ready for MCP requests", rendered)
+
+    def test_default_tool_surface_exposes_candidate_modes_and_hides_legacy_aliases(self) -> None:
         tools = {tool.name: tool for tool in asyncio.run(server.mcp.list_tools())}
         self.assertNotIn("research_search", tools)
         self.assertNotIn("research_provider_status", tools)
         self.assertFalse(any(name.startswith("agent_runtime_") for name in tools))
         mode_schema = tools["memory_search_candidates"].inputSchema["properties"]["mode"]
-        self.assertEqual(mode_schema["const"], "lexical")
-        with self.assertRaisesRegex(ValueError, "not exposed"):
-            server.memory_search_candidates("query", mode="semantic")
+        self.assertEqual(mode_schema["enum"], ["lexical", "semantic", "hybrid"])
 
     def test_safe_path_rejects_sensitive_and_symlink_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

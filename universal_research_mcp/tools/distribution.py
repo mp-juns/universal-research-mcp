@@ -16,11 +16,12 @@ GOVERNANCE_ROLE_IDS = (
     "scope_and_cost_governor", "substance_reviewer", "user_alignment_reviewer",
 )
 REQUIRED_BUNDLE_FILES = (
-    "docs/failure-policy.md", "docs/host-integration.md", "docs/security.md",
+    "docs/failure-policy.md", "docs/host-integration.md", "docs/secure-harness.md", "docs/security.md",
     "schemas/core-record.schema.json", "schemas/agent-runtime-event.schema.json",
     "schemas/index-health.schema.json", "schemas/pack-manifest.schema.json",
     "schemas/project-profile.schema.json", "schemas/research-agent-decision.schema.json",
-    "schemas/research-agent-task.schema.json", "packs/study_type/research_operations.yaml",
+    "schemas/research-agent-task.schema.json", "schemas/research-run-plan.schema.json",
+    "schemas/worker-result.schema.json", "packs/study_type/research_operations.yaml",
     "plugin/universal-research-memory/.mcp.json",
     "plugin/universal-research-memory/.codex-plugin/plugin.json",
     "plugin/universal-research-memory/skills/research-workflow/SKILL.md",
@@ -33,7 +34,11 @@ REQUIRED_RUNTIME_FILES = (
     "universal_research_mcp/cli.py", "universal_research_mcp/server.py",
     "universal_research_mcp/core/input.py", "universal_research_mcp/indexing/lexical.py",
     "universal_research_mcp/indexing/semantic.py", "universal_research_mcp/providers/redaction.py",
-    "universal_research_mcp/runtime/paths.py", "universal_research_mcp/tools/distribution.py",
+    "universal_research_mcp/providers/deterministic_embedding.py",
+    "universal_research_mcp/runtime/paths.py", "universal_research_mcp/runtime/semantic_config.py",
+    "universal_research_mcp/semantic_runtime.py", "universal_research_mcp/tools/distribution.py",
+    "universal_research_mcp/secure_harness/controller.py",
+    "universal_research_mcp/secure_harness/worker_server.py",
 )
 REQUIRED_GOVERNANCE_FILES = (
     "universal_research_mcp/governance/schemas/prompt-pack.schema.json",
