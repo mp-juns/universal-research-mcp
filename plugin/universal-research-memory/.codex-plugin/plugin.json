@@ -1,7 +1,7 @@
 {
   "name": "universal-research-memory",
-  "version": "0.4.3+codex.20260813221500",
-  "description": "Codex-only provenance-first research memory and governed workflows.",
+  "version": "0.5.0+codex.20260813233000",
+  "description": "Codex-only provenance-first research memory, governed ingestion, and workflows.",
   "homepage": "https://github.com/mp-juns/universal-research-mcp",
   "repository": "https://github.com/mp-juns/universal-research-mcp",
   "license": "MIT",
@@ -18,11 +18,11 @@
   "interface": {
     "displayName": "Universal Research",
     "shortDescription": "Codex research memory with governed workflows.",
-    "longDescription": "Universal Research provides source-grounded memory and an eleven-role governance contract for Codex. Model selection, agent sessions, and tool execution remain owned by the Codex host. This preview does not configure or call external model APIs or local model servers.",
+    "longDescription": "Universal Research provides source-grounded memory, governed canonical ingestion, and an eleven-role governance contract for Codex. Model selection, agent sessions, and tool execution remain owned by the Codex host. This preview does not configure or call external model APIs or local model servers.",
     "developerName": "mp-juns",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use Codex host-owned execution only. Keep research memory read-only by default; do not route work to external APIs or local model servers, and keep visualization off unless explicitly approved."
+    "defaultPrompt": "Use Codex host-owned execution only. Treat canonical ingestion as a two-step, host-approved operation: prepare an immutable draft, then commit only its exact hash after explicit approval. Do not route work to external APIs or local model servers, and keep visualization off unless explicitly approved."
   },
   "mcpServers": "./.mcp.json"
 }

@@ -26,9 +26,13 @@ revision and a line, page, row, or structured-data locator.
   writing data.
 - `universal_research_mcp/core/amendments.py` creates a narrow, fail-closed resolved view for completed
   payload amendments without changing canonical records.
-- `universal_research_mcp/core/input.py` supplies the host-owned approval-checked append boundary;
-  it resolves the referenced approval record and requires approved, human,
-  explicitly scoped authority. The MCP intentionally does not call it.
+- `universal_research_mcp/core/input.py` supplies approval-checked append
+  validation and persistence. `universal_research_mcp/core/ingest.py` exposes
+  it to the unified MCP only through immutable prepare/commit drafts. A
+  separate `runtime/ingest_approval.py` authority signs one-time receipts under
+  host state outside the project; exact draft hash, canonical-head, source
+  SHA-256, receipt, pre-existing human scope, and one-time consumption are all
+  rechecked before append.
 - `universal_research_mcp/core/audit.py` derives read-only findings with record-addressable evidence.
 - `scripts/validate_research_ledger.py` is a repository-only ledger validation entry
   point.
@@ -52,17 +56,20 @@ revision and a line, page, row, or structured-data locator.
 - `universal_research_mcp/agent_runtime/` is an internal prototype for project-local, hash-bound
   plugin-owned sessions after governor review. These are separate provider
   requests and records, not native host GUI tasks or operating-system sandboxes.
-- `universal_research_mcp/` publicly provides the default read-only memory MCP
-  and one management CLI. They accept an explicit project root and never use a
-  reference-project runtime path. Provider execution modules are not registered
-  by the Codex plugin or exposed through a distribution console entry point.
+- `universal_research_mcp/` publicly provides the default research-memory MCP
+  and one management CLI. The MCP's two mutating ingestion tools are marked
+  non-read-only/non-idempotent for the host and cannot create approvals or
+  accept self-asserted approval. They accept an explicit project root and never
+  use a reference-project runtime path. Provider execution modules are not
+  registered by the Codex plugin or exposed through a distribution console entry
+  point.
 - The MCP transport requires the documented `mcp[cli]` runtime. Pure ledger and
   lexical-query contract tests do not import that optional transport runtime.
 - `packs/` adds constraints without relaxing the core policy.
 
 ## Deliberately outside the MCP authority
 
-- Canonical ledger writes or automatic amendments
+- Automatic amendments, self-created approvals, or unbound canonical writes
 - Unapproved index/model/provider execution or background watchers
 - Automatic audit dispositions or approval decisions
 - Reference-project data migration or runtime sharing

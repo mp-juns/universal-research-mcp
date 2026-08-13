@@ -492,6 +492,23 @@ def _record_command(root: Path, args: argparse.Namespace) -> int:
     })
 
 
+def _ingest_command(root: Path, args: argparse.Namespace) -> int:
+    """Issue a receipt outside the MCP process after explicit user confirmation."""
+
+    from universal_research_mcp.runtime.ingest_approval import IngestApprovalStore
+
+    if args.ingest_action != "approve":
+        raise ValueError("unsupported ingest command")
+    if args.confirm_draft_sha256 != args.draft_sha256:
+        raise ValueError("--confirm-draft-sha256 must exactly match --draft-sha256")
+    _emit(IngestApprovalStore(root, state_root=args.state_root).issue(
+        draft_id=args.draft_id,
+        draft_sha256=args.draft_sha256,
+        expires_at=args.expires_at,
+    ))
+    return 0
+
+
 def _semantic_status(root: Path) -> dict[str, Any]:
     from universal_research_mcp.indexing import semantic_status
 
@@ -769,6 +786,26 @@ def build_parser() -> argparse.ArgumentParser:
     record_approve.add_argument("--root", type=Path)
     record_approve.add_argument("--confirm", required=True, help="Exact approval record ID to append.")
 
+    ingest = subparsers.add_parser(
+        "ingest", help="Issue a separate host receipt for one prepared MCP ingest draft.",
+    )
+    ingest_actions = ingest.add_subparsers(dest="ingest_action", required=True)
+    ingest_approve = ingest_actions.add_parser(
+        "approve", help="Create a one-time signed receipt for one exact pending draft.",
+    )
+    ingest_approve.add_argument("--root", type=Path)
+    ingest_approve.add_argument("--draft-id", required=True)
+    ingest_approve.add_argument("--draft-sha256", required=True)
+    ingest_approve.add_argument(
+        "--confirm-draft-sha256", required=True,
+        help="Repeat the exact draft SHA-256 after reviewing the pending ingest.",
+    )
+    ingest_approve.add_argument("--expires-at", required=True)
+    ingest_approve.add_argument(
+        "--state-root", type=Path,
+        help="Optional absolute host-state location outside the research project.",
+    )
+
     usage = subparsers.add_parser(
         "usage", help="Summarize observed token usage without estimates.",
     )
@@ -970,6 +1007,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "record":
         return _record_command(_root(getattr(args, "root", None)), args)
 
+    if args.command == "ingest":
+        return _ingest_command(_root(getattr(args, "root", None)), args)
+
     if args.command == "semantic":
         return _semantic_command(_root(getattr(args, "root", None)), args)
 
@@ -1032,7 +1072,7 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     """Preserve ``universal-research-mcp --root ...`` while adding subcommands."""
 
     materialized = list(sys.argv[1:] if argv is None else argv)
-    commands = {"serve", "init", "index", "build-index", "semantic", "doctor", "validate", "usage", "source", "record", "harness"}
+    commands = {"serve", "init", "index", "build-index", "semantic", "doctor", "validate", "usage", "source", "record", "ingest", "harness"}
     if _internal_provider_preview_enabled():
         commands.update({"provider", "agent"})
     if materialized and materialized[0] in commands:
