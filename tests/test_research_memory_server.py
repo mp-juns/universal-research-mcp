@@ -1,4 +1,5 @@
 import asyncio
+import io
 import os
 from pathlib import Path
 import hashlib
@@ -27,6 +28,15 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
         self.assertEqual(parsed.root, Path("fixture-root"))
         self.assertEqual(parsed.lexical_db, Path("fixture.sqlite"))
         self.assertEqual(parsed.events_root, Path("fixture-events"))
+
+    def test_server_startup_progress_uses_stderr_only(self) -> None:
+        output = io.StringIO()
+        with tempfile.TemporaryDirectory() as temporary, patch.object(server.mcp, "run"):
+            with patch.object(server.sys, "stderr", output):
+                self.assertEqual(server.main(["--root", temporary, "--auto-index", "--startup-progress"]), 0)
+        rendered = output.getvalue()
+        self.assertIn("startup [  5%] resolving the research workspace", rendered)
+        self.assertIn("startup [100%] ready for MCP requests", rendered)
 
     def test_default_tool_surface_is_lexical_and_hides_legacy_aliases(self) -> None:
         tools = {tool.name: tool for tool in asyncio.run(server.mcp.list_tools())}

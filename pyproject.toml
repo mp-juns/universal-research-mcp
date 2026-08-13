@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.4.1"
+version = "0.4.2"
 description = "Read-only MCP for provenance-first research memory, evidence re-verification, and governed Codex workflows."
 readme = "README.md"
 requires-python = ">=3.11"
