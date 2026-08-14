@@ -8,6 +8,13 @@ description: Use the Universal Research Memory MCP to retrieve research history 
 Use this skill for questions about previous research work, plans, protocols,
 decisions, results, failures, or artifacts managed by this project.
 
+If `research_profile_status` reports a profile, use its declared retrieval mode
+only after the corresponding local derived index is current. The profile can
+declare code, build-definition, configuration, and documentation source scope,
+but it does not register files or make them evidence-eligible. Never treat a
+profile's provider route or registered Skill ID as permission to call an API,
+read a secret, create a Skill, or start a subagent.
+
 ## Evidence-first retrieval
 
 1. Call `memory_search_candidates` to obtain candidate records.

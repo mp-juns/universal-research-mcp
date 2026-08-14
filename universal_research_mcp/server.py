@@ -64,6 +64,12 @@ it. Governance tools validate plans, authority, and returned decisions but
 cannot approve work on the user's behalf. Provider secrets must never be pasted
 into chat, command arguments, research records, or tool input.
 
+Use research_profile_status to inspect the project-local retrieval, source, and
+provider policy. A profile is declarative only: it cannot create a Skill,
+activate an unregistered Skill, read a credential, call an API, download a
+model, or start a subagent. Those actions remain separately governed by the
+Codex host and its explicit approvals.
+
 For new canonical research input, first call research_prepare_ingest. It writes
 only an immutable pending draft and never appends a record. Commit only the
 returned exact draft ID and hash through research_commit_ingest after the host
@@ -861,6 +867,15 @@ def research_index_status() -> dict[str, Any]:
     except (ImportError, OSError, RuntimeError, ValueError) as exc:
         status = {"status": "unavailable", "reason": str(exc)}
     return {"startup": INDEX_STARTUP_STATUS, "current": status}
+
+
+@mcp.tool()
+def research_profile_status() -> dict[str, Any]:
+    """Inspect the declared research profile without executing any route."""
+
+    from universal_research_mcp.runtime.research_profile import profile_status
+
+    return profile_status(ROOT)
 
 
 @mcp.tool()

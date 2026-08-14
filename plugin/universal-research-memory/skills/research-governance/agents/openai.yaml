@@ -1,4 +1,4 @@
 interface:
   display_name: "Research Governance"
   short_description: "Run evidence-bound governed research workflows."
-  default_prompt: "Apply the fixed research governance workflow, load only the activated role's hash-bound prompt pack, verify its evidence bundle, and fail closed on any contract mismatch."
+  default_prompt: "Use $research-governance to inspect the declared research profile, apply the fixed governance workflow, and fail closed on any contract mismatch."

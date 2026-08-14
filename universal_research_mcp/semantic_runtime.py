@@ -14,6 +14,7 @@ from typing import Any
 from universal_research_mcp.providers.deterministic_embedding import SignedHashingEmbedder
 from universal_research_mcp.providers.local_embedding import LocalSentenceTransformerEmbedder
 from universal_research_mcp.runtime.semantic_config import load_semantic_config
+from universal_research_mcp.runtime.research_profile import semantic_config_from_profile
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,10 @@ class SemanticBackend:
 
 
 def configured_backend(root: str | Path) -> SemanticBackend | None:
-    config = load_semantic_config(root)
+    # An explicit semantic.json remains the narrower, higher-priority setting.
+    # A validated profile is only a declarative fallback; neither path performs
+    # downloads or network requests.
+    config = load_semantic_config(root) or semantic_config_from_profile(root)
     if config is None:
         return None
     backend = config["backend"]
