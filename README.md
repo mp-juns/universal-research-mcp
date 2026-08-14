@@ -159,7 +159,7 @@ to:
 
 ```json
 {
-  "mode": "hybrid",
+  "mode": "adaptive",
   "semantic_backend": {
     "kind": "demo",
     "dimensions": 256,
@@ -168,7 +168,13 @@ to:
 }
 ```
 
-Then run `universal-research semantic build --root ./my-research`. For a local
+Then run `universal-research semantic build --root ./my-research`. `adaptive`
+uses lexical retrieval for explicit file paths, command flags, and code
+identifiers; it uses semantic retrieval for ordinary research questions when
+the configured semantic index is current. If that semantic view is unavailable
+or returns no candidates, it reports a lexical fallback in the response rather
+than implying that semantic retrieval ran. It does not use an unvalidated score
+threshold or claim a universal accuracy improvement. For a local
 GPU model already on disk, use `kind: "local"`, a `model_path`, and
 `device: "cuda"`; applying the profile never downloads or loads that model.
 The public MCP exposes the profile's status but cannot call a declared OpenAI,
@@ -253,8 +259,12 @@ with event_id + expected_sha256 → current-hash check → memory_gate_claim →
 eligible or blocked material claim
 ```
 
-`memory_search_candidates` accepts `mode="lexical"`, `"semantic"`, or
-`"hybrid"`. Hybrid search independently ranks lexical and semantic candidates
+`memory_search_candidates` defaults to `mode="configured"`, which resolves the
+explicit project profile (or preserves lexical behavior when no profile exists).
+It also accepts explicit `"lexical"`, `"semantic"`, `"hybrid"`, and
+`"adaptive"` modes. Adaptive mode uses a deterministic syntax rule for the
+lexical fast path and otherwise tries the configured semantic view; every
+response reports the selected mode and routing reason. Hybrid search independently ranks lexical and semantic candidates
 and fuses ranks with reciprocal-rank fusion (0.45 lexical / 0.55 semantic,
 `k=60`). Every result remains `candidate_only=true`; semantic similarity cannot
 establish a fact, cause, comparison, or release claim. A semantic passage may

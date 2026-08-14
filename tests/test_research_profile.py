@@ -28,6 +28,16 @@ def test_template_is_valid_and_does_not_activate_semantic_or_network() -> None:
     assert profile["provider_policy"]["network_enabled"] is False
 
 
+def test_adaptive_profile_requires_a_configured_semantic_backend() -> None:
+    profile = profile_template()
+    profile["retrieval"] = {
+        "mode": "adaptive",
+        "semantic_backend": {"kind": "disabled"},
+    }
+    with pytest.raises(ValueError, match="adaptive mode requires"):
+        validate_profile(profile)
+
+
 def test_profile_cli_validates_then_applies_only_matching_hash(
     tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:

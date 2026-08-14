@@ -153,13 +153,13 @@ def validate_profile(value: Any) -> dict[str, Any]:
         raise ValueError("research profile schema_version is invalid")
 
     retrieval = _require_keys(profile["retrieval"], {"mode", "semantic_backend"}, "retrieval")
-    if retrieval["mode"] not in {"lexical", "semantic", "hybrid"}:
+    if retrieval["mode"] not in {"lexical", "semantic", "hybrid", "adaptive"}:
         raise ValueError("research profile retrieval mode is invalid")
     semantic_backend = _validate_semantic_backend(retrieval["semantic_backend"])
     if retrieval["mode"] == "lexical" and semantic_backend["kind"] != "disabled":
         raise ValueError("research profile lexical mode requires a disabled semantic backend")
-    if retrieval["mode"] in {"semantic", "hybrid"} and semantic_backend["kind"] == "disabled":
-        raise ValueError("research profile semantic or hybrid mode requires a configured semantic backend")
+    if retrieval["mode"] in {"semantic", "hybrid", "adaptive"} and semantic_backend["kind"] == "disabled":
+        raise ValueError("research profile semantic, hybrid, or adaptive mode requires a configured semantic backend")
 
     execution = _require_keys(
         profile["execution"], {"host", "subagent_mode", "max_parallel_agents", "registered_skill_ids"}, "execution",

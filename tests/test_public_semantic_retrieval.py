@@ -10,6 +10,7 @@ import pytest
 
 from universal_research_mcp import cli, server
 from universal_research_mcp.indexing import ensure_lexical_index
+from universal_research_mcp.runtime.research_profile import profile_template, write_profile
 
 
 def _fixture(root: Path) -> None:
@@ -87,3 +88,98 @@ def test_semantic_search_fails_closed_when_unconfigured_or_stale(tmp_path: Path)
             server.memory_search_candidates("alpha", mode="hybrid")
     finally:
         server.configure_runtime(previous_root, previous_db, previous_events)
+
+
+def test_adaptive_profile_routes_structural_queries_to_lexical_and_prose_to_semantic(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = tmp_path / "research"
+    _fixture(root)
+    profile = profile_template()
+    profile["retrieval"] = {
+        "mode": "adaptive",
+        "semantic_backend": {"kind": "demo", "dimensions": 64, "auto_refresh": False},
+    }
+    write_profile(root, profile)
+    assert cli.main(["semantic", "build", "--root", str(root)]) == 0
+    capsys.readouterr()
+
+    previous_root, previous_db, previous_events = server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT
+    try:
+        server.configure_runtime(root)
+        prose = server.memory_search_candidates("alpha research evidence")
+        structural = server.memory_search_candidates("docs/evidence.md", mode="adaptive")
+    finally:
+        server.configure_runtime(previous_root, previous_db, previous_events)
+
+    assert prose["requested_mode"] == "configured"
+    assert prose["mode"] == "semantic"
+    assert prose["routing"]["selection_reason"] == "natural_language_semantic_route"
+    assert prose["routing"]["configured_mode_reason"] == "configured_profile"
+    assert structural["mode"] == "lexical"
+    assert structural["routing"]["selection_reason"] == "structural_query_lexical_fast_path"
+    assert structural["routing"]["semantic_attempted"] is False
+
+
+def test_adaptive_profile_falls_back_to_lexical_when_semantic_is_not_built(tmp_path: Path) -> None:
+    root = tmp_path / "research"
+    _fixture(root)
+    profile = profile_template()
+    profile["retrieval"] = {
+        "mode": "adaptive",
+        "semantic_backend": {"kind": "demo", "dimensions": 64, "auto_refresh": False},
+    }
+    write_profile(root, profile)
+
+    previous_root, previous_db, previous_events = server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT
+    try:
+        server.configure_runtime(root)
+        fallback = server.memory_search_candidates("alpha research evidence")
+    finally:
+        server.configure_runtime(previous_root, previous_db, previous_events)
+
+    assert fallback["mode"] == "lexical"
+    assert fallback["routing"]["selection_reason"] == "semantic_unavailable_lexical_fallback"
+    assert fallback["routing"]["semantic_fallback"] is True
+
+
+def test_adaptive_profile_falls_back_to_lexical_when_semantic_has_no_candidates(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = tmp_path / "research"
+    _fixture(root)
+    profile = profile_template()
+    profile["retrieval"] = {
+        "mode": "adaptive",
+        "semantic_backend": {"kind": "demo", "dimensions": 64, "auto_refresh": False},
+    }
+    write_profile(root, profile)
+    assert cli.main(["semantic", "build", "--root", str(root)]) == 0
+    capsys.readouterr()
+
+    previous_root, previous_db, previous_events = server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT
+    try:
+        server.configure_runtime(root)
+        fallback = server.memory_search_candidates("alpha evidence", status="not-present")
+    finally:
+        server.configure_runtime(previous_root, previous_db, previous_events)
+
+    assert fallback["mode"] == "lexical"
+    assert fallback["routing"]["selection_reason"] == "semantic_empty_lexical_fallback"
+    assert fallback["routing"]["semantic_fallback"] is True
+
+
+def test_configured_mode_preserves_lexical_default_without_a_profile(tmp_path: Path) -> None:
+    root = tmp_path / "research"
+    _fixture(root)
+
+    previous_root, previous_db, previous_events = server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT
+    try:
+        server.configure_runtime(root)
+        result = server.memory_search_candidates("alpha evidence")
+    finally:
+        server.configure_runtime(previous_root, previous_db, previous_events)
+
+    assert result["requested_mode"] == "configured"
+    assert result["mode"] == "lexical"
+    assert result["routing"]["configured_mode_reason"] == "no_profile_legacy_default"

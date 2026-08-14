@@ -31,6 +31,12 @@ read a secret, create a Skill, or start a subagent.
 6. State the verified path, line range, and uncertainty with the conclusion.
 7. If evidence conflicts, preserve the conflict rather than merging it.
 
+For ordinary search, use the default configured mode so the MCP resolves the
+explicit project profile. An `adaptive` profile chooses lexical retrieval only
+for clear file paths, flags, and code identifiers; otherwise it attempts the
+configured semantic view. Inspect the returned `routing` field: a lexical
+fallback is not a semantic result and remains candidate-only.
+
 For a recency question, call `memory_latest` before ordinary search.
 
 For an operating-policy, provenance, or approval review, call
