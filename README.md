@@ -23,7 +23,7 @@ short `urmcp` alias. The PyPI distribution name remains
 `universal-research-mcp`, so users can find the authoritative package and its
 release history in one place.
 
-> **Supported integration (0.5.2): Codex only.** Codex owns model
+> **Supported integration (0.5.3): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
@@ -146,6 +146,16 @@ offline demo or local-GPU backend; bound source discovery to documentation,
 source code, build definitions, and configuration; and record approved future
 provider routes. It is not an agent runner or credential store.
 
+The optional `candidate_backend` policy controls lexical candidate ordering and
+hybrid fusion without changing the canonical ledger. `"universal"` (the
+default) searches exact source passages before event summaries and uses the
+current 0.45/0.55 hybrid weights. `"event_first"` preserves the predecessor
+Research Memory policy: event-summary FTS first and equal-weight RRF. It is
+implemented inside this package against Universal's own current derived views;
+it never opens a predecessor database, launches its watcher, or executes an
+external project script. The small matched evaluation that motivated this
+option is not evidence that either policy is universally better.
+
 ```bash
 universal-research profile template > research-profile.json
 universal-research profile validate research-profile.json --root ./my-research
@@ -163,6 +173,7 @@ to:
 ```json
 {
   "mode": "adaptive",
+  "candidate_backend": "event_first",
   "semantic_backend": {
     "kind": "demo",
     "dimensions": 256,
@@ -264,6 +275,11 @@ eligible or blocked material claim
 
 `memory_search_candidates` defaults to `mode="configured"`, which resolves the
 explicit project profile (or preserves lexical behavior when no profile exists).
+It also resolves `candidate_backend="configured"`; callers may explicitly use
+`"universal"` or `"event_first"` for a bounded comparison. Before candidates
+are returned, a deterministic identity gate requires every event/path/hash/line
+locator to exist in the current canonical projection. A backend mismatch fails
+closed rather than becoming a search result.
 It also accepts explicit `"lexical"`, `"semantic"`, `"hybrid"`, and
 `"adaptive"` modes. Adaptive mode uses a deterministic syntax rule for the
 lexical fast path and otherwise tries the configured semantic view; every

@@ -24,8 +24,19 @@ def _write_profile(path: Path, profile: dict[str, object]) -> None:
 def test_template_is_valid_and_does_not_activate_semantic_or_network() -> None:
     profile = validate_profile(profile_template())
     assert profile["retrieval"]["mode"] == "lexical"
+    assert profile["retrieval"]["candidate_backend"] == "universal"
     assert profile["retrieval"]["semantic_backend"] == {"kind": "disabled"}
     assert profile["provider_policy"]["network_enabled"] is False
+
+
+def test_existing_two_key_retrieval_profile_remains_valid() -> None:
+    profile = profile_template()
+    profile["retrieval"] = {
+        "mode": "lexical",
+        "semantic_backend": {"kind": "disabled"},
+    }
+    validated = validate_profile(profile)
+    assert "candidate_backend" not in validated["retrieval"]
 
 
 def test_adaptive_profile_requires_a_configured_semantic_backend() -> None:
@@ -102,6 +113,10 @@ def test_profile_cli_validates_then_applies_only_matching_hash(
         (
             lambda profile: profile["source_scope"].update({"exclude_secrets": False}),
             "must exclude secrets",
+        ),
+        (
+            lambda profile: profile["retrieval"].update({"candidate_backend": "external_script"}),
+            "candidate_backend",
         ),
     ],
 )
