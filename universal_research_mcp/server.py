@@ -64,6 +64,18 @@ it. Governance tools validate plans, authority, and returned decisions but
 cannot approve work on the user's behalf. Provider secrets must never be pasted
 into chat, command arguments, research records, or tool input.
 
+Use research_profile_status to inspect the project-local retrieval, source, and
+provider policy. A profile is declarative only: it cannot create a Skill,
+activate an unregistered Skill, read a credential, call an API, download a
+model, or start a subagent. Those actions remain separately governed by the
+Codex host and its explicit approvals.
+
+Use research_semantic_models and research_semantic_setup_plan only to inspect a
+reviewed local SentenceTransformer choice and a non-mutating environment plan.
+They cannot create Conda/venv environments, install packages, download a
+model, build an index, or alter Codex registration. A user must explicitly
+approve the exact returned plan hash before a host CLI may execute setup.
+
 For new canonical research input, first call research_prepare_ingest. It writes
 only an immutable pending draft and never appends a record. Commit only the
 returned exact draft ID and hash through research_commit_ingest after the host
@@ -861,6 +873,48 @@ def research_index_status() -> dict[str, Any]:
     except (ImportError, OSError, RuntimeError, ValueError) as exc:
         status = {"status": "unavailable", "reason": str(exc)}
     return {"startup": INDEX_STARTUP_STATUS, "current": status}
+
+
+@mcp.tool()
+def research_profile_status() -> dict[str, Any]:
+    """Inspect the declared research profile without executing any route."""
+
+    from universal_research_mcp.runtime.research_profile import profile_status
+
+    return profile_status(ROOT)
+
+
+@mcp.tool()
+def research_semantic_models() -> dict[str, Any]:
+    """List reviewed local SentenceTransformer models without contacting a registry."""
+
+    from universal_research_mcp.runtime.semantic_setup import catalogue
+
+    return catalogue()
+
+
+@mcp.tool()
+def research_semantic_setup_plan(
+    model_id: str,
+    environment_manager: Literal["auto", "conda", "venv"] = "auto",
+    device: Literal["auto", "cpu", "cuda", "mps"] = "auto",
+    revision: str = "main",
+    auto_refresh: bool = False,
+    reuse_existing: bool = False,
+) -> dict[str, Any]:
+    """Prepare but never execute a hash-bound local semantic setup plan."""
+
+    from universal_research_mcp.runtime.semantic_setup import setup_plan
+
+    return setup_plan(
+        ROOT,
+        model_id=model_id,
+        manager=environment_manager,
+        device=device,
+        revision=revision,
+        auto_refresh=auto_refresh,
+        reuse_existing=reuse_existing,
+    )
 
 
 @mcp.tool()

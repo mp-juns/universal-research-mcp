@@ -519,16 +519,26 @@ def _public_semantic_status(root: Path) -> dict[str, Any]:
     """Report the configured offline backend without loading or downloading it."""
 
     from universal_research_mcp.indexing import semantic_status
-    from universal_research_mcp.runtime.semantic_config import (
-        configuration_path, load_semantic_config,
+    from universal_research_mcp.runtime.research_profile import (
+        configuration_path as profile_configuration_path, load_profile,
     )
+    from universal_research_mcp.runtime.semantic_config import configuration_path, load_semantic_config
     from universal_research_mcp.semantic_runtime import configured_backend
 
     config = load_semantic_config(root)
+    configuration_source = "semantic_config"
+    if config is None:
+        profile = load_profile(root)
+        if profile is not None:
+            from universal_research_mcp.runtime.research_profile import semantic_config_from_profile
+
+            config = semantic_config_from_profile(root)
+            configuration_source = "research_profile" if config is not None else "none"
     if config is None:
         return {
             "status": "unconfigured",
             "configuration_path": str(configuration_path(root)),
+            "research_profile_path": str(profile_configuration_path(root)),
             "semantic": semantic_status(root),
             "remote_used": False,
         }
@@ -536,7 +546,10 @@ def _public_semantic_status(root: Path) -> dict[str, Any]:
     assert backend is not None
     return {
         "status": "configured",
-        "configuration_path": str(configuration_path(root)),
+        "configuration_path": str(
+            configuration_path(root) if configuration_source == "semantic_config" else profile_configuration_path(root)
+        ),
+        "configuration_source": configuration_source,
         "backend": config["backend"],
         "backend_class": backend.backend_class,
         "trained_embedding_model": backend.trained_embedding_model,
@@ -560,9 +573,30 @@ def _public_semantic_build(root: Path, args: argparse.Namespace) -> tuple[dict[s
 
 def _semantic_command(root: Path, args: argparse.Namespace) -> int:
     from universal_research_mcp.runtime.semantic_config import configure_demo, configure_local
+    from universal_research_mcp.runtime.semantic_setup import catalogue, execute_setup, setup_plan
 
     if args.semantic_action == "status":
         _emit(_public_semantic_status(root))
+        return 0
+    if args.semantic_action == "models":
+        _emit(catalogue())
+        return 0
+    if args.semantic_action == "setup":
+        plan = setup_plan(
+            root,
+            model_id=args.model,
+            manager=args.environment_manager,
+            device=args.device,
+            revision=args.revision,
+            auto_refresh=args.auto_refresh,
+            reuse_existing=args.reuse_existing,
+        )
+        if not args.execute:
+            _emit(plan)
+            return 0
+        if not args.confirm_plan_sha256:
+            raise ValueError("semantic setup execution requires --confirm-plan-sha256")
+        _emit(execute_setup(plan, confirm_plan_sha256=args.confirm_plan_sha256))
         return 0
     if args.semantic_action == "configure":
         if args.backend == "demo":
@@ -584,6 +618,41 @@ def _semantic_command(root: Path, args: argparse.Namespace) -> int:
     report, code = _public_semantic_build(root, args)
     _emit(report)
     return code
+
+
+def _profile_command(root: Path, args: argparse.Namespace) -> int:
+    """Manage only the declarative, project-local research profile."""
+
+    from universal_research_mcp.runtime.research_profile import (
+        profile_sha256, profile_status, profile_template, validate_profile, write_profile,
+    )
+
+    if args.profile_action == "template":
+        _emit(profile_template())
+        return 0
+    if args.profile_action == "status":
+        _emit(profile_status(root))
+        return 0
+    candidate = validate_profile(json.loads(args.input.read_text(encoding="utf-8")))
+    digest = profile_sha256(candidate)
+    if args.profile_action == "validate":
+        _emit({
+            "valid": True,
+            "profile_sha256": digest,
+            "execution": "not_executed",
+            "provider_execution": "not_supported_by_public_mcp",
+        })
+        return 0
+    if args.confirm_profile_sha256 != digest:
+        raise ValueError("--confirm-profile-sha256 must exactly match the validated profile SHA-256")
+    persisted = write_profile(root, candidate)
+    _emit({
+        "applied": True,
+        "profile_sha256": profile_sha256(persisted),
+        "execution": "not_executed",
+        "provider_execution": "not_supported_by_public_mcp",
+    })
+    return 0
 
 
 def _ensure_semantic(root: Path, args: argparse.Namespace) -> tuple[dict[str, Any], int]:
@@ -762,6 +831,34 @@ def build_parser() -> argparse.ArgumentParser:
     semantic_build.add_argument("--batch-size", type=int, default=32)
     semantic_status = semantic_actions.add_parser("status", help="Inspect semantic configuration and index health.")
     semantic_status.add_argument("--root", type=Path)
+    semantic_actions.add_parser("models", help="List the reviewed local SentenceTransformer recommendations.")
+    semantic_setup = semantic_actions.add_parser(
+        "setup", help="Plan or explicitly create an isolated local semantic environment and model snapshot.",
+    )
+    semantic_setup.add_argument("--root", type=Path)
+    semantic_setup.add_argument("--model", required=True, help="Exact model ID from `semantic models`.")
+    semantic_setup.add_argument("--revision", default="main", help="Model revision; use an immutable commit hash for reproducibility.")
+    semantic_setup.add_argument("--environment-manager", choices=("auto", "conda", "venv"), default="auto")
+    semantic_setup.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
+    semantic_setup.add_argument("--auto-refresh", action=argparse.BooleanOptionalAction, default=False)
+    semantic_setup.add_argument("--reuse-existing", action="store_true")
+    semantic_setup.add_argument("--execute", action="store_true", help="Run only with an exact confirmation hash from the displayed plan.")
+    semantic_setup.add_argument("--confirm-plan-sha256")
+
+    profile = subparsers.add_parser(
+        "profile", help="Validate and apply a declarative research routing profile.",
+    )
+    profile_actions = profile.add_subparsers(dest="profile_action", required=True)
+    profile_actions.add_parser("template", help="Print the safe default research profile JSON.")
+    profile_validate = profile_actions.add_parser("validate", help="Validate profile JSON without writing or executing it.")
+    profile_validate.add_argument("input", type=Path)
+    profile_validate.add_argument("--root", type=Path)
+    profile_apply = profile_actions.add_parser("apply", help="Write one validated profile after hash confirmation.")
+    profile_apply.add_argument("input", type=Path)
+    profile_apply.add_argument("--root", type=Path)
+    profile_apply.add_argument("--confirm-profile-sha256", required=True)
+    profile_status = profile_actions.add_parser("status", help="Inspect the applied profile without executing routes.")
+    profile_status.add_argument("--root", type=Path)
 
     source = subparsers.add_parser("source", help="Register immutable project-contained source revisions.")
     source_actions = source.add_subparsers(dest="source_action", required=True)
@@ -1013,6 +1110,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "semantic":
         return _semantic_command(_root(getattr(args, "root", None)), args)
 
+    if args.command == "profile":
+        return _profile_command(_root(getattr(args, "root", None)), args)
+
     from universal_research_mcp.indexing import (
         ensure_lexical_index,
         index_status,
@@ -1072,7 +1172,7 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     """Preserve ``universal-research-mcp --root ...`` while adding subcommands."""
 
     materialized = list(sys.argv[1:] if argv is None else argv)
-    commands = {"serve", "init", "index", "build-index", "semantic", "doctor", "validate", "usage", "source", "record", "ingest", "harness"}
+    commands = {"serve", "init", "index", "build-index", "semantic", "profile", "doctor", "validate", "usage", "source", "record", "ingest", "harness"}
     if _internal_provider_preview_enabled():
         commands.update({"provider", "agent"})
     if materialized and materialized[0] in commands:

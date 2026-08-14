@@ -5,7 +5,7 @@ framework and governed MCP. It records plans, approvals, observations, claims,
 failures, amendments, and contributions with traceable sources. Canonical JSONL
 is authoritative; SQLite search indexes are verified, replaceable derived views.
 
-> **Supported integration (0.4.1): Codex only.** Codex owns model
+> **Supported integration (0.5.0): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
@@ -69,8 +69,102 @@ when `--auto-refresh` was explicitly selected; otherwise canonical writes leave
 it stale and print a recovery command. Remote embedding remains unsupported by
 the public MCP and is never invoked by `serve`.
 
+### Local SentenceTransformer setup
+
+`pip install universal-research-mcp` never creates a virtual environment or
+downloads a model. To install the optional library dependencies into your
+current Python environment, use `pip install "universal-research-mcp[semantic]"`.
+To keep a research project self-contained instead, use the built-in guided
+setup. It offers a reviewed catalogue of ten local SentenceTransformer models;
+the Korean/multilingual default is `intfloat/multilingual-e5-base` (768
+dimensions). The catalogue includes compact, balanced, and large English and
+multilingual alternatives.
+
+```bash
+universal-research semantic models
+universal-research semantic setup --root ./my-research \
+  --model intfloat/multilingual-e5-base --device cuda
+```
+
+The first command only prints a plan and a `plan_sha256`. With the default
+environment manager, setup uses Conda when the `conda` executable is available
+and otherwise selects Python `venv`. It does not create either one yet. Review
+the planned environment path, package version, model revision, device, and
+network use; then repeat the exact hash to authorize the mutating operation:
+
+```bash
+universal-research semantic setup --root ./my-research \
+  --model intfloat/multilingual-e5-base --device cuda --execute \
+  --confirm-plan-sha256 <plan_sha256>
+```
+
+The confirmed step creates or explicitly reuses
+`./my-research/.universal-research/semantic-env`, installs the exact package
+version with its `semantic` extra, downloads only the selected reviewed model
+to `./my-research/.universal-research/models/`, and writes the local semantic
+configuration. It does **not** build an index or start a model. Its result gives
+the environment-specific `semantic build` and `serve` commands. Point Codex's
+MCP server command to that returned environment-specific `universal-research`
+executable only after reviewing the host configuration change.
+
+Use `--revision <immutable-model-commit>` instead of the default `main` when
+reproducibility matters. Setup will never replace an existing environment or
+model directory unless you regenerate the plan with `--reuse-existing` and
+confirm its new hash. The system uses `trust_local_model_code=false`; arbitrary
+repository IDs, raw model code, external provider APIs, and automatic model
+downloads are not accepted through this flow.
+
 See the full [canonical input tutorial](docs/input-cli-tutorial.md) for a
 source → human approval → guarded record append → lexical search workflow.
+
+### Declarative research profiles
+
+For a repeatable project policy, use a JSON profile. It can declare whether
+candidate retrieval is lexical, semantic, or hybrid; select the already-present
+offline demo or local-GPU backend; bound source discovery to documentation,
+source code, build definitions, and configuration; and record approved future
+provider routes. It is not an agent runner or credential store.
+
+```bash
+universal-research profile template > research-profile.json
+universal-research profile validate research-profile.json --root ./my-research
+# Review the returned profile_sha256, then repeat it exactly:
+universal-research profile apply research-profile.json --root ./my-research \
+  --confirm-profile-sha256 <profile_sha256>
+universal-research profile status --root ./my-research
+```
+
+The template is lexical-only, network-disabled, and keeps the documented source
+categories available for a later explicit registration step. To enable the
+offline reproducible semantic fixture, change the profile's `retrieval` section
+to:
+
+```json
+{
+  "mode": "hybrid",
+  "semantic_backend": {
+    "kind": "demo",
+    "dimensions": 256,
+    "auto_refresh": false
+  }
+}
+```
+
+Then run `universal-research semantic build --root ./my-research`. For a local
+GPU model already on disk, use `kind: "local"`, a `model_path`, and
+`device: "cuda"`; applying the profile never downloads or loads that model.
+The public MCP exposes the profile's status but cannot call a declared OpenAI,
+Anthropic, Ollama, or other provider route. A remote route requires an explicit
+`network_enabled: true` declaration and an `env:NAME` credential reference;
+the profile never contains a raw API key and the public MCP still does not read
+it or make the call.
+
+Profiles can select only the package's registered Codex Skills
+(`research-governance`, `research-workflow`). You can author and install another
+Codex Skill, but a profile cannot create or activate it by itself. Add a new
+Skill through the reviewed plugin/release path, then add its fixed ID to the
+runtime registry; this prevents a retrieved document or an agent from creating
+its own authority and executing it.
 
 ### First searchable input
 
