@@ -44,7 +44,7 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
         self.assertNotIn("research_provider_status", tools)
         self.assertFalse(any(name.startswith("agent_runtime_") for name in tools))
         mode_schema = tools["memory_search_candidates"].inputSchema["properties"]["mode"]
-        self.assertEqual(mode_schema["enum"], ["lexical", "semantic", "hybrid"])
+        self.assertEqual(mode_schema["enum"], ["configured", "lexical", "semantic", "hybrid", "adaptive"])
 
     def test_safe_path_rejects_sensitive_and_symlink_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

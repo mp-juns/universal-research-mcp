@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 from contextlib import closing
 from datetime import datetime, timezone
@@ -50,11 +51,27 @@ INDEX_STARTUP_STATUS: dict[str, Any] = {"status": "not_requested"}
 
 DENIED_BASENAMES = {".env", ".env.local", ".env.production", "id_rsa", "id_ed25519", "authorized_keys", "credentials.json"}
 DENIED_FRAGMENTS = {"secret", "token", "credential", "private_key", "api_key", "apikey"}
+_STRUCTURAL_QUERY = re.compile(
+    r"(?:"
+    r"--[A-Za-z][A-Za-z0-9-]*"
+    r"|\b[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+\b"
+    r"|\b[A-Za-z][A-Za-z0-9.-]*\.(?:"
+    r"py|pyi|toml|json|ya?ml|ini|cfg|md|txt|sh|ps1|js|ts|tsx|jsx|"
+    r"c|cc|cpp|h|hpp|rs|go|java|kt|sql|cmake)\b"
+    r"|\b(?:Dockerfile|Makefile|CMakeLists\.txt)\b"
+    r"|\b[A-Za-z_][A-Za-z0-9_]*\s*\(\s*\)"
+    r")"
+)
 
 INSTRUCTIONS = """
 Use memory_search_candidates to find candidate research records. A search score
-is not evidence. Its lexical, semantic, and hybrid modes are candidate-only;
-semantic and hybrid require a current explicitly configured offline index.
+is not evidence. Its lexical, semantic, hybrid, configured, and adaptive modes
+are candidate-only. Configured resolves the explicit project profile and falls
+back to lexical only when no profile exists. Adaptive uses lexical for explicit
+code/file/identifier queries and semantic for ordinary research questions when
+the explicitly configured offline index is current; it reports a lexical
+fallback if semantic retrieval is unavailable. It never turns a candidate into
+evidence.
 Before making an important claim, call memory_fetch_evidence
 with the exact path and line range returned by search, then report that source
 range and its hash. Before reporting a material result, comparison, causal,
@@ -392,6 +409,57 @@ def search_hybrid(query: str, top_k: int, status: str | None = None) -> list[dic
     return ranked[:top_k]
 
 
+def _configured_retrieval_mode() -> tuple[str, str]:
+    """Resolve the explicit project policy without changing an unprofiled default."""
+
+    from universal_research_mcp.runtime.research_profile import load_profile
+
+    profile = load_profile(ROOT)
+    if profile is None:
+        return "lexical", "no_profile_legacy_default"
+    return str(profile["retrieval"]["mode"]), "configured_profile"
+
+
+def _is_structural_query(query: str) -> bool:
+    """Detect only clear code/file/flag syntax; prose stays semantic-eligible."""
+
+    return _STRUCTURAL_QUERY.search(query) is not None
+
+
+def _adaptive_search(
+    query: str,
+    top_k: int,
+    status: str | None,
+) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
+    """Use deterministic routing without inventing unvalidated score thresholds."""
+
+    if _is_structural_query(query):
+        return "lexical", search_lexical(query, top_k, status), {
+            "selection_reason": "structural_query_lexical_fast_path",
+            "semantic_attempted": False,
+            "semantic_fallback": False,
+        }
+    try:
+        semantic = search_semantic(query, top_k, status)
+    except RuntimeError:
+        return "lexical", search_lexical(query, top_k, status), {
+            "selection_reason": "semantic_unavailable_lexical_fallback",
+            "semantic_attempted": True,
+            "semantic_fallback": True,
+        }
+    if semantic:
+        return "semantic", semantic, {
+            "selection_reason": "natural_language_semantic_route",
+            "semantic_attempted": True,
+            "semantic_fallback": False,
+        }
+    return "lexical", search_lexical(query, top_k, status), {
+        "selection_reason": "semantic_empty_lexical_fallback",
+        "semantic_attempted": True,
+        "semantic_fallback": True,
+    }
+
+
 def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
     """Return registered nonempty hashes for one source path or exact event."""
 
@@ -438,20 +506,57 @@ def _recency_key(row: sqlite3.Row) -> float:
 def memory_search_candidates(
     query: str,
     top_k: int = 8,
-    mode: Literal["lexical", "semantic", "hybrid"] = "lexical",
+    mode: Literal["configured", "lexical", "semantic", "hybrid", "adaptive"] = "configured",
     status: str | None = None,
 ) -> dict[str, Any]:
     """Return provenance-bound candidates. Fetch original evidence before concluding."""
 
     _require_current_lexical_index()
     top_k = max(1, min(int(top_k), 100))
+    requested_mode = mode
+    configured_mode_reason: str | None = None
+    if mode == "configured":
+        mode, configured_mode_reason = _configured_retrieval_mode()
+
     if mode == "lexical":
+        selected_mode = "lexical"
         results = search_lexical(query, top_k, status)
+        routing: dict[str, Any] = {
+            "selection_reason": "explicit_lexical_mode",
+            "semantic_attempted": False,
+            "semantic_fallback": False,
+        }
     elif mode == "semantic":
+        selected_mode = "semantic"
         results = search_semantic(query, top_k, status)
-    else:
+        routing = {
+            "selection_reason": "explicit_semantic_mode",
+            "semantic_attempted": True,
+            "semantic_fallback": False,
+        }
+    elif mode == "hybrid":
+        selected_mode = "hybrid"
         results = search_hybrid(query, top_k, status)
-    return {"query": query, "mode": mode, "candidate_only": True, "results": results}
+        routing = {
+            "selection_reason": "explicit_hybrid_mode",
+            "semantic_attempted": True,
+            "semantic_fallback": False,
+        }
+    elif mode == "adaptive":
+        selected_mode, results, routing = _adaptive_search(query, top_k, status)
+    else:
+        raise ValueError("retrieval mode is invalid")
+
+    if configured_mode_reason is not None:
+        routing["configured_mode_reason"] = configured_mode_reason
+    return {
+        "query": query,
+        "requested_mode": requested_mode,
+        "mode": selected_mode,
+        "candidate_only": True,
+        "routing": routing,
+        "results": results,
+    }
 
 
 @mcp.tool()
