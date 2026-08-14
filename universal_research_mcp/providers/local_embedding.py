@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import importlib.util
 from pathlib import Path
 from typing import Sequence
@@ -18,6 +18,7 @@ class LocalSentenceTransformerEmbedder:
     device: str = "auto"
     trust_local_model_code: bool = False
     provider_id: str = "local"
+    _encoder: object | None = field(init=False, default=None, repr=False)
 
     def preflight(self) -> Availability:
         snapshot = Path(self.model_path).expanduser().resolve()
@@ -51,15 +52,10 @@ class LocalSentenceTransformerEmbedder:
         snapshot = Path(self.model_path).expanduser().resolve()
         if Path(model).expanduser().resolve() != snapshot:
             raise ValueError("semantic model does not match the approved local snapshot")
-        from sentence_transformers import SentenceTransformer
-
-        selected_device = None if self.device == "auto" else self.device
-        encoder = SentenceTransformer(
-            str(snapshot),
-            device=selected_device,
-            local_files_only=True,
-            trust_remote_code=self.trust_local_model_code,
-        )
+        encoder = self._encoder
+        if encoder is None:
+            encoder = self._load_encoder(snapshot)
+            self._encoder = encoder
         vectors = encoder.encode(
             list(texts),
             show_progress_bar=False,
@@ -78,4 +74,17 @@ class LocalSentenceTransformerEmbedder:
             provider_id=self.provider_id,
             model=str(snapshot),
             vectors=tuple(materialized),
+        )
+
+    def _load_encoder(self, snapshot: Path) -> object:
+        """Load the approved local snapshot once for this embedder instance."""
+
+        from sentence_transformers import SentenceTransformer
+
+        selected_device = None if self.device == "auto" else self.device
+        return SentenceTransformer(
+            str(snapshot),
+            device=selected_device,
+            local_files_only=True,
+            trust_remote_code=self.trust_local_model_code,
         )

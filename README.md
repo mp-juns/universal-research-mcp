@@ -88,7 +88,10 @@ on disk, configure `--backend local --model-path /absolute/path/to/model`; the
 command never downloads a snapshot. A configured semantic view is rebuilt only
 when `--auto-refresh` was explicitly selected; otherwise canonical writes leave
 it stale and print a recovery command. Remote embedding remains unsupported by
-the public MCP and is never invoked by `serve`.
+the public MCP and is never invoked by `serve`. Within one running MCP process,
+an unchanged local semantic configuration reuses its approved embedder and
+loaded encoder. Changing the model path, device, or local-code trust setting
+creates a separate in-process instance; restarting the server releases it.
 
 ### Local SentenceTransformer setup
 
