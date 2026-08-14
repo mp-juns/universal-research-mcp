@@ -34,13 +34,16 @@ package entry points, and are not a compatibility promise.
 
 ## Quick start
 
-### Secure Codex/Docker harness preview
+### Secure Codex/Docker harness and governed-result promotion
 
-The opt-in secure harness keeps Codex on the host and runs only sealed test,
+The secure harness keeps Codex on the host and runs only sealed test,
 build, and experiment recipes in offline, resource-bounded Docker workers. The
 original project is never mounted into a worker, visualization is disabled, and
 edits stay quarantined until their exact diff hash is approved. See
-[the secure harness guide](docs/secure-harness.md). This preview does not claim
+[the secure harness guide](docs/secure-harness.md). A canonical result declared
+as a `benchmark` or `final_review` must carry an exact secure-harness
+attestation; ordinary Codex work cannot be promoted under those labels without
+one. This preview does not claim
 to be a custom Codex runtime or a complete multi-provider agent scheduler.
 
 

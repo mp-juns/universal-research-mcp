@@ -19,6 +19,19 @@ Start with `universal-research harness doctor`, then create a JSON plan with
 Use `harness review` for claim eligibility, and `harness changes` plus `harness
 apply --confirm-diff-hash ...` for explicit import.
 
+For a declared `benchmark` or `final_review`, set `workflow_mode` in the plan
+and use `verification_mode: "strict"`. After a passed review, run `harness
+attest` with the exact review hash. A canonical record whose payload declares
+one of those modes must carry that exact persisted attestation; the normal
+record and MCP ingest paths reject it otherwise. This does not prevent someone
+from using a separate general Codex thread. It prevents that unbound work from
+being promoted as an attested Universal benchmark or final-review result.
+
+Use the normal host-state default consistently, or set
+`UNIVERSAL_RESEARCH_HARNESS_STATE_ROOT` to the same absolute host-state path
+for both `harness` and canonical ingest. Supplying `--state-root` for a run but
+using a different state root during ingestion intentionally fails closed.
+
 The initial executable approval mode is `plan_once`. Network acquisition and GPU
 execution fail closed unless separately represented in a future host-owned stage;
 GPU requests already require exact UUIDs and experiment operations. Visualization
