@@ -8,6 +8,7 @@ backends.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,26 @@ class SemanticBackend:
     backend_class: str
     trained_embedding_model: bool
     auto_refresh: bool
+
+
+@lru_cache(maxsize=8)
+def _local_embedder(
+    model_path: str,
+    device: str,
+    trust_local_model_code: bool,
+) -> LocalSentenceTransformerEmbedder:
+    """Reuse an explicitly configured local embedder within one process.
+
+    ``configured_backend`` is evaluated for every semantic or hybrid request.
+    The immutable backend tuple makes reuse safe while ensuring that a changed
+    model path, device, or remote-code policy receives a separate instance.
+    """
+
+    return LocalSentenceTransformerEmbedder(
+        model_path,
+        device=device,
+        trust_local_model_code=trust_local_model_code,
+    )
 
 
 def configured_backend(root: str | Path) -> SemanticBackend | None:
@@ -50,10 +71,10 @@ def configured_backend(root: str | Path) -> SemanticBackend | None:
     if backend["kind"] == "local_sentence_transformer":
         model_path = str(Path(backend["model_path"]).expanduser().resolve())
         return SemanticBackend(
-            embedder=LocalSentenceTransformerEmbedder(
+            embedder=_local_embedder(
                 model_path,
-                device=backend["device"],
-                trust_local_model_code=backend["trust_local_model_code"],
+                device=str(backend["device"]),
+                trust_local_model_code=bool(backend["trust_local_model_code"]),
             ),
             provider_id="local",
             model=model_path,

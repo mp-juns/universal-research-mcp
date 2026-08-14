@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from universal_research_mcp.providers import (
     AnthropicProvider,
@@ -516,6 +519,25 @@ class ProviderRouterTests(unittest.TestCase):
         status = embedder.preflight()
         self.assertFalse(status.available)
         self.assertIn("does not exist", status.reason)
+
+    def test_local_embedding_reuses_loaded_encoder(self) -> None:
+        class FakeEncoder:
+            def encode(self, texts, **_kwargs):
+                return [[1.0, 2.0] for _ in texts]
+
+        with tempfile.TemporaryDirectory() as temporary:
+            snapshot = Path(temporary)
+            embedder = LocalSentenceTransformerEmbedder(snapshot)
+            with (
+                patch.object(embedder, "preflight", return_value=Availability.ready()),
+                patch.object(embedder, "_load_encoder", return_value=FakeEncoder()) as load,
+            ):
+                first = embedder.embed(("first",), model=str(snapshot), dimensions=2)
+                second = embedder.embed(("second",), model=str(snapshot), dimensions=2)
+
+            self.assertEqual(load.call_count, 1)
+            self.assertEqual(first.vectors, ((1.0, 2.0),))
+            self.assertEqual(second.vectors, ((1.0, 2.0),))
 
 
 if __name__ == "__main__":
