@@ -23,7 +23,7 @@ short `urmcp` alias. The PyPI distribution name remains
 `universal-research-mcp`, so users can find the authoritative package and its
 release history in one place.
 
-> **Supported integration (0.5.3): Codex only.** Codex owns model
+> **Supported host integration (0.6.0): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
@@ -61,6 +61,60 @@ and `100% ready for MCP requests`. This never writes to the MCP protocol
 stream. It is enabled by default for an interactive terminal and disabled by
 default for a non-interactive MCP host. Override it with
 `--startup-progress` or `--no-startup-progress`.
+
+### Public read-only demo MCP
+
+The default server remains a local `stdio` process with access to one user's
+research root. An unauthenticated remote transport is available only for a
+separately reviewed **public demo corpus**. It cannot expose an arbitrary local
+project: the operator must first create a publication manifest that binds the
+exact canonical ledger, every registered source, the lexical database, and any
+retrieval configuration by SHA-256.
+
+Build and review the complete corpus before acknowledging public disclosure:
+
+```bash
+universal-research index ensure --kind lexical --root ./public-research
+universal-research public-demo prepare --root ./public-research \
+  --corpus-id universal-research-demo \
+  --display-name "Universal Research Public Demo" \
+  --confirm-public-data I_UNDERSTAND_THIS_DATA_WILL_BE_PUBLIC
+universal-research public-demo verify --root ./public-research
+```
+
+Then start the Streamable HTTP MCP on loopback, normally behind a TLS reverse
+proxy:
+
+```bash
+universal-research serve --root ./public-research --no-auto-index \
+  --transport streamable-http --public-demo \
+  --host 127.0.0.1 --port 8000 --http-path /mcp
+```
+
+For a container or reverse-proxy binding, the external `Host` value must be
+explicitly allowed:
+
+```bash
+universal-research serve --root ./public-research --no-auto-index \
+  --transport streamable-http --public-demo --host 0.0.0.0 --port 8000 \
+  --allowed-host research.example.org --http-path /mcp
+```
+
+The public process exposes only candidate search, latest records, exact
+evidence fetch, claim gating, ledger audit, and a path-free publication status.
+Canonical ingest, pending-draft inspection, governance dispatch preparation,
+profile/model setup, legacy tools, and automatic index writes are removed from
+its tool surface. Direct Python-level ingest calls also fail closed. Any change
+to a reviewed file or file set prevents startup until an operator prepares and
+reviews a new manifest.
+
+This mode is intentionally public and has no user authentication. Do not use it
+for private or multi-tenant research. A private remote service still requires a
+separate identity provider, tenant-isolated storage, rate limits, and an
+authorization review. The initial public mode supports lexical retrieval and
+the deterministic signed-hashing semantic fixture; local learned models remain
+blocked until their exact model snapshot can be bound into the publication
+manifest.
 
 `init` creates an independent empty canonical source registry and a verified
 FTS5 lexical index. It reports the semantic index as `missing`; it does not
