@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "urmcp"
+version = "0.5.1"
+description = "Short PyPI install alias for Universal Research MCP."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "mp-juns"}]
+keywords = ["urmcp", "mcp", "codex", "research", "provenance", "audit"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = ["universal-research-mcp==0.5.1"]
+
+[project.urls]
+Homepage = "https://github.com/mp-juns/universal-research-mcp"
+Repository = "https://github.com/mp-juns/universal-research-mcp"
+Documentation = "https://github.com/mp-juns/universal-research-mcp#readme"
+Issues = "https://github.com/mp-juns/universal-research-mcp/issues"
+
+[project.scripts]
+urmcp = "universal_research_mcp.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

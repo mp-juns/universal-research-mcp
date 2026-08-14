@@ -1,0 +1,35 @@
+name: Publish urmcp alias to PyPI
+
+on:
+  push:
+    tags: ["urmcp-v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Build, publish, and release alias
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/urmcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install build
+      - name: Require the release tag to match the alias version
+        run: python scripts/require_urmcp_release_tag.py "$GITHUB_REF_NAME"
+      - run: python -m build packages/urmcp --outdir packages/urmcp/dist
+      - run: python scripts/validate_urmcp_alias_artifact.py packages/urmcp/dist/*.whl
+      - name: Publish alias distribution to PyPI by Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/urmcp/dist/
+      - name: Create the GitHub Release after PyPI publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
