@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.5.0"
+version = "0.5.1"
 description = "Governed MCP for provenance-first research memory, evidence re-verification, and controlled canonical ingestion."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "mp-juns"}]
-keywords = ["codex", "mcp", "research", "provenance", "audit", "reproducibility"]
+keywords = ["codex", "mcp", "research", "provenance", "audit", "reproducibility", "urmcp"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
@@ -49,6 +49,7 @@ semantic = [
 universal-research-mcp = "universal_research_mcp.cli:legacy_main"
 universal-research-governance = "universal_research_mcp.governance_server:main"
 universal-research = "universal_research_mcp.cli:main"
+urmcp = "universal_research_mcp.cli:main"
 urgov = "universal_research_mcp.governance.cli:main"
 
 [tool.setuptools]

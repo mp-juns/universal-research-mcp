@@ -1,11 +1,29 @@
 # Universal Research MCP
 
+[![PyPI](https://img.shields.io/pypi/v/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/)
+[![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
+[![License](https://img.shields.io/pypi/l/universal-research-mcp.svg)](LICENSE)
+
+**[Install from PyPI](https://pypi.org/project/universal-research-mcp/)** ·
+**[Read the documentation](https://github.com/mp-juns/universal-research-mcp#readme)** ·
+**[Report an issue](https://github.com/mp-juns/universal-research-mcp/issues)**
+
 Universal Research MCP is a provenance-first, append-only research operations
 framework and governed MCP. It records plans, approvals, observations, claims,
 failures, amendments, and contributions with traceable sources. Canonical JSONL
 is authoritative; SQLite search indexes are verified, replaceable derived views.
 
-> **Supported integration (0.5.0): Codex only.** Codex owns model
+```bash
+python -m pip install --upgrade universal-research-mcp
+```
+
+After installation, use either the full `universal-research` command or the
+short `urmcp` alias. The PyPI distribution name remains
+`universal-research-mcp`, so users can find the authoritative package and its
+release history in one place.
+
+> **Supported integration (0.5.1): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
