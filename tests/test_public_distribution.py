@@ -6,6 +6,7 @@ import unittest
 import zipfile
 
 from universal_research_mcp.governance.registry import FIXED_ROSTER
+from universal_research_mcp import __version__
 from universal_research_mcp.tools.distribution import (
     BUNDLE_PREFIX,
     GOVERNANCE_ROLE_IDS,
@@ -24,7 +25,7 @@ class PublicDistributionTests(unittest.TestCase):
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         self.assertEqual(project["project"]["name"], "universal-research-mcp")
-        self.assertEqual(project["project"]["version"], "0.5.0")
+        self.assertEqual(project["project"]["version"], __version__)
         self.assertEqual(project["project"]["license"], "MIT")
         self.assertEqual(project["project"]["license-files"], ["LICENSE"])
         self.assertEqual(project["project"]["authors"], [{"name": "mp-juns"}])
@@ -34,6 +35,10 @@ class PublicDistributionTests(unittest.TestCase):
         )
         self.assertEqual(
             project["project"]["scripts"]["universal-research"],
+            "universal_research_mcp.cli:main",
+        )
+        self.assertEqual(
+            project["project"]["scripts"]["urmcp"],
             "universal_research_mcp.cli:main",
         )
         self.assertNotIn(
@@ -107,7 +112,7 @@ class PublicDistributionTests(unittest.TestCase):
             *REQUIRED_RUNTIME_FILES,
             *REQUIRED_GOVERNANCE_FILES,
             *(BUNDLE_PREFIX + name for name in REQUIRED_BUNDLE_FILES),
-            "universal_research_mcp-0.5.0.dist-info/entry_points.txt",
+            f"universal_research_mcp-{__version__}.dist-info/entry_points.txt",
         }
         wheel_members.remove(omitted)
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -136,7 +141,7 @@ class PublicDistributionTests(unittest.TestCase):
                 ROOT / "plugin/universal-research-memory/.codex-plugin/plugin.json"
             ).read_text(encoding="utf-8")
         )
-        self.assertTrue(manifest["version"].startswith("0.5.0+codex."))
+        self.assertTrue(manifest["version"].startswith(f"{__version__}+codex."))
         self.assertEqual(manifest["author"]["name"], "mp-juns")
         self.assertEqual(manifest["interface"]["developerName"], "mp-juns")
         self.assertIn("Codex-only", manifest["description"])
