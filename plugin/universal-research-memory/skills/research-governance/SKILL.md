@@ -81,6 +81,12 @@ Select the smallest mode that fits the work:
 - Use `final_review` only after a `main_result` or `final_submission` gate;
   activate all four critical reviewers only at that gate.
 
+For a result that will be promoted as `benchmark` or `final_review`, require
+the secure harness path: sealed plan with `workflow_mode`, strict verification,
+one-time approval, passed review, and `harness attest` with the exact review
+hash. The canonical record must carry the returned exact harness attestation.
+Do not describe ordinary Codex-thread work as an attested governed result.
+
 Create a task packet with an explicit path/source/action scope, evidence
 boundary, network/model/benchmark/parallelism boundaries, an explicit cost
 estimate (including zero) and cost ceiling, the resolved

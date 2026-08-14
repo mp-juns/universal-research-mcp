@@ -85,6 +85,7 @@ class HarnessApprovalStore:
             "image": normalized["image"],
             "model": normalized["model"],
             "reasoning_effort": normalized["reasoning_effort"],
+            "workflow_mode": normalized["workflow_mode"],
             "approval_mode": normalized["approval_mode"],
             "resources": normalized["resources"],
             "operation_ids": [item["operation_id"] for item in normalized["operations"]],
@@ -122,6 +123,8 @@ class HarnessApprovalStore:
             "authority_source": "explicit_local_cli_approval",
             "one_time": True,
         }
+        if "workflow_mode" in grant:
+            expected["workflow_mode"] = normalized["workflow_mode"]
         if any(grant.get(key) != item for key, item in expected.items()):
             raise HarnessApprovalError("approval does not match the exact plan")
         expiry = datetime.fromisoformat(str(grant["expires_at"]))

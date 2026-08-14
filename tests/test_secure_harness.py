@@ -9,6 +9,8 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.core.input import append_record, validate_candidate_records
+from universal_research_mcp.indexing import initialize_project
 from universal_research_mcp.secure_harness.approval import (
     HarnessApprovalError,
     HarnessApprovalStore,
@@ -21,9 +23,11 @@ from universal_research_mcp.secure_harness.contracts import HarnessContractError
 from universal_research_mcp.secure_harness.controller import (
     HarnessRunStore,
     apply_changes,
+    attest_run,
     build_plan_bundle,
     change_review,
     preflight,
+    review_run,
 )
 from universal_research_mcp.secure_harness.docker_backend import DockerBackend, docker_command
 from universal_research_mcp.secure_harness.snapshot import materialize_snapshot
@@ -33,14 +37,21 @@ from universal_research_mcp.secure_harness.worker import WorkerSession
 IMAGE = "example/research-worker@sha256:" + "a" * 64
 
 
-def _spec(*, operations: list[dict] | None = None, approval_mode: str = "plan_once") -> dict:
+def _spec(
+    *,
+    operations: list[dict] | None = None,
+    approval_mode: str = "plan_once",
+    workflow_mode: str = "lightweight",
+    verification_mode: str = "adaptive",
+) -> dict:
     now = datetime.now(timezone.utc)
     return {
         "run_id": "run_secure_01",
         "workflow_id": "workflow_secure_01",
         "model": "gpt-5.6-terra",
         "reasoning_effort": "high",
-        "verification_mode": "adaptive",
+        "workflow_mode": workflow_mode,
+        "verification_mode": verification_mode,
         "approval_mode": approval_mode,
         "image": IMAGE,
         "resources": {
@@ -112,6 +123,14 @@ def test_runtime_plan_matches_published_json_schema(tmp_path: Path) -> None:
     plan = build_plan_bundle(root, _spec())["plan"]
     schema = json.loads((Path(__file__).parents[1] / "schemas/research-run-plan.schema.json").read_text())
     Draft202012Validator(schema).validate(plan)
+
+
+def test_benchmark_and_final_review_plans_require_strict_verification(tmp_path: Path) -> None:
+    root = _project(tmp_path)
+    with pytest.raises(HarnessContractError, match="require strict verification"):
+        build_plan_bundle(root, _spec(workflow_mode="benchmark"))
+    bundle = build_plan_bundle(root, _spec(workflow_mode="benchmark", verification_mode="strict"))
+    assert bundle["plan"]["workflow_mode"] == "benchmark"
 
 
 def test_gpu_requires_experiment_and_exact_uuid(tmp_path: Path) -> None:
@@ -280,6 +299,77 @@ def test_claim_renderer_blocks_material_claims_without_trusted_receipts() -> Non
     passed = evaluate_segments(segments, verification_mode="adaptive", verification_receipts=[receipt])
     assert passed["status"] == "passed"
     assert passed["answer"].startswith("The governed condition")
+
+
+def test_only_attested_benchmark_results_are_canonical_promotion_eligible(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _project(tmp_path)
+    initialize_project(root)
+    append_record(root, {
+        "schema_version": "core/1.0", "record_id": "approval_benchmark",
+        "record_kind": "approval", "study_id": "study_benchmark",
+        "occurred_at": "2026-08-14T00:00:00+00:00",
+        "recorded_at": "2026-08-14T00:00:00+00:00", "status": "approved",
+        "created_by": {"actor_id": "actor_owner", "actor_type": "human"},
+        "payload": {"scope": {"study_ids": ["study_benchmark"], "record_kinds": ["observation"]}},
+    }, approval_bootstrap=True)
+    state = tmp_path / "host-state"
+    monkeypatch.setenv("UNIVERSAL_RESEARCH_HARNESS_STATE_ROOT", str(state))
+    bundle = build_plan_bundle(root, _spec(workflow_mode="benchmark", verification_mode="strict"))
+    store = HarnessRunStore(root, state_root=state)
+    run = store.create(bundle, "Report the benchmark only through verified segments.")
+    segment = {
+        "claim_id": "benchmark_claim", "text": "The benchmark result is verified.",
+        "kind": "result", "final": True, "external": False, "numerical": False,
+        "citation": True, "benchmark": True, "causal": False, "canonical": False,
+        "conflicting": False, "evidence_refs": ["artifact_benchmark"],
+    }
+    result = {
+        "schema_version": "secure-harness-codex-result/1.0", "run_id": "run_secure_01",
+        "run_plan_hash": bundle["plan"]["run_plan_hash"], "model": "fixture-model",
+        "workflow_mode": "benchmark", "usage": {"input_tokens": 1, "output_tokens": 1},
+        "events_hash": "sha256:" + "a" * 64, "structured_output": {"segments": [segment]}, "executed": True,
+    }
+    result["result_hash"] = artifact_hash(result)
+    store.write_result(run, result)
+    receipt = {
+        "claim_id": "benchmark_claim", "evidence_refs": ["artifact_benchmark"],
+        "retrieval_passed": True, "source_verification_passed": True, "independent_review_passed": True,
+    }
+    receipt["receipt_hash"] = artifact_hash(receipt)
+    review = review_run(root, "run_secure_01", receipts_path=None, state_root=state)
+    assert review["status"] == "blocked"
+    receipts_path = tmp_path / "receipts.json"
+    receipts_path.write_text(json.dumps([receipt]), encoding="utf-8")
+    review = review_run(root, "run_secure_01", receipts_path=receipts_path, state_root=state)
+    attested = attest_run(
+        root, "run_secure_01", expected_review_hash=artifact_hash(review),
+        receipts_path=receipts_path, state_root=state,
+    )
+    binding = {key: attested[key] for key in (
+        "run_id", "workflow_mode", "run_plan_hash", "result_hash", "attestation_hash",
+    )}
+    record = {
+        "schema_version": "core/1.0", "record_id": "observation_benchmark",
+        "record_kind": "observation", "study_id": "study_benchmark",
+        "occurred_at": "2026-08-14T00:01:00+00:00",
+        "recorded_at": "2026-08-14T00:01:00+00:00", "status": "completed",
+        "created_by": {"actor_id": "actor_researcher", "actor_type": "ai"},
+        "approval_refs": ["approval_benchmark"],
+        "payload": {"workflow_mode": "benchmark", "harness_attestation": binding},
+    }
+    assert validate_candidate_records(root, [record]) == []
+    missing = {**record, "record_id": "observation_unattested", "payload": {"workflow_mode": "benchmark"}}
+    assert "requires a valid secure-harness attestation" in validate_candidate_records(root, [missing])[0].message
+    forged = {**record, "record_id": "observation_forged", "payload": {
+        "workflow_mode": "benchmark", "harness_attestation": {**binding, "result_hash": "sha256:" + "0" * 64},
+    }}
+    assert "requires a valid secure-harness attestation" in validate_candidate_records(root, [forged])[0].message
+    mismatched_mode = {**record, "record_id": "observation_mode_mismatch", "payload": {
+        "workflow_mode": "final_review", "harness_attestation": binding,
+    }}
+    assert "requires a valid secure-harness attestation" in validate_candidate_records(root, [mismatched_mode])[0].message
 
 
 def test_change_import_requires_unchanged_base_and_exact_diff_hash(tmp_path: Path) -> None:

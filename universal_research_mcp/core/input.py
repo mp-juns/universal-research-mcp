@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any, Iterable
@@ -127,6 +128,40 @@ def _source_issues(
     return issues
 
 
+def _harness_promotion_issues(root: str | Path, records: Iterable[dict[str, Any]]) -> list[ValidationIssue]:
+    """Require a persisted worker attestation for declared governed outcomes."""
+
+    issues: list[ValidationIssue] = []
+    for record in records:
+        payload = record.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        mode = payload.get("workflow_mode")
+        if mode is None or mode == "lightweight":
+            continue
+        identifier = str(record.get("record_id") or "<unknown>")
+        if mode not in {"benchmark", "final_review"}:
+            issues.append(ValidationIssue(identifier, "/payload/workflow_mode", "workflow_mode is unsupported"))
+            continue
+        try:
+            from universal_research_mcp.secure_harness.controller import promotion_attestation_binding
+
+            binding = promotion_attestation_binding(
+                root,
+                payload.get("harness_attestation"),
+                state_root=os.environ.get("UNIVERSAL_RESEARCH_HARNESS_STATE_ROOT"),
+            )
+            if binding["workflow_mode"] != mode:
+                raise ValueError("harness attestation workflow_mode does not match the canonical record")
+        except (OSError, RuntimeError, ValueError) as exc:
+            issues.append(ValidationIssue(
+                identifier,
+                "/payload/harness_attestation",
+                f"{mode} canonical promotion requires a valid secure-harness attestation: {exc}",
+            ))
+    return issues
+
+
 def validate_candidate_records(root: str | Path, records: list[dict[str, Any]]) -> list[ValidationIssue]:
     return validate_candidate_records_with_sources(root, records, sources=None)
 
@@ -157,6 +192,7 @@ def validate_candidate_records_with_sources(
         candidate_ids.add(identifier)
     effective_sources = _registered_sources(paths) if sources is None else sources
     issues.extend(_source_issues(paths, records, effective_sources))
+    issues.extend(_harness_promotion_issues(paths.root, records))
     approvals = {str(item.get("record_id")): item for item in [*existing, *records]}
     for record in records:
         if record.get("record_kind") == "approval":

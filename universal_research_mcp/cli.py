@@ -338,6 +338,7 @@ def _secure_harness_command(root: Path, args: argparse.Namespace) -> int:
     from universal_research_mcp.secure_harness.approval import HarnessApprovalStore
     from universal_research_mcp.secure_harness.controller import (
         apply_changes,
+        attest_run,
         build_plan_bundle,
         change_review,
         execute_codex,
@@ -348,7 +349,7 @@ def _secure_harness_command(root: Path, args: argparse.Namespace) -> int:
     from universal_research_mcp.secure_harness.docker_backend import doctor
 
     action = args.harness_action
-    state_root = getattr(args, "state_root", None)
+    state_root = getattr(args, "state_root", None) or os.environ.get("UNIVERSAL_RESEARCH_HARNESS_STATE_ROOT")
     if action == "doctor":
         _emit(doctor())
         return 0
@@ -396,6 +397,15 @@ def _secure_harness_command(root: Path, args: argparse.Namespace) -> int:
     if action == "review":
         _emit(review_run(
             root, args.run_id, receipts_path=args.receipts, state_root=state_root,
+        ))
+        return 0
+    if action == "attest":
+        _emit(attest_run(
+            root,
+            args.run_id,
+            expected_review_hash=args.confirm_review_hash,
+            receipts_path=args.receipts,
+            state_root=state_root,
         ))
         return 0
     if action == "changes":
@@ -940,6 +950,14 @@ def build_parser() -> argparse.ArgumentParser:
     harness_review.add_argument("--root", type=Path)
     harness_review.add_argument("--state-root", type=Path)
     harness_review.add_argument("--receipts", type=Path)
+    harness_attest = harness_actions.add_parser(
+        "attest", help="Create a one-time promotion attestation for a passed benchmark or final review.",
+    )
+    harness_attest.add_argument("run_id")
+    harness_attest.add_argument("--root", type=Path)
+    harness_attest.add_argument("--state-root", type=Path)
+    harness_attest.add_argument("--receipts", type=Path)
+    harness_attest.add_argument("--confirm-review-hash", required=True)
     harness_changes = harness_actions.add_parser("changes")
     harness_changes.add_argument("run_id")
     harness_changes.add_argument("--root", type=Path)

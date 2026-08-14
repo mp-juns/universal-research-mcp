@@ -79,6 +79,13 @@ reservation, so a fabricated direct call or replay fails before transport. This
 is a same-process host trust boundary, not authentication against a malicious
 host that controls the runtime itself.
 
+For declared `benchmark` and `final_review` canonical outcomes, the promotion
+boundary additionally requires a persisted secure-harness attestation binding
+the project, workflow mode, sealed run plan, immutable result, and passed claim
+review. An arbitrary Codex shell session cannot mint this attestation. It can
+still create an ordinary un-attested local artifact; Universal must not present
+that artifact as a governed benchmark or final-review result.
+
 Host visualization remains a separate default-off capability; Codex model
 entitlement does not grant visualization, filesystem, network, or spend
 authority. Claude Code, OpenCode, OpenClaw, local model servers, and external

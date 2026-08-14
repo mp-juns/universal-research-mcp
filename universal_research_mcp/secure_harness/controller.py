@@ -22,6 +22,7 @@ from .snapshot import build_manifest
 
 
 BUNDLE_VERSION = "research-run-plan-bundle/1.0"
+ATTESTATION_VERSION = "secure-harness-attestation/1.0"
 _MAX_JSON_BYTES = 16 * 1024 * 1024
 
 
@@ -38,7 +39,7 @@ def _load_json(path: str | Path, label: str) -> Any:
 def build_plan_bundle(root: str | Path, specification: Mapping[str, Any]) -> dict[str, Any]:
     project = Path(root).resolve(strict=True)
     allowed = {
-        "run_id", "workflow_id", "model", "reasoning_effort", "verification_mode",
+        "run_id", "workflow_id", "model", "reasoning_effort", "workflow_mode", "verification_mode",
         "approval_mode", "image", "resources", "operations", "created_at", "expires_at",
     }
     unknown = sorted(set(specification) - allowed)
@@ -55,6 +56,7 @@ def build_plan_bundle(root: str | Path, specification: Mapping[str, Any]) -> dic
     manifest = build_manifest(project, snapshot_paths)
     plan = build_run_plan({
         "schema_version": "research-run-plan/1.0",
+        "workflow_mode": "lightweight",
         **dict(specification),
         "project_root_hash": project_root_hash(project),
         "snapshot_hash": manifest["snapshot_hash"],
@@ -183,6 +185,9 @@ class HarnessRunStore:
     def write_result(self, run: Path, value: Mapping[str, Any]) -> None:
         self._create_json(run / "result.json", value)
 
+    def write_attestation(self, run: Path, value: Mapping[str, Any]) -> None:
+        self._create_json(run / "attestation.json", value)
+
     def run_dir(self, run_id: str) -> Path:
         if not run_id or any(character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for character in run_id):
             raise HarnessContractError("run ID is invalid")
@@ -228,6 +233,7 @@ def execute_codex(
         "run_id": plan["run_id"],
         "run_plan_hash": plan["run_plan_hash"],
         "model": result.model,
+        "workflow_mode": plan["workflow_mode"],
         "usage": result.usage,
         "events_hash": result.events_hash,
         "structured_output": result.final_output,
@@ -265,6 +271,113 @@ def review_run(
         "usage": result.get("usage"),
         "model": result.get("model"),
     }
+
+
+def _attestation_binding(value: Mapping[str, Any]) -> dict[str, str]:
+    return {
+        "run_id": str(value["run_id"]),
+        "workflow_mode": str(value["workflow_mode"]),
+        "run_plan_hash": str(value["run_plan_hash"]),
+        "result_hash": str(value["result_hash"]),
+        "attestation_hash": str(value["attestation_hash"]),
+    }
+
+
+def attest_run(
+    root: str | Path,
+    run_id: str,
+    *,
+    expected_review_hash: str,
+    receipts_path: str | Path | None = None,
+    state_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Create a one-time promotion attestation for a reviewed governed run."""
+
+    store = HarnessRunStore(root, state_root=state_root)
+    run = store.run_dir(run_id)
+    plan = validate_run_plan(_load_json(run / "plan.json", "run plan"))
+    mode = plan["workflow_mode"]
+    if mode not in {"benchmark", "final_review"}:
+        raise HarnessContractError("only benchmark or final_review runs may be attested for promotion")
+    review = review_run(root, run_id, receipts_path=receipts_path, state_root=state_root)
+    review_hash = artifact_hash(review)
+    if expected_review_hash != review_hash:
+        raise HarnessContractError("expected review hash does not match the reviewed run")
+    if review.get("status") != "passed" or review.get("claim_eligibility") != "eligible":
+        raise HarnessContractError("blocked review cannot be attested for canonical promotion")
+    result = _load_json(run / "result.json", "run result")
+    result_hash = result.get("result_hash")
+    if not isinstance(result_hash, str) or result_hash != artifact_hash({
+        key: item for key, item in result.items() if key != "result_hash"
+    }):
+        raise HarnessContractError("run result integrity check failed")
+    attestation = {
+        "schema_version": ATTESTATION_VERSION,
+        "project_root_hash": plan["project_root_hash"],
+        "run_id": plan["run_id"],
+        "workflow_mode": mode,
+        "run_plan_hash": plan["run_plan_hash"],
+        "result_hash": result_hash,
+        "review_hash": review_hash,
+        "claim_eligibility": "eligible",
+        "attested_at": datetime.now(timezone.utc).isoformat(),
+    }
+    attestation["attestation_hash"] = artifact_hash(attestation)
+    store.write_attestation(run, attestation)
+    return {"schema_version": ATTESTATION_VERSION, "status": "attested", **_attestation_binding(attestation)}
+
+
+def promotion_attestation_binding(
+    root: str | Path,
+    value: object,
+    *,
+    state_root: str | Path | None = None,
+) -> dict[str, str]:
+    """Verify the exact persisted harness attestation a canonical record cites."""
+
+    if not isinstance(value, Mapping) or set(value) != {
+        "run_id", "workflow_mode", "run_plan_hash", "result_hash", "attestation_hash",
+    }:
+        raise HarnessContractError("harness_attestation must be an exact promotion binding")
+    run_id = value.get("run_id")
+    if not isinstance(run_id, str):
+        raise HarnessContractError("harness_attestation run_id is invalid")
+    store = HarnessRunStore(root, state_root=state_root)
+    run = store.run_dir(run_id)
+    attestation = _load_json(run / "attestation.json", "harness attestation")
+    expected_keys = {
+        "schema_version", "project_root_hash", "run_id", "workflow_mode", "run_plan_hash",
+        "result_hash", "review_hash", "claim_eligibility", "attested_at", "attestation_hash",
+    }
+    if set(attestation) != expected_keys or attestation.get("schema_version") != ATTESTATION_VERSION:
+        raise HarnessContractError("harness attestation schema is invalid")
+    if attestation.get("attestation_hash") != artifact_hash({
+        key: item for key, item in attestation.items() if key != "attestation_hash"
+    }):
+        raise HarnessContractError("harness attestation integrity check failed")
+    plan = validate_run_plan(_load_json(run / "plan.json", "run plan"))
+    result = _load_json(run / "result.json", "run result")
+    if plan["workflow_mode"] not in {"benchmark", "final_review"}:
+        raise HarnessContractError("harness attestation is not a promotion mode")
+    if (
+        attestation.get("run_id") != plan["run_id"]
+        or attestation.get("workflow_mode") != plan["workflow_mode"]
+        or attestation.get("run_plan_hash") != plan["run_plan_hash"]
+        or result.get("run_id") != plan["run_id"]
+        or result.get("run_plan_hash") != plan["run_plan_hash"]
+        or result.get("result_hash") != artifact_hash({
+            key: item for key, item in result.items() if key != "result_hash"
+        })
+        or result.get("result_hash") != attestation.get("result_hash")
+        or attestation.get("claim_eligibility") != "eligible"
+    ):
+        raise HarnessContractError("harness result no longer matches its attestation")
+    if attestation.get("project_root_hash") != project_root_hash(root):
+        raise HarnessContractError("harness attestation is bound to another project")
+    binding = _attestation_binding(attestation)
+    if dict(value) != binding:
+        raise HarnessContractError("harness attestation binding does not match")
+    return binding
 
 
 def change_review(root: str | Path, run_id: str, *, state_root: str | Path | None = None) -> dict[str, Any]:

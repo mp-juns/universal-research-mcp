@@ -22,6 +22,7 @@ OPERATION_VERSION = "worker-operation/1.0"
 CLAIM_VERSION = "claim-inventory/1.0"
 APPROVAL_MODES = frozenset({"plan_once", "sensitive_stage", "each_operation"})
 VERIFICATION_MODES = frozenset({"adaptive", "strict"})
+WORKFLOW_MODES = frozenset({"lightweight", "benchmark", "final_review"})
 OPERATION_KINDS = frozenset({"read", "search", "patch", "test", "build", "experiment"})
 CLAIM_LEVELS = frozenset({"L0", "L1", "L2", "L3"})
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -181,7 +182,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         raise HarnessContractError("run plan must be an object")
     allowed = {
         "schema_version", "run_id", "workflow_id", "project_root_hash", "model",
-        "reasoning_effort", "verification_mode", "approval_mode", "image",
+        "reasoning_effort", "workflow_mode", "verification_mode", "approval_mode", "image",
         "snapshot_hash", "resources", "operations", "created_at", "expires_at",
         "run_plan_hash",
     }
@@ -207,8 +208,13 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         raise HarnessContractError("reasoning_effort is unsupported")
     verification = value.get("verification_mode")
     approval = value.get("approval_mode")
+    workflow_mode = value.get("workflow_mode", "lightweight")
+    if workflow_mode not in WORKFLOW_MODES:
+        raise HarnessContractError("workflow_mode is unsupported")
     if verification not in VERIFICATION_MODES:
         raise HarnessContractError("verification_mode is unsupported")
+    if workflow_mode in {"benchmark", "final_review"} and verification != "strict":
+        raise HarnessContractError("benchmark and final_review plans require strict verification")
     if approval not in APPROVAL_MODES:
         raise HarnessContractError("approval_mode is unsupported")
     operations = value.get("operations")
@@ -225,6 +231,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         "project_root_hash": project_root_hash,
         "model": model,
         "reasoning_effort": reasoning,
+        "workflow_mode": workflow_mode,
         "verification_mode": verification,
         "approval_mode": approval,
         "image": image,
@@ -238,7 +245,12 @@ def validate_run_plan(value: object) -> dict[str, Any]:
     expires = datetime.fromisoformat(normalized["expires_at"])
     if expires <= created:
         raise HarnessContractError("run plan must expire after creation")
-    computed = hash_without({**normalized, "run_plan_hash": None}, "run_plan_hash")
+    # Legacy 1.0 plans did not carry workflow_mode. Preserve their immutable
+    # hash while treating them as lightweight; newly built plans always carry it.
+    material = {**normalized, "run_plan_hash": None}
+    if "workflow_mode" not in value:
+        material.pop("workflow_mode")
+    computed = hash_without(material, "run_plan_hash")
     supplied = value.get("run_plan_hash")
     if supplied is not None and supplied != computed:
         raise HarnessContractError("run plan hash mismatch")
