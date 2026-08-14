@@ -573,9 +573,30 @@ def _public_semantic_build(root: Path, args: argparse.Namespace) -> tuple[dict[s
 
 def _semantic_command(root: Path, args: argparse.Namespace) -> int:
     from universal_research_mcp.runtime.semantic_config import configure_demo, configure_local
+    from universal_research_mcp.runtime.semantic_setup import catalogue, execute_setup, setup_plan
 
     if args.semantic_action == "status":
         _emit(_public_semantic_status(root))
+        return 0
+    if args.semantic_action == "models":
+        _emit(catalogue())
+        return 0
+    if args.semantic_action == "setup":
+        plan = setup_plan(
+            root,
+            model_id=args.model,
+            manager=args.environment_manager,
+            device=args.device,
+            revision=args.revision,
+            auto_refresh=args.auto_refresh,
+            reuse_existing=args.reuse_existing,
+        )
+        if not args.execute:
+            _emit(plan)
+            return 0
+        if not args.confirm_plan_sha256:
+            raise ValueError("semantic setup execution requires --confirm-plan-sha256")
+        _emit(execute_setup(plan, confirm_plan_sha256=args.confirm_plan_sha256))
         return 0
     if args.semantic_action == "configure":
         if args.backend == "demo":
@@ -810,6 +831,19 @@ def build_parser() -> argparse.ArgumentParser:
     semantic_build.add_argument("--batch-size", type=int, default=32)
     semantic_status = semantic_actions.add_parser("status", help="Inspect semantic configuration and index health.")
     semantic_status.add_argument("--root", type=Path)
+    semantic_actions.add_parser("models", help="List the reviewed local SentenceTransformer recommendations.")
+    semantic_setup = semantic_actions.add_parser(
+        "setup", help="Plan or explicitly create an isolated local semantic environment and model snapshot.",
+    )
+    semantic_setup.add_argument("--root", type=Path)
+    semantic_setup.add_argument("--model", required=True, help="Exact model ID from `semantic models`.")
+    semantic_setup.add_argument("--revision", default="main", help="Model revision; use an immutable commit hash for reproducibility.")
+    semantic_setup.add_argument("--environment-manager", choices=("auto", "conda", "venv"), default="auto")
+    semantic_setup.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
+    semantic_setup.add_argument("--auto-refresh", action=argparse.BooleanOptionalAction, default=False)
+    semantic_setup.add_argument("--reuse-existing", action="store_true")
+    semantic_setup.add_argument("--execute", action="store_true", help="Run only with an exact confirmation hash from the displayed plan.")
+    semantic_setup.add_argument("--confirm-plan-sha256")
 
     profile = subparsers.add_parser(
         "profile", help="Validate and apply a declarative research routing profile.",

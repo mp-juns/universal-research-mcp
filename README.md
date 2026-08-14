@@ -69,6 +69,51 @@ when `--auto-refresh` was explicitly selected; otherwise canonical writes leave
 it stale and print a recovery command. Remote embedding remains unsupported by
 the public MCP and is never invoked by `serve`.
 
+### Local SentenceTransformer setup
+
+`pip install universal-research-mcp` never creates a virtual environment or
+downloads a model. To install the optional library dependencies into your
+current Python environment, use `pip install "universal-research-mcp[semantic]"`.
+To keep a research project self-contained instead, use the built-in guided
+setup. It offers a reviewed catalogue of ten local SentenceTransformer models;
+the Korean/multilingual default is `intfloat/multilingual-e5-base` (768
+dimensions). The catalogue includes compact, balanced, and large English and
+multilingual alternatives.
+
+```bash
+universal-research semantic models
+universal-research semantic setup --root ./my-research \
+  --model intfloat/multilingual-e5-base --device cuda
+```
+
+The first command only prints a plan and a `plan_sha256`. With the default
+environment manager, setup uses Conda when the `conda` executable is available
+and otherwise selects Python `venv`. It does not create either one yet. Review
+the planned environment path, package version, model revision, device, and
+network use; then repeat the exact hash to authorize the mutating operation:
+
+```bash
+universal-research semantic setup --root ./my-research \
+  --model intfloat/multilingual-e5-base --device cuda --execute \
+  --confirm-plan-sha256 <plan_sha256>
+```
+
+The confirmed step creates or explicitly reuses
+`./my-research/.universal-research/semantic-env`, installs the exact package
+version with its `semantic` extra, downloads only the selected reviewed model
+to `./my-research/.universal-research/models/`, and writes the local semantic
+configuration. It does **not** build an index or start a model. Its result gives
+the environment-specific `semantic build` and `serve` commands. Point Codex's
+MCP server command to that returned environment-specific `universal-research`
+executable only after reviewing the host configuration change.
+
+Use `--revision <immutable-model-commit>` instead of the default `main` when
+reproducibility matters. Setup will never replace an existing environment or
+model directory unless you regenerate the plan with `--reuse-existing` and
+confirm its new hash. The system uses `trust_local_model_code=false`; arbitrary
+repository IDs, raw model code, external provider APIs, and automatic model
+downloads are not accepted through this flow.
+
 See the full [canonical input tutorial](docs/input-cli-tutorial.md) for a
 source → human approval → guarded record append → lexical search workflow.
 
