@@ -35,6 +35,7 @@ def profile_template() -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "retrieval": {
             "mode": "lexical",
+            "candidate_backend": "universal",
             "semantic_backend": {"kind": "disabled"},
         },
         "execution": {
@@ -152,9 +153,15 @@ def validate_profile(value: Any) -> dict[str, Any]:
     if profile["schema_version"] != SCHEMA_VERSION:
         raise ValueError("research profile schema_version is invalid")
 
-    retrieval = _require_keys(profile["retrieval"], {"mode", "semantic_backend"}, "retrieval")
+    retrieval = profile["retrieval"]
+    if not isinstance(retrieval, dict) or not {"mode", "semantic_backend"} <= set(retrieval) or not set(
+        retrieval
+    ) <= {"mode", "candidate_backend", "semantic_backend"}:
+        raise ValueError("research profile retrieval is invalid")
     if retrieval["mode"] not in {"lexical", "semantic", "hybrid", "adaptive"}:
         raise ValueError("research profile retrieval mode is invalid")
+    if retrieval.get("candidate_backend", "universal") not in {"universal", "event_first"}:
+        raise ValueError("research profile candidate_backend is invalid")
     semantic_backend = _validate_semantic_backend(retrieval["semantic_backend"])
     if retrieval["mode"] == "lexical" and semantic_backend["kind"] != "disabled":
         raise ValueError("research profile lexical mode requires a disabled semantic backend")

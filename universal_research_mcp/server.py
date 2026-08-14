@@ -67,7 +67,10 @@ INSTRUCTIONS = """
 Use memory_search_candidates to find candidate research records. A search score
 is not evidence. Its lexical, semantic, hybrid, configured, and adaptive modes
 are candidate-only. Configured resolves the explicit project profile and falls
-back to lexical only when no profile exists. Adaptive uses lexical for explicit
+back to lexical only when no profile exists. The optional event_first candidate
+backend reproduces predecessor event-summary ranking and equal-weight hybrid
+fusion using only Universal's own derived views. Every returned locator passes
+the current canonical-projection identity gate. Adaptive uses lexical for explicit
 code/file/identifier queries and semantic for ordinary research questions when
 the explicitly configured offline index is current; it reports a lexical
 fallback if semantic retrieval is unavailable. It never turns a candidate into
@@ -280,6 +283,38 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
     return [_result(row, rank, -float(row["bm25_raw"])) for rank, row in enumerate(unique, 1)]
 
 
+def search_event_first_lexical(query: str, top_k: int, status: str | None = None) -> list[dict[str, Any]]:
+    """Rank canonical event summaries before source passages.
+
+    This reproduces the candidate-ordering policy used by the predecessor
+    Research Memory query path while reading only Universal's current derived
+    lexical view. It never opens the predecessor database or executes an
+    external project script.
+    """
+
+    filters: list[str] = []
+    params: list[Any] = [safe_fts_query(query)]
+    if status:
+        filters.append("e.status = ?")
+        params.append(status)
+    params.append(top_k)
+    where = " AND " + " AND ".join(filters) if filters else ""
+    with closing(open_readonly(RESEARCH_DB)) as db:
+        rows = db.execute(
+            f"""
+            SELECT e.event_id, e.event_type, e.status, e.date, e.summary,
+                   e.source_path, e.source_heading, e.line_start, e.line_end,
+                   e.source_sha256, bm25(event_fts) AS bm25_raw
+            FROM event_fts JOIN events AS e ON e.event_id = event_fts.event_id
+            WHERE event_fts MATCH ? {where}
+            ORDER BY bm25_raw ASC, e.date DESC, e.event_id ASC
+            LIMIT ?
+            """,
+            params,
+        ).fetchall()
+    return [_result(row, rank, -float(row["bm25_raw"])) for rank, row in enumerate(rows, 1)]
+
+
 def _dot(left: tuple[float, ...], right: tuple[float, ...]) -> float:
     if len(left) != len(right):
         raise RuntimeError("semantic query and index dimensions do not match")
@@ -352,11 +387,18 @@ def search_semantic(query: str, top_k: int, status: str | None = None) -> list[d
             candidate = _result(row, len(results) + 1)
             candidate["lexical_score"] = None
             if passage is not None:
+                registered_source = lexical.execute(
+                    "SELECT source_sha256 FROM sources WHERE source_path = ?",
+                    (passage["source_path"],),
+                ).fetchone()
+                if registered_source is None:
+                    raise RuntimeError("semantic passage is absent from the canonical source registry")
                 candidate.update({
                     "path": passage["source_path"],
                     "heading": passage["source_heading"],
                     "start_line": passage["line_start"],
                     "end_line": passage["line_end"],
+                    "source_sha256": registered_source["source_sha256"],
                 })
             candidate["semantic_score"] = float(details["score"])
             candidate["retrieval"] = {
@@ -409,15 +451,101 @@ def search_hybrid(query: str, top_k: int, status: str | None = None) -> list[dic
     return ranked[:top_k]
 
 
-def _configured_retrieval_mode() -> tuple[str, str]:
+def search_event_first_hybrid(query: str, top_k: int, status: str | None = None) -> list[dict[str, Any]]:
+    """Fuse event-first lexical and semantic ranks with equal-weight RRF."""
+
+    lexical = search_event_first_lexical(query, top_k, status)
+    semantic = search_semantic(query, max(top_k * 8, 50), status)
+    combined: dict[str, dict[str, Any]] = {}
+    for candidate in lexical:
+        combined.setdefault(candidate["event_id"], {})["lexical"] = candidate
+    for candidate in semantic:
+        combined.setdefault(candidate["event_id"], {})["semantic"] = candidate
+
+    event_ids = sorted(combined)
+    canonical: dict[str, sqlite3.Row] = {}
+    if event_ids:
+        placeholders = ",".join("?" for _ in event_ids)
+        with closing(open_readonly(RESEARCH_DB)) as db:
+            rows = db.execute(
+                f"""
+                SELECT event_id, event_type, status, date, summary, source_path,
+                       source_heading, line_start, line_end, source_sha256
+                FROM events WHERE event_id IN ({placeholders})
+                """,
+                event_ids,
+            ).fetchall()
+        canonical = {str(row["event_id"]): row for row in rows}
+
+    ranked: list[dict[str, Any]] = []
+    for event_id, sources in combined.items():
+        row = canonical.get(event_id)
+        if row is None:
+            raise RuntimeError("candidate event is absent from the current canonical projection")
+        lexical_candidate = sources.get("lexical")
+        semantic_candidate = sources.get("semantic")
+        lexical_rank = None if lexical_candidate is None else int(lexical_candidate["rank"])
+        semantic_rank = None if semantic_candidate is None else int(semantic_candidate["rank"])
+        score = (
+            (1.0 / (60 + lexical_rank) if lexical_rank is not None else 0.0)
+            + (1.0 / (60 + semantic_rank) if semantic_rank is not None else 0.0)
+        )
+        candidate = _result(row, 0)
+        semantic_retrieval = (semantic_candidate or {}).get("retrieval") or {}
+        semantic_evidence = None
+        if semantic_candidate is not None:
+            semantic_evidence = {
+                "event_id": semantic_candidate["event_id"],
+                "path": semantic_candidate["path"],
+                "heading": semantic_candidate["heading"],
+                "start_line": semantic_candidate["start_line"],
+                "end_line": semantic_candidate["end_line"],
+                "source_sha256": semantic_candidate["source_sha256"],
+            }
+        candidate["retrieval"] = {
+            "lexical_rank": lexical_rank,
+            "lexical_score": None if lexical_candidate is None else lexical_candidate["lexical_score"],
+            "semantic_rank": semantic_rank,
+            "cosine_similarity": semantic_retrieval.get("cosine_similarity"),
+            "semantic_passage_id": semantic_retrieval.get("semantic_passage_id"),
+            "semantic_evidence": semantic_evidence,
+            "rrf_score": score,
+            "rrf_weights": {"lexical": 1.0, "semantic": 1.0},
+            "rrf_k": 60,
+        }
+        candidate["rrf_score"] = score
+        ranked.append(candidate)
+    ranked.sort(key=lambda item: (-float(item["rrf_score"]), item["event_id"]))
+    for rank, candidate in enumerate(ranked[:top_k], start=1):
+        candidate["rank"] = rank
+    return ranked[:top_k]
+
+
+def _configured_retrieval_policy() -> tuple[str, str, str]:
     """Resolve the explicit project policy without changing an unprofiled default."""
 
     from universal_research_mcp.runtime.research_profile import load_profile
 
     profile = load_profile(ROOT)
     if profile is None:
-        return "lexical", "no_profile_legacy_default"
-    return str(profile["retrieval"]["mode"]), "configured_profile"
+        return "lexical", "universal", "no_profile_legacy_default"
+    retrieval = profile["retrieval"]
+    return (
+        str(retrieval["mode"]),
+        str(retrieval.get("candidate_backend", "universal")),
+        "configured_profile",
+    )
+
+
+def _lexical_search(
+    candidate_backend: str,
+    query: str,
+    top_k: int,
+    status: str | None,
+) -> list[dict[str, Any]]:
+    if candidate_backend == "event_first":
+        return search_event_first_lexical(query, top_k, status)
+    return search_lexical(query, top_k, status)
 
 
 def _is_structural_query(query: str) -> bool:
@@ -430,11 +558,12 @@ def _adaptive_search(
     query: str,
     top_k: int,
     status: str | None,
+    candidate_backend: str,
 ) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
     """Use deterministic routing without inventing unvalidated score thresholds."""
 
     if _is_structural_query(query):
-        return "lexical", search_lexical(query, top_k, status), {
+        return "lexical", _lexical_search(candidate_backend, query, top_k, status), {
             "selection_reason": "structural_query_lexical_fast_path",
             "semantic_attempted": False,
             "semantic_fallback": False,
@@ -442,7 +571,7 @@ def _adaptive_search(
     try:
         semantic = search_semantic(query, top_k, status)
     except RuntimeError:
-        return "lexical", search_lexical(query, top_k, status), {
+        return "lexical", _lexical_search(candidate_backend, query, top_k, status), {
             "selection_reason": "semantic_unavailable_lexical_fallback",
             "semantic_attempted": True,
             "semantic_fallback": True,
@@ -453,10 +582,72 @@ def _adaptive_search(
             "semantic_attempted": True,
             "semantic_fallback": False,
         }
-    return "lexical", search_lexical(query, top_k, status), {
+    return "lexical", _lexical_search(candidate_backend, query, top_k, status), {
         "selection_reason": "semantic_empty_lexical_fallback",
         "semantic_attempted": True,
         "semantic_fallback": True,
+    }
+
+
+def _locator_matches_projection(db: sqlite3.Connection, locator: dict[str, Any]) -> bool:
+    values = (
+        locator.get("event_id"),
+        locator.get("path"),
+        locator.get("source_sha256"),
+        locator.get("start_line"),
+        locator.get("end_line"),
+    )
+    event_match = db.execute(
+        """
+        SELECT 1 FROM events
+        WHERE event_id = ? AND source_path IS ? AND source_sha256 IS ?
+          AND line_start IS ? AND line_end IS ?
+        """,
+        values,
+    ).fetchone()
+    passage_match = db.execute(
+        """
+        SELECT 1 FROM source_passage_fts
+        WHERE event_id = ? AND source_path IS ? AND source_sha256 IS ?
+          AND line_start IS ? AND line_end IS ?
+        LIMIT 1
+        """,
+        values,
+    ).fetchone()
+    return event_match is not None or passage_match is not None
+
+
+def _apply_candidate_identity_gate(results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Fail closed unless every locator exists in the current derived projection."""
+
+    evidence_eligible = 0
+    checked_locators = 0
+    with closing(open_readonly(RESEARCH_DB)) as db:
+        for candidate in results:
+            if not _locator_matches_projection(db, candidate):
+                raise RuntimeError("candidate locator failed the canonical identity gate")
+            checked_locators += 1
+            candidate["canonical_identity_verified"] = True
+            semantic_evidence = (candidate.get("retrieval") or {}).get("semantic_evidence")
+            if semantic_evidence is not None:
+                if not isinstance(semantic_evidence, dict) or not _locator_matches_projection(db, semantic_evidence):
+                    raise RuntimeError("semantic evidence locator failed the canonical identity gate")
+                semantic_evidence["canonical_identity_verified"] = True
+                checked_locators += 1
+            eligible = bool(
+                candidate.get("path")
+                and candidate.get("source_sha256")
+                and candidate.get("start_line") is not None
+                and candidate.get("end_line") is not None
+            )
+            candidate["evidence_eligible"] = eligible
+            evidence_eligible += int(eligible)
+    return {
+        "status": "passed",
+        "checked_candidates": len(results),
+        "checked_locators": checked_locators,
+        "evidence_eligible_candidates": evidence_eligible,
+        "authority": "current_canonical_projection",
     }
 
 
@@ -508,19 +699,26 @@ def memory_search_candidates(
     top_k: int = 8,
     mode: Literal["configured", "lexical", "semantic", "hybrid", "adaptive"] = "configured",
     status: str | None = None,
+    candidate_backend: Literal["configured", "universal", "event_first"] = "configured",
 ) -> dict[str, Any]:
     """Return provenance-bound candidates. Fetch original evidence before concluding."""
 
     _require_current_lexical_index()
     top_k = max(1, min(int(top_k), 100))
     requested_mode = mode
+    requested_candidate_backend = candidate_backend
     configured_mode_reason: str | None = None
+    configured_mode, configured_backend, policy_reason = _configured_retrieval_policy()
     if mode == "configured":
-        mode, configured_mode_reason = _configured_retrieval_mode()
+        mode, configured_mode_reason = configured_mode, policy_reason
+    if candidate_backend == "configured":
+        candidate_backend = configured_backend
+    if candidate_backend not in {"universal", "event_first"}:
+        raise ValueError("candidate backend is invalid")
 
     if mode == "lexical":
         selected_mode = "lexical"
-        results = search_lexical(query, top_k, status)
+        results = _lexical_search(candidate_backend, query, top_k, status)
         routing: dict[str, Any] = {
             "selection_reason": "explicit_lexical_mode",
             "semantic_attempted": False,
@@ -536,22 +734,35 @@ def memory_search_candidates(
         }
     elif mode == "hybrid":
         selected_mode = "hybrid"
-        results = search_hybrid(query, top_k, status)
+        results = (
+            search_event_first_hybrid(query, top_k, status)
+            if candidate_backend == "event_first"
+            else search_hybrid(query, top_k, status)
+        )
         routing = {
             "selection_reason": "explicit_hybrid_mode",
             "semantic_attempted": True,
             "semantic_fallback": False,
         }
     elif mode == "adaptive":
-        selected_mode, results, routing = _adaptive_search(query, top_k, status)
+        selected_mode, results, routing = _adaptive_search(query, top_k, status, candidate_backend)
     else:
         raise ValueError("retrieval mode is invalid")
 
     if configured_mode_reason is not None:
         routing["configured_mode_reason"] = configured_mode_reason
+    identity_gate = _apply_candidate_identity_gate(results)
+    routing["candidate_backend"] = candidate_backend
+    routing["candidate_backend_applied"] = selected_mode in {"lexical", "hybrid"}
+    routing["candidate_backend_reason"] = (
+        policy_reason if requested_candidate_backend == "configured" else "explicit_request"
+    )
+    routing["identity_gate"] = identity_gate
     return {
         "query": query,
         "requested_mode": requested_mode,
+        "requested_candidate_backend": requested_candidate_backend,
+        "candidate_backend": candidate_backend,
         "mode": selected_mode,
         "candidate_only": True,
         "routing": routing,

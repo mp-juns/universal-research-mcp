@@ -32,7 +32,11 @@ read a secret, create a Skill, or start a subagent.
 7. If evidence conflicts, preserve the conflict rather than merging it.
 
 For ordinary search, use the default configured mode so the MCP resolves the
-explicit project profile. An `adaptive` profile chooses lexical retrieval only
+explicit project profile and candidate backend. `event_first` is only an
+alternative candidate-ordering/fusion policy over Universal's current derived
+indexes; it does not authorize access to a predecessor database or watcher.
+Require `routing.identity_gate.status=passed` before fetching any candidate.
+An `adaptive` profile chooses lexical retrieval only
 for clear file paths, flags, and code identifiers; otherwise it attempts the
 configured semantic view. Inspect the returned `routing` field: a lexical
 fallback is not a semantic result and remains candidate-only.
