@@ -23,7 +23,7 @@ short `urmcp` alias. The PyPI distribution name remains
 `universal-research-mcp`, so users can find the authoritative package and its
 release history in one place.
 
-> **Supported integration (0.5.2): Codex only.** Codex owns model
+> **Supported integration (0.5.3): Codex only.** Codex owns model
 > selection, agent sessions, tool execution, approvals, and GUI presentation.
 > Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, Claude Code, OpenCode, and
 > OpenClaw are not supported or invoked by this release.
