@@ -789,9 +789,38 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--root", type=Path)
     serve.add_argument("--lexical-db", type=Path)
     serve.add_argument("--events-root", type=Path)
-    serve.add_argument("--auto-index", action=argparse.BooleanOptionalAction, default=True)
+    serve.add_argument("--auto-index", action=argparse.BooleanOptionalAction, default=None)
     serve.add_argument("--startup-progress", action=argparse.BooleanOptionalAction, default=None)
     serve.add_argument("--legacy-tools", action="store_true")
+    serve.add_argument("--transport", choices=("stdio", "streamable-http"), default="stdio")
+    serve.add_argument("--public-demo", action="store_true")
+    serve.add_argument("--public-demo-manifest", type=Path, default=Path("config/public-demo.json"))
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--http-path", default="/mcp")
+    serve.add_argument("--allowed-host", action="append", default=[])
+    serve.add_argument("--allowed-origin", action="append", default=[])
+
+    public_demo = subparsers.add_parser(
+        "public-demo", help="Prepare or verify a content-bound public demo corpus.",
+    )
+    public_demo_actions = public_demo.add_subparsers(dest="public_demo_action", required=True)
+    public_prepare = public_demo_actions.add_parser(
+        "prepare", help="Write a reviewed publication manifest without starting a server.",
+    )
+    public_prepare.add_argument("--root", type=Path, required=True)
+    public_prepare.add_argument("--corpus-id", required=True)
+    public_prepare.add_argument("--display-name", required=True)
+    public_prepare.add_argument("--manifest", type=Path, default=Path("config/public-demo.json"))
+    public_prepare.add_argument(
+        "--confirm-public-data", required=True,
+        help="Exact disclosure acknowledgement printed in the documentation.",
+    )
+    public_verify = public_demo_actions.add_parser(
+        "verify", help="Re-hash the reviewed corpus without serving or changing it.",
+    )
+    public_verify.add_argument("--root", type=Path, required=True)
+    public_verify.add_argument("--manifest", type=Path, default=Path("config/public-demo.json"))
 
     initialize = subparsers.add_parser("init", help="Initialize an independent research store.")
     initialize.add_argument("path", nargs="?", type=Path)
@@ -1063,7 +1092,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         for option, value in (("--root", args.root), ("--lexical-db", args.lexical_db), ("--events-root", args.events_root)):
             if value is not None:
                 forwarded.extend((option, str(value)))
-        if args.auto_index:
+        auto_index = args.auto_index if args.auto_index is not None else not args.public_demo
+        if auto_index:
             forwarded.append("--auto-index")
         if args.startup_progress is True:
             forwarded.append("--startup-progress")
@@ -1071,7 +1101,38 @@ def main(argv: Sequence[str] | None = None) -> int:
             forwarded.append("--no-startup-progress")
         if args.legacy_tools:
             forwarded.append("--legacy-tools")
+        if args.transport != "stdio":
+            forwarded.extend(("--transport", args.transport))
+        if args.public_demo:
+            forwarded.append("--public-demo")
+            forwarded.extend(("--public-demo-manifest", str(args.public_demo_manifest)))
+        for option, value in (
+            ("--host", args.host), ("--port", args.port), ("--http-path", args.http_path),
+        ):
+            forwarded.extend((option, str(value)))
+        for value in args.allowed_host:
+            forwarded.extend(("--allowed-host", value))
+        for value in args.allowed_origin:
+            forwarded.extend(("--allowed-origin", value))
         return serve_main(forwarded)
+
+    if args.command == "public-demo":
+        from universal_research_mcp.public_demo import (
+            build_manifest, validate_manifest, write_manifest,
+        )
+
+        root = _root(args.root)
+        if args.public_demo_action == "verify":
+            _emit(validate_manifest(root, relative_path=args.manifest))
+            return 0
+        document = build_manifest(
+            root,
+            corpus_id=args.corpus_id,
+            display_name=args.display_name,
+            confirmation=args.confirm_public_data,
+        )
+        _emit(write_manifest(root, document, relative_path=args.manifest))
+        return 0
 
     if args.command == "provider":
         from universal_research_mcp.runtime.provider_config import (
@@ -1190,7 +1251,11 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     """Preserve ``universal-research-mcp --root ...`` while adding subcommands."""
 
     materialized = list(sys.argv[1:] if argv is None else argv)
-    commands = {"serve", "init", "index", "build-index", "semantic", "profile", "doctor", "validate", "usage", "source", "record", "ingest", "harness"}
+    commands = {
+        "serve", "init", "index", "build-index", "semantic", "profile",
+        "public-demo", "doctor", "validate", "usage", "source", "record",
+        "ingest", "harness",
+    }
     if _internal_provider_preview_enabled():
         commands.update({"provider", "agent"})
     if materialized and materialized[0] in commands:
