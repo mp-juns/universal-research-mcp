@@ -1,9 +1,8 @@
 # Universal Research Framework Architecture
 
-> Public integration scope for 0.4.0 is Codex only. Provider-backed runtime
-> modules below are retained as internal prototypes and are not registered by
-> the plugin, exposed as distribution entry points, or covered by a public
-> compatibility promise.
+> Public integration scope for 0.7.0 is Codex only. Provider-backed runtime
+> modules below are retained as repository prototypes, excluded from the PyPI
+> wheel, and not covered by a public compatibility promise.
 
 ## Authority flow
 
@@ -32,7 +31,9 @@ revision and a line, page, row, or structured-data locator.
   separate `runtime/ingest_approval.py` authority signs one-time receipts under
   host state outside the project; exact draft hash, canonical-head, source
   SHA-256, receipt, pre-existing human scope, and one-time consumption are all
-  rechecked before append.
+  rechecked before append. A write-ahead journal binds exact per-file
+  before/after hashes and permits only an idempotent resume of the same partial
+  transaction; the draft is consumed after all canonical operations verify.
 - `universal_research_mcp/core/audit.py` derives read-only findings with record-addressable evidence.
 - `scripts/validate_research_ledger.py` is a repository-only ledger validation entry
   point.
@@ -61,8 +62,8 @@ revision and a line, page, row, or structured-data locator.
   non-read-only/non-idempotent for the host and cannot create approvals or
   accept self-asserted approval. They accept an explicit project root and never
   use a reference-project runtime path. Provider execution modules are not
-  registered by the Codex plugin or exposed through a distribution console entry
-  point.
+  registered by the Codex plugin, exposed through a distribution console entry
+  point, or included in the public wheel.
 - The MCP transport requires the documented `mcp[cli]` runtime. Pure ledger and
   lexical-query contract tests do not import that optional transport runtime.
 - `packs/` adds constraints without relaxing the core policy.

@@ -12,8 +12,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from universal_research_mcp.providers.deterministic_embedding import SignedHashingEmbedder
-from universal_research_mcp.providers.local_embedding import LocalSentenceTransformerEmbedder
+from universal_research_mcp.semantic_backends import (
+    LocalSentenceTransformerEmbedder,
+    SignedHashingEmbedder,
+)
 from universal_research_mcp.runtime.semantic_config import load_semantic_config
 from universal_research_mcp.runtime.research_profile import semantic_config_from_profile
 

@@ -23,8 +23,8 @@ from universal_research_mcp.core.input import (
     SOURCE_ID,
     _registered_sources,
     _sha256,
-    append_record,
     issues_json,
+    ledger_path_for_record,
     validate_candidate_records_with_sources,
 )
 from universal_research_mcp.indexing import canonical_fingerprint, ensure_lexical_index, index_status
@@ -33,6 +33,7 @@ from universal_research_mcp.semantic_runtime import build_configured_semantic_in
 
 
 DRAFT_SCHEMA = "mcp-ingest-draft/1.0"
+TRANSACTION_SCHEMA = "mcp-ingest-transaction/1.0"
 MAX_DRAFT_BYTES = 1_048_576
 _DRAFT_ID = re.compile(r"^ingest_[a-f0-9]{24}$")
 
@@ -54,6 +55,13 @@ def _digest(value: dict[str, Any]) -> str:
 def _draft_roots(paths: ProjectPaths) -> tuple[Path, Path, Path]:
     root = paths.root / "data" / "ingest-drafts"
     return root / "pending", root / "consumed", paths.root / "data" / "audit"
+
+
+def _transaction_path(paths: ProjectPaths, draft_id: str) -> Path:
+    return (
+        paths.root / "data" / "ingest-drafts" / "transactions"
+        / f"{_safe_draft_id(draft_id)}.json"
+    )
 
 
 def _safe_draft_id(draft_id: str) -> str:
@@ -84,6 +92,191 @@ def _create_only_json(path: Path, payload: dict[str, Any]) -> None:
             path.unlink(missing_ok=True)
         finally:
             raise
+
+
+def _fsync_directory(path: Path) -> None:
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    descriptor = os.open(path, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _replace_json(path: Path, payload: dict[str, Any]) -> None:
+    """Durably replace a mutable transaction journal in its own directory."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    encoded = _canonical_bytes(payload) + b"\n"
+    if len(encoded) > MAX_DRAFT_BYTES:
+        raise ValueError("ingest transaction exceeds the maximum safe size")
+    temporary = path.parent / f".{path.name}.{secrets.token_hex(8)}.tmp"
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(temporary, flags, 0o600)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        _fsync_directory(path.parent)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def _load_transaction(paths: ProjectPaths, draft_id: str) -> dict[str, Any] | None:
+    path = _transaction_path(paths, draft_id)
+    if not path.exists():
+        return None
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("ingest transaction journal is unsafe")
+    raw = path.read_bytes()
+    if len(raw) < 1 or len(raw) > MAX_DRAFT_BYTES:
+        raise ValueError("ingest transaction journal size is invalid")
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError("ingest transaction journal is invalid JSON") from exc
+    if not isinstance(value, dict) or value.get("schema_version") != TRANSACTION_SCHEMA:
+        raise ValueError("ingest transaction journal schema is invalid")
+    declared = value.pop("transaction_sha256", None)
+    if not isinstance(declared, str) or declared != _digest(value):
+        raise ValueError("ingest transaction journal integrity check failed")
+    value["transaction_sha256"] = declared
+    return value
+
+
+def _bytes_sha256(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _safe_canonical_target(paths: ProjectPaths, relative: str) -> Path:
+    target = paths.root / relative
+    resolved = paths.resolve_relative(relative)
+    if resolved != target:
+        raise ValueError("canonical transaction target contains a symlink")
+    current = paths.root
+    for part in Path(relative).parts[:-1]:
+        current = current / part
+        if current.exists() and current.is_symlink():
+            raise ValueError("canonical transaction parent contains a symlink")
+    if target.exists():
+        metadata = target.lstat()
+        if target.is_symlink() or not target.is_file():
+            raise ValueError("canonical transaction target is unsafe")
+        if metadata.st_nlink != 1:
+            raise ValueError("canonical transaction target has multiple hard links")
+    return target
+
+
+def _operation(
+    paths: ProjectPaths,
+    *,
+    target: Path,
+    append_value: dict[str, Any] | list[dict[str, Any]],
+    kind: str,
+) -> dict[str, Any]:
+    relative = target.relative_to(paths.root).as_posix()
+    safe_target = _safe_canonical_target(paths, relative)
+    before = safe_target.read_bytes() if safe_target.exists() else b""
+    values = append_value if isinstance(append_value, list) else [append_value]
+    append_bytes = "".join(
+        json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n"
+        for value in values
+    ).encode("utf-8")
+    after = before + append_bytes
+    return {
+        "kind": kind,
+        "target": relative,
+        "before_exists": safe_target.exists(),
+        "before_size": len(before),
+        "before_sha256": _bytes_sha256(before),
+        "append_text": append_bytes.decode("utf-8"),
+        "append_sha256": _bytes_sha256(append_bytes),
+        "after_size": len(after),
+        "after_sha256": _bytes_sha256(after),
+    }
+
+
+def _validate_transaction_binding(
+    transaction: dict[str, Any], *, draft_id: str, draft_sha256: str,
+    approval_receipt_id: str,
+) -> None:
+    expected = {
+        "draft_id": draft_id,
+        "draft_sha256": draft_sha256,
+        "approval_receipt_id": approval_receipt_id,
+    }
+    for key, value in expected.items():
+        if transaction.get(key) != value:
+            raise ValueError(f"ingest transaction does not match {key}")
+    operations = transaction.get("operations")
+    if not isinstance(operations, list) or not operations:
+        raise ValueError("ingest transaction has no canonical operations")
+
+
+def _transaction_operation_state(
+    paths: ProjectPaths, operation: dict[str, Any],
+) -> str:
+    target = operation.get("target")
+    if not isinstance(target, str):
+        raise ValueError("ingest transaction target is invalid")
+    path = _safe_canonical_target(paths, target)
+    current = path.read_bytes() if path.exists() else b""
+    current_state = (len(current), _bytes_sha256(current))
+    before_state = (operation.get("before_size"), operation.get("before_sha256"))
+    after_state = (operation.get("after_size"), operation.get("after_sha256"))
+    if current_state == after_state:
+        return "applied"
+    if current_state == before_state and path.exists() is bool(operation.get("before_exists")):
+        return "pending"
+    raise RuntimeError(
+        f"canonical target changed outside ingest transaction: {target}"
+    )
+
+
+def _apply_transaction_operation(
+    paths: ProjectPaths, operation: dict[str, Any],
+) -> str:
+    state = _transaction_operation_state(paths, operation)
+    if state == "applied":
+        return state
+    target_value = operation.get("target")
+    append_text = operation.get("append_text")
+    if not isinstance(target_value, str) or not isinstance(append_text, str):
+        raise ValueError("ingest transaction operation is invalid")
+    append_bytes = append_text.encode("utf-8")
+    if _bytes_sha256(append_bytes) != operation.get("append_sha256"):
+        raise ValueError("ingest transaction append payload hash is invalid")
+    target = _safe_canonical_target(paths, target_value)
+    before = target.read_bytes() if target.exists() else b""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.parent.is_symlink():
+        raise ValueError("canonical transaction target parent is unsafe")
+    temporary = target.parent / f".{target.name}.{secrets.token_hex(8)}.tmp"
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(temporary, flags, 0o600)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(before)
+            handle.write(append_bytes)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, target)
+        _fsync_directory(target.parent)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    if _transaction_operation_state(paths, operation) != "applied":
+        raise RuntimeError("canonical transaction operation verification failed")
+    return "applied"
 
 
 def _load_draft(paths: ProjectPaths, draft_id: str) -> tuple[dict[str, Any], Path]:
@@ -225,6 +418,16 @@ def _append_audit(paths: ProjectPaths, event: dict[str, Any]) -> None:
         handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+def _append_audit_safely(paths: ProjectPaths, event: dict[str, Any]) -> dict[str, str] | None:
+    """Preserve the primary commit/failure outcome if audit storage is unavailable."""
+
+    try:
+        _append_audit(paths, event)
+    except (OSError, RuntimeError, ValueError) as exc:
+        return {"error_type": type(exc).__name__, "reason": str(exc)}
+    return None
+
+
 @contextmanager
 def _commit_lock(paths: ProjectPaths):
     """Refuse concurrent commits instead of accepting an unbound race."""
@@ -317,6 +520,66 @@ def prepare_ingest(
     }
 
 
+def _source_registration_record(source: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "source_id": source["source_id"],
+        "source_path": source["path"],
+        "source_sha256": source["source_sha256"],
+        "source_type": source["source_type"],
+        "legacy_import": False,
+    }
+
+
+def _prepare_transaction(
+    paths: ProjectPaths,
+    *,
+    draft_id: str,
+    draft_sha256: str,
+    approval_receipt_id: str,
+    record: dict[str, Any],
+    registrations: list[dict[str, Any]],
+    canonical_head_before: str,
+) -> dict[str, Any]:
+    operations = []
+    if registrations:
+        operations.append(_operation(
+            paths,
+            target=paths.events_root / "sources.jsonl",
+            append_value=[_source_registration_record(source) for source in registrations],
+            kind="source_registration",
+        ))
+    operations.append(_operation(
+        paths,
+        target=ledger_path_for_record(paths, record),
+        append_value=record,
+        kind="event_record",
+    ))
+    transaction = {
+        "schema_version": TRANSACTION_SCHEMA,
+        "status": "prepared",
+        "draft_id": draft_id,
+        "draft_sha256": draft_sha256,
+        "approval_receipt_id": approval_receipt_id,
+        "record_id": record.get("record_id"),
+        "canonical_head_before": canonical_head_before,
+        "prepared_at": _now(),
+        "updated_at": _now(),
+        "operations": operations,
+        "applied_operation_count": 0,
+        "last_error": None,
+    }
+    transaction["transaction_sha256"] = _digest(transaction)
+    _create_only_json(_transaction_path(paths, draft_id), transaction)
+    return transaction
+
+
+def _store_transaction(paths: ProjectPaths, transaction: dict[str, Any]) -> None:
+    transaction["updated_at"] = _now()
+    transaction.pop("transaction_sha256", None)
+    transaction["transaction_sha256"] = _digest(transaction)
+    _replace_json(_transaction_path(paths, str(transaction["draft_id"])), transaction)
+
+
 def _commit_ingest_locked(
     paths: ProjectPaths,
     *,
@@ -324,7 +587,7 @@ def _commit_ingest_locked(
     draft_sha256: str,
     approval_receipt_id: str,
 ) -> dict[str, Any]:
-    """Consume exactly one prepared draft and append it after all rechecks."""
+    """Apply or resume one exact write-ahead canonical transaction."""
 
     _pending, consumed, _audit = _draft_roots(paths)
     safe_id = _safe_draft_id(draft_id)
@@ -338,10 +601,6 @@ def _commit_ingest_locked(
     approval_ref = draft.get("approval_ref")
     if not isinstance(record, dict) or not isinstance(registrations, list) or not isinstance(approval_ref, str):
         raise ValueError("pending ingest draft has an invalid schema")
-    before = canonical_fingerprint(paths.events_root)
-    expected = draft.get("canonical_head")
-    if not isinstance(expected, dict) or before.get("sha256") != expected.get("sha256"):
-        raise ValueError("canonical ledger changed after preparation; prepare a fresh draft")
     for source in registrations:
         if not isinstance(source, dict):
             raise ValueError("pending source registration is invalid")
@@ -352,50 +611,141 @@ def _commit_ingest_locked(
         actual = _sha256(paths.resolve_relative(path))
         if actual != expected_sha:
             raise ValueError("source content changed after preparation; prepare a fresh draft")
-    _validate_draft_record(paths, record, approval_ref, registrations)
 
-    from universal_research_mcp.runtime.ingest_approval import IngestApprovalStore
+    from universal_research_mcp.runtime.ingest_approval import (
+        IngestApprovalError,
+        IngestApprovalStore,
+    )
 
-    receipt = IngestApprovalStore(
+    store = IngestApprovalStore(
         paths.root,
         state_root=os.environ.get("UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT"),
-    ).consume(
+    )
+    store.verify(
         draft_id=draft_id,
         draft_sha256=draft_sha256,
         receipt_id=approval_receipt_id,
     )
 
-    consumption = {
-        "schema_version": "mcp-ingest-consumption/1.0",
-        "draft_id": draft_id,
-        "draft_sha256": draft_sha256,
-        "approval_receipt_id": approval_receipt_id,
-        "consumed_at": _now(),
-        "record_id": record.get("record_id"),
-    }
-    _create_only_json(consumed / f"{draft_id}.json", consumption)
-    registered: list[dict[str, Any]] = []
-    try:
-        from universal_research_mcp.core.input import register_source
+    transaction = _load_transaction(paths, draft_id)
+    if transaction is None:
+        before = canonical_fingerprint(paths.events_root)
+        expected = draft.get("canonical_head")
+        if not isinstance(expected, dict) or before.get("sha256") != expected.get("sha256"):
+            raise ValueError("canonical ledger changed after preparation; prepare a fresh draft")
+        _validate_draft_record(paths, record, approval_ref, registrations)
+        transaction = _prepare_transaction(
+            paths,
+            draft_id=draft_id,
+            draft_sha256=draft_sha256,
+            approval_receipt_id=approval_receipt_id,
+            record=record,
+            registrations=registrations,
+            canonical_head_before=str(before["sha256"]),
+        )
+    else:
+        _validate_transaction_binding(
+            transaction,
+            draft_id=draft_id,
+            draft_sha256=draft_sha256,
+            approval_receipt_id=approval_receipt_id,
+        )
+        for operation in transaction["operations"]:
+            if not isinstance(operation, dict):
+                raise ValueError("ingest transaction operation is invalid")
+            _transaction_operation_state(paths, operation)
 
-        for source in registrations:
-            registered.append(register_source(
-                paths.root,
-                str(source["path"]),
-                source_id=str(source["source_id"]),
-                source_type=str(source["source_type"]),
-            ))
-        ledger = append_record(paths.root, record, approval_ref=approval_ref)
-        refresh = _refresh_derived_indexes(paths.root)
+    try:
+        receipt = store.consume(
+            draft_id=draft_id,
+            draft_sha256=draft_sha256,
+            receipt_id=approval_receipt_id,
+        )
+    except IngestApprovalError as exc:
+        if "already consumed" not in str(exc):
+            raise
+        receipt = store.resume(
+            draft_id=draft_id,
+            draft_sha256=draft_sha256,
+            receipt_id=approval_receipt_id,
+        )
+
+    transaction["status"] = "applying"
+    transaction["receipt_signature"] = receipt["signature"]
+    transaction["last_error"] = None
+    _store_transaction(paths, transaction)
+    try:
+        applied = 0
+        for operation in transaction["operations"]:
+            if not isinstance(operation, dict):
+                raise ValueError("ingest transaction operation is invalid")
+            _apply_transaction_operation(paths, operation)
+            applied += 1
+            transaction["applied_operation_count"] = applied
+            _store_transaction(paths, transaction)
+        after = canonical_fingerprint(paths.events_root)
+        transaction["canonical_head_after"] = after["sha256"]
+        transaction["status"] = "canonical_committed"
+        _store_transaction(paths, transaction)
+
+        consumption = {
+            "schema_version": "mcp-ingest-consumption/1.1",
+            "draft_id": draft_id,
+            "draft_sha256": draft_sha256,
+            "approval_receipt_id": approval_receipt_id,
+            "consumed_at": _now(),
+            "record_id": record.get("record_id"),
+            "transaction_path": _transaction_path(paths, draft_id).relative_to(paths.root).as_posix(),
+            "canonical_head_after": after["sha256"],
+        }
+        _create_only_json(consumed / f"{draft_id}.json", consumption)
     except Exception as exc:
-        _append_audit(paths, {
-            "timestamp": _now(), "event_type": "ingest_commit_failed",
+        transaction["status"] = "failed_recoverable"
+        transaction["last_error"] = {
+            "error_type": type(exc).__name__, "reason": str(exc), "recorded_at": _now(),
+        }
+        _store_transaction(paths, transaction)
+        _append_audit_safely(paths, {
+            "timestamp": _now(), "event_type": "ingest_commit_failed_recoverable",
             "draft_id": draft_id, "draft_sha256": draft_sha256,
             "record_id": record.get("record_id"), "authority_basis": "host_mutating_tool",
             "error_type": type(exc).__name__, "reason": str(exc),
+            "applied_operation_count": transaction.get("applied_operation_count"),
+            "transaction_status": transaction["status"],
         })
         raise
-    after = canonical_fingerprint(paths.events_root)
+
+    # The immutable consumption marker is the terminal commit authority. A
+    # journal-finalization write that fails after this point must not turn an
+    # already committed canonical append into an unretryable reported failure.
+    journal_warning: dict[str, str] | None = None
+    transaction["status"] = "committed"
+    transaction["committed_at"] = _now()
+    try:
+        _store_transaction(paths, transaction)
+    except (OSError, RuntimeError, ValueError) as exc:
+        transaction["status"] = "committed_journal_finalization_pending"
+        journal_warning = {
+            "error_type": type(exc).__name__,
+            "reason": str(exc),
+        }
+        journal_audit_warning = _append_audit_safely(paths, {
+            "timestamp": _now(),
+            "event_type": "ingest_commit_journal_finalization_pending",
+            "draft_id": draft_id,
+            "draft_sha256": draft_sha256,
+            "record_id": record.get("record_id"),
+            "authority_basis": "immutable_consumption_marker_and_verified_canonical_state",
+            **journal_warning,
+        })
+        if journal_audit_warning is not None:
+            journal_warning["audit_error"] = json.dumps(
+                journal_audit_warning, ensure_ascii=False, sort_keys=True,
+            )
+
+    refresh = _refresh_derived_indexes(paths.root)
+    registered = [_source_registration_record(source) for source in registrations]
+    ledger = ledger_path_for_record(paths, record)
     result = {
         "status": "committed",
         "canonical_append": True,
@@ -406,18 +756,21 @@ def _commit_ingest_locked(
         "approval_receipt": receipt,
         "ledger_path": ledger.relative_to(paths.root).as_posix(),
         "registered_sources": registered,
-        "canonical_head_before": before["sha256"],
-        "canonical_head_after": after["sha256"],
+        "canonical_head_before": transaction["canonical_head_before"],
+        "canonical_head_after": transaction["canonical_head_after"],
+        "transaction_status": transaction["status"],
+        "transaction_journal_warning": journal_warning,
         "derived_refresh": refresh,
         "authority_basis": "host_mutating_tool_signed_receipt_and_preexisting_human_scope_approval",
     }
-    _append_audit(paths, {
+    result["audit_warning"] = _append_audit_safely(paths, {
         "timestamp": _now(), "event_type": "ingest_committed",
         "draft_id": draft_id, "draft_sha256": draft_sha256,
         "record_id": record.get("record_id"), "approval_ref": approval_ref,
         "approval_receipt_id": approval_receipt_id,
         "approval_receipt_signature": receipt["signature"],
-        "canonical_head_before": before["sha256"], "canonical_head_after": after["sha256"],
+        "canonical_head_before": transaction["canonical_head_before"],
+        "canonical_head_after": transaction["canonical_head_after"],
         "authority_basis": result["authority_basis"],
         "lexical_status": refresh["lexical"].get("status"),
         "semantic_status": refresh["semantic"].get("status"),
@@ -451,14 +804,26 @@ def pending_ingest_status(root: str | Path, *, draft_id: str) -> dict[str, Any]:
     draft, _path = _load_draft(paths, draft_id)
     pending, consumed, _audit = _draft_roots(paths)
     consumed_path = consumed / f"{draft_id}.json"
+    transaction = _load_transaction(paths, draft_id)
+    transaction_status = transaction.get("status") if transaction else None
+    if consumed_path.exists():
+        status = "consumed"
+    elif transaction_status in {"applying", "canonical_committed", "failed_recoverable"}:
+        status = "recovery_required"
+    else:
+        status = "pending"
     return {
-        "status": "consumed" if consumed_path.exists() else "pending",
+        "status": status,
         "draft_id": draft_id,
         "draft_sha256": draft["draft_sha256"],
         "record_id": (draft.get("record") or {}).get("record_id"),
         "prepared_at": draft.get("prepared_at"),
         "canonical_head_sha256": (draft.get("canonical_head") or {}).get("sha256"),
         "pending_path": (pending / f"{draft_id}.json").relative_to(paths.root).as_posix(),
+        "transaction_status": transaction_status,
+        "applied_operation_count": (
+            transaction.get("applied_operation_count") if transaction else 0
+        ),
     }
 
 

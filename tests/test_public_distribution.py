@@ -65,11 +65,19 @@ class PublicDistributionTests(unittest.TestCase):
         self.assertEqual(
             set(data_files["share/universal-research-mcp/docs"]),
             {
+                "docs/architecture.md",
                 "docs/failure-policy.md",
                 "docs/host-integration.md",
+                "docs/public-demo.md",
+                "docs/research-operations-specification.md",
                 "docs/secure-harness.md",
+                "docs/semantic-retrieval.md",
                 "docs/security.md",
             },
+        )
+        self.assertEqual(
+            data_files["share/universal-research-mcp/docs/decisions"],
+            ["docs/decisions/*.md"],
         )
 
     def test_wheel_validator_requires_every_role_prompt_pack_member(self) -> None:

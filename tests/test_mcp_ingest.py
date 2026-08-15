@@ -9,6 +9,7 @@ import pytest
 
 from universal_research_mcp import server
 from universal_research_mcp.cli import main
+from universal_research_mcp.core import ingest as ingest_module
 from universal_research_mcp.core.input import all_records, append_record
 from universal_research_mcp.indexing import initialize_project
 from universal_research_mcp.runtime import ProjectPaths
@@ -242,5 +243,178 @@ def test_ingest_approval_cli_issues_exact_external_receipt(
             "--confirm-draft-sha256", "0" * 64,
             "--expires-at", "2030-01-01T00:00:00+00:00", "--state-root", str(state_root),
             ])
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_mcp_ingest_resumes_after_one_canonical_file_was_applied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root = tmp_path / "research"
+        state_root = tmp_path / "host-state"
+        monkeypatch.setenv("UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT", str(state_root))
+        _source, record = _prepared_project(root)
+        server.configure_runtime(root)
+        prepared = server.research_prepare_ingest(
+            record, "approval_ingest",
+            [{"path": "docs/ingest.md", "source_id": "src_ingest", "source_type": "markdown"}],
+        )
+        receipt = _receipt(root, prepared, state_root)
+        original = ingest_module._apply_transaction_operation
+        calls = 0
+
+        def fail_second(paths: ProjectPaths, operation: dict[str, object]) -> str:
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("injected event-ledger write failure")
+            return original(paths, operation)
+
+        monkeypatch.setattr(ingest_module, "_apply_transaction_operation", fail_second)
+        with pytest.raises(OSError, match="injected event-ledger write failure"):
+            server.research_commit_ingest(
+                prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+            )
+        status = server.research_pending_ingest_status(prepared["draft_id"])
+        assert status["status"] == "recovery_required"
+        assert status["applied_operation_count"] == 1
+        assert len(all_records(ProjectPaths.from_root(root))) == 1
+        source_lines = (root / "data/events/sources.jsonl").read_text(encoding="utf-8").splitlines()
+        assert len(source_lines) == 1
+
+        monkeypatch.setattr(ingest_module, "_apply_transaction_operation", original)
+        committed = server.research_commit_ingest(
+            prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+        )
+        assert committed["status"] == "committed"
+        assert committed["approval_receipt"]["resumed"] is True
+        assert len(all_records(ProjectPaths.from_root(root))) == 2
+        assert len((root / "data/events/sources.jsonl").read_text(encoding="utf-8").splitlines()) == 1
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_mcp_ingest_resumes_after_canonical_commit_before_consumption_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root = tmp_path / "research"
+        state_root = tmp_path / "host-state"
+        monkeypatch.setenv("UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT", str(state_root))
+        _source, record = _prepared_project(root)
+        server.configure_runtime(root)
+        prepared = server.research_prepare_ingest(
+            record, "approval_ingest",
+            [{"path": "docs/ingest.md", "source_id": "src_ingest", "source_type": "markdown"}],
+        )
+        receipt = _receipt(root, prepared, state_root)
+        original = ingest_module._create_only_json
+
+        def fail_consumption(path: Path, payload: dict[str, object]) -> None:
+            if path.parent.name == "consumed":
+                raise OSError("injected consumption-marker failure")
+            original(path, payload)
+
+        monkeypatch.setattr(ingest_module, "_create_only_json", fail_consumption)
+        with pytest.raises(OSError, match="injected consumption-marker failure"):
+            server.research_commit_ingest(
+                prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+            )
+        status = server.research_pending_ingest_status(prepared["draft_id"])
+        assert status["status"] == "recovery_required"
+        assert status["applied_operation_count"] == 2
+        assert len(all_records(ProjectPaths.from_root(root))) == 2
+
+        monkeypatch.setattr(ingest_module, "_create_only_json", original)
+        committed = server.research_commit_ingest(
+            prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+        )
+        assert committed["status"] == "committed"
+        assert committed["approval_receipt"]["resumed"] is True
+        assert len(all_records(ProjectPaths.from_root(root))) == 2
+        assert len((root / "data/events/sources.jsonl").read_text(encoding="utf-8").splitlines()) == 1
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_mcp_ingest_groups_multiple_source_registrations_in_one_atomic_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root = tmp_path / "research"
+        state_root = tmp_path / "host-state"
+        monkeypatch.setenv("UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT", str(state_root))
+        _source, record = _prepared_project(root)
+        second = root / "docs/second.md"
+        second.write_text("# Second source\n", encoding="utf-8")
+        server.configure_runtime(root)
+        prepared = server.research_prepare_ingest(
+            record,
+            "approval_ingest",
+            [
+                {"path": "docs/ingest.md", "source_id": "src_ingest", "source_type": "markdown"},
+                {"path": "docs/second.md", "source_id": "src_second", "source_type": "markdown"},
+            ],
+        )
+        receipt = _receipt(root, prepared, state_root)
+        committed = server.research_commit_ingest(
+            prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+        )
+        assert committed["status"] == "committed"
+        assert len(committed["registered_sources"]) == 2
+        assert len((root / "data/events/sources.jsonl").read_text(encoding="utf-8").splitlines()) == 2
+        transaction = json.loads(next(
+            (root / "data/ingest-drafts/transactions").glob("*.json")
+        ).read_text(encoding="utf-8"))
+        assert [item["kind"] for item in transaction["operations"]] == [
+            "source_registration", "event_record",
+        ]
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_mcp_ingest_reports_success_if_only_final_journal_write_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root = tmp_path / "research"
+        state_root = tmp_path / "host-state"
+        monkeypatch.setenv("UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT", str(state_root))
+        _source, record = _prepared_project(root)
+        server.configure_runtime(root)
+        prepared = server.research_prepare_ingest(
+            record, "approval_ingest",
+            [{"path": "docs/ingest.md", "source_id": "src_ingest", "source_type": "markdown"}],
+        )
+        receipt = _receipt(root, prepared, state_root)
+        original = ingest_module._store_transaction
+        calls = 0
+
+        def fail_final(paths: ProjectPaths, transaction: dict[str, object]) -> None:
+            nonlocal calls
+            calls += 1
+            if transaction.get("status") == "committed":
+                raise OSError("injected final journal write failure")
+            original(paths, transaction)
+
+        monkeypatch.setattr(ingest_module, "_store_transaction", fail_final)
+        committed = server.research_commit_ingest(
+            prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+        )
+        assert calls >= 5
+        assert committed["status"] == "committed"
+        assert committed["transaction_status"] == "committed_journal_finalization_pending"
+        assert committed["transaction_journal_warning"]["error_type"] == "OSError"
+        assert len(all_records(ProjectPaths.from_root(root))) == 2
+        assert server.research_pending_ingest_status(prepared["draft_id"])["status"] == "consumed"
+        with pytest.raises(ValueError, match="already consumed"):
+            server.research_commit_ingest(
+                prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
+            )
     finally:
         server.configure_runtime(*prior)

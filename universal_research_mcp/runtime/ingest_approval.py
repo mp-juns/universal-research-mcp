@@ -114,7 +114,7 @@ class IngestApprovalStore:
         now = datetime.now(timezone.utc)
         if expiry <= now:
             raise IngestApprovalError("receipt expiry must be in the future")
-        receipt = {
+        receipt: dict[str, Any] = {
             "schema_version": RECEIPT_VERSION,
             "receipt_id": f"receipt_{secrets.token_hex(12)}",
             "project_root_hash": self.project_root_hash,
@@ -127,6 +127,26 @@ class IngestApprovalStore:
         receipt["signature"] = self._sign(receipt)
         self._create_json(self.receipt_path(receipt["receipt_id"]), receipt)
         return self.summary(receipt, consumed=False)
+
+    def verify(
+        self, *, draft_id: str, draft_sha256: str, receipt_id: str,
+    ) -> dict[str, Any]:
+        """Verify the exact receipt without consuming or renewing it."""
+
+        binding = ingest_approval_binding(
+            self.root, draft_id=draft_id, draft_sha256=draft_sha256,
+        )
+        receipt = self._read_receipt(receipt_id)
+        expected = {"project_root_hash": self.project_root_hash, **binding}
+        for key, value in expected.items():
+            if receipt.get(key) != value:
+                raise IngestApprovalError(f"receipt does not match {key}")
+        expiry, _normalized = _timestamp(str(receipt.get("expires_at") or ""), "expires_at")
+        if expiry <= datetime.now(timezone.utc) and not self.consumed_path(receipt_id).exists():
+            raise IngestApprovalError("receipt has expired")
+        return self.summary(
+            receipt, consumed=self.consumed_path(receipt_id).exists(),
+        )
 
     def consume(
         self, *, draft_id: str, draft_sha256: str, receipt_id: str,
@@ -159,6 +179,38 @@ class IngestApprovalStore:
             raise IngestApprovalError("receipt was already consumed") from exc
         return self.summary(receipt, consumed=True) | {
             "consumption_signature": marker["consumption_signature"],
+        }
+
+    def resume(
+        self, *, draft_id: str, draft_sha256: str, receipt_id: str,
+    ) -> dict[str, Any]:
+        """Verify an already-consumed receipt for one recovery transaction.
+
+        This does not create a second consumption marker.  It exists only so a
+        project-local write-ahead transaction can finish after a process or
+        filesystem failure without broadening the receipt to another draft.
+        """
+
+        binding = ingest_approval_binding(
+            self.root, draft_id=draft_id, draft_sha256=draft_sha256,
+        )
+        receipt = self._read_receipt(receipt_id)
+        expected = {"project_root_hash": self.project_root_hash, **binding}
+        for key, value in expected.items():
+            if receipt.get(key) != value:
+                raise IngestApprovalError(f"receipt does not match {key}")
+        marker = self._read_consumption(receipt_id)
+        marker_expected = {
+            "receipt_id": receipt["receipt_id"],
+            "receipt_signature": receipt["signature"],
+            **expected,
+        }
+        for key, value in marker_expected.items():
+            if marker.get(key) != value:
+                raise IngestApprovalError(f"receipt consumption does not match {key}")
+        return self.summary(receipt, consumed=True) | {
+            "consumption_signature": marker["consumption_signature"],
+            "resumed": True,
         }
 
     def receipt_path(self, receipt_id: str) -> Path:
@@ -264,6 +316,41 @@ class IngestApprovalStore:
         expiry, _expiry = _timestamp(value["expires_at"], "expires_at")
         if issued >= expiry:
             raise IngestApprovalError("receipt timestamps are invalid")
+        return value
+
+    def _read_consumption(self, receipt_id: str) -> dict[str, Any]:
+        path = self.consumed_path(receipt_id)
+        try:
+            if self.directory.is_symlink() or path.is_symlink() or not path.is_file():
+                raise IngestApprovalError("receipt consumption is missing or unsafe")
+            raw = path.read_bytes()
+            if len(raw) < 1 or len(raw) > _MAX_BYTES:
+                raise IngestApprovalError("receipt consumption size is invalid")
+            value = json.loads(raw)
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise IngestApprovalError("receipt consumption is unreadable") from exc
+        required = {
+            "schema_version", "receipt_id", "receipt_signature",
+            "project_root_hash", "draft_id", "draft_sha256",
+            "canonical_head_sha256", "record_id", "consumed_at",
+            "consume_before_canonical_append", "consumption_signature",
+        }
+        if not isinstance(value, dict) or set(value) != required:
+            raise IngestApprovalError("receipt consumption schema is invalid")
+        if (
+            value.get("schema_version") != CONSUMPTION_VERSION
+            or value.get("consume_before_canonical_append") is not True
+        ):
+            raise IngestApprovalError("receipt consumption authority is invalid")
+        if not all(
+            isinstance(value.get(key), str)
+            for key in required - {"consume_before_canonical_append"}
+        ):
+            raise IngestApprovalError("receipt consumption fields are invalid")
+        if not hmac.compare_digest(
+            str(value["consumption_signature"]), self._sign(value),
+        ):
+            raise IngestApprovalError("receipt consumption signature is invalid")
         return value
 
 

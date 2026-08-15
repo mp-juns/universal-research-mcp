@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.6.0"
+version = "0.7.0"
 description = "Governed MCP for provenance-first research memory, evidence re-verification, and controlled canonical ingestion."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -53,7 +53,7 @@ urmcp = "universal_research_mcp.cli:main"
 urgov = "universal_research_mcp.governance.cli:main"
 
 [tool.setuptools]
-packages = ["universal_research_mcp", "universal_research_mcp.adapters", "universal_research_mcp.agent_runtime", "universal_research_mcp.core", "universal_research_mcp.governance", "universal_research_mcp.harness", "universal_research_mcp.indexing", "universal_research_mcp.integrations", "universal_research_mcp.integrations.codex", "universal_research_mcp.providers", "universal_research_mcp.runtime", "universal_research_mcp.secure_harness", "universal_research_mcp.tools"]
+packages = ["universal_research_mcp", "universal_research_mcp.adapters", "universal_research_mcp.core", "universal_research_mcp.governance", "universal_research_mcp.indexing", "universal_research_mcp.integrations", "universal_research_mcp.integrations.codex", "universal_research_mcp.runtime", "universal_research_mcp.secure_harness", "universal_research_mcp.tools"]
 
 [tool.setuptools.package-data]
 "universal_research_mcp.governance" = ["roles/*/role.yaml", "roles/*/instructions.md", "schemas/*.json"]
@@ -74,13 +74,27 @@ ignore_missing_imports = true
 # excluding their pre-existing gradual-typing categories from the release gate.
 disable_error_code = ["arg-type", "assignment", "attr-defined", "call-overload", "dict-item", "misc", "operator", "union-attr"]
 
+[[tool.mypy.overrides]]
+module = [
+  "universal_research_mcp.core.claim_gate",
+  "universal_research_mcp.core.ingest",
+  "universal_research_mcp.public_demo",
+  "universal_research_mcp.runtime.ingest_approval",
+]
+enable_error_code = ["arg-type", "assignment", "attr-defined", "operator", "union-attr"]
+
 [tool.setuptools.data-files]
 "share/universal-research-mcp/docs" = [
+  "docs/architecture.md",
   "docs/failure-policy.md",
   "docs/host-integration.md",
+  "docs/public-demo.md",
+  "docs/research-operations-specification.md",
   "docs/secure-harness.md",
+  "docs/semantic-retrieval.md",
   "docs/security.md",
 ]
+"share/universal-research-mcp/docs/decisions" = ["docs/decisions/*.md"]
 "share/universal-research-mcp/schemas" = ["schemas/*.json"]
 "share/universal-research-mcp/packs/study_type" = ["packs/study_type/*.yaml"]
 "share/universal-research-mcp/plugin/universal-research-memory" = [

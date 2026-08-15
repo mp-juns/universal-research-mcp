@@ -14,9 +14,10 @@ contributions, amendments, negative results, stopped work, reproducibility
 fingerprints, and safely extensible domain/project profiles.
 
 It deliberately does not use semantic similarity to establish facts, causation,
-or performance; expose approval, canonical-ledger writes, or amendments as MCP
-tools; or expose model loading, benchmarks, daemons, or remote proxies from the
-default MCP. It never treats reference-project measurements as universal rules.
+or performance; expose approval or amendments as MCP tools; or expose model
+loading, benchmarks, daemons, or remote proxies from the default MCP. Its only
+canonical-write MCP boundary is exact, externally approved, journaled ingest.
+It never treats reference-project measurements as universal rules.
 
 ## 2. Layered architecture
 
@@ -36,7 +37,7 @@ Storage / search / display adapters
   ├─ SQLite FTS and optional semantic index
   └─ Markdown or other display projection
        ↓
-Read-only MCP and Codex Skill
+Read-mostly MCP and Codex Skill
 ```
 
 The core has no dependency on a particular directory name. `TODO.md` and
@@ -219,11 +220,15 @@ as ready search coverage.
 Markdown work logs, TODO views, and external displays may be regenerated from
 canonical records. They are useful interfaces, not a substitute for the ledger.
 
-## 13. Read-only MCP contract
+## 13. Read-mostly MCP contract
 
 The MCP exposes candidate search, latest-record lookup, evidence fetch, ledger
-audit, derived-index status, and governance-manifest preparation. It does not
-write a ledger, approve a task, execute a model/benchmark, or start a remote
+audit, derived-index status, governance-manifest preparation, and two guarded
+ingestion operations. `research_prepare_ingest` creates only an immutable,
+non-canonical draft. `research_commit_ingest` requires an externally signed,
+one-use receipt bound to that exact draft and a pre-existing human approval;
+it applies a recoverable transaction journal before marking the draft consumed.
+The MCP cannot create approvals, execute a model/benchmark, or start a remote
 proxy. Search candidates are not evidence. An evidence response carries an
 event ID, path, source line range, expected/indexed/current hashes, integrity
 status, and bounded source content. `matched`, `mismatched`, and `not_indexed`
@@ -254,7 +259,7 @@ encoder compatibility checks are separate from the default CI.
 ## 16. Package, CI, and release
 
 The package name is `universal-research-mcp`. Its default dependency set is a
-read-only MCP runtime; optional semantic dependencies are intentionally not
+read-mostly MCP runtime; optional semantic dependencies are intentionally not
 downloaded by default. CI runs package install, console entry point, core,
 approval, MCP, and lexical-fixture checks on pushes and pull requests. It does
 not run a semantic encoder, model download, benchmark, reference project, or

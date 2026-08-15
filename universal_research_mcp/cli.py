@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from importlib.util import find_spec
 import json
 import os
 from pathlib import Path
@@ -18,9 +19,14 @@ _INTERNAL_PROVIDER_PREVIEW_ENV = "UNIVERSAL_RESEARCH_INTERNAL_PROVIDER_PREVIEW"
 
 
 def _internal_provider_preview_enabled() -> bool:
-    """Return whether unsupported provider-development commands may be registered."""
+    """Enable source-tree prototypes only when their excluded modules exist."""
 
-    return os.environ.get(_INTERNAL_PROVIDER_PREVIEW_ENV) == "1"
+    return (
+        os.environ.get(_INTERNAL_PROVIDER_PREVIEW_ENV) == "1"
+        and find_spec("universal_research_mcp.providers") is not None
+        and find_spec("universal_research_mcp.agent_runtime") is not None
+        and find_spec("universal_research_mcp.harness") is not None
+    )
 
 
 def _emit(value: dict[str, Any]) -> None:
@@ -320,7 +326,7 @@ def _harness_command(root: Path, args: argparse.Namespace) -> int:
 def _usage_command(root: Path, args: argparse.Namespace) -> int:
     """Report only token counts that a provider or host actually supplied."""
 
-    from universal_research_mcp.harness import read_usage_observations, summarize_usage
+    from universal_research_mcp.core.usage import read_usage_observations, summarize_usage
 
     summary = summarize_usage(read_usage_observations(root), run_id=args.run_id)
     _emit({

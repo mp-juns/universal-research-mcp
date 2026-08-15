@@ -71,24 +71,30 @@ def _configured_project(root: Path) -> tuple[Path, list[dict[str, object]]]:
     return root, references
 
 
-def test_claim_gate_is_exposed_and_requires_two_current_records_for_release(tmp_path: Path) -> None:
+def test_evidence_eligibility_is_exposed_and_requires_two_current_records_for_release(tmp_path: Path) -> None:
     prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
     try:
         _root, references = _configured_project(tmp_path / "research")
         tools = {tool.name for tool in asyncio.run(server.mcp.list_tools())}
-        assert "memory_gate_claim" in tools
+        assert "memory_check_evidence_eligibility" in tools
+        assert "memory_gate_claim" not in tools
 
-        blocked = server.memory_gate_claim(
+        blocked = server.memory_check_evidence_eligibility(
             "The release is ready.", "release", "auto", [references[0]],
         )
         assert blocked["status"] == "blocked"
-        assert blocked["blockers"][0]["code"] == "CLAIM-EVIDENCE-INSUFFICIENT"
+        assert blocked["blockers"][0]["code"] == "EVIDENCE-ELIGIBILITY-INSUFFICIENT"
 
-        eligible = server.memory_gate_claim(
+        eligible = server.memory_check_evidence_eligibility(
             "The release is ready.", "release", "auto", references,
         )
         assert eligible["status"] == "eligible"
         assert eligible["claim_eligibility"] == "eligible"
+        assert eligible["evidence_eligibility"] == "eligible"
+        assert eligible["claim_verified"] is False
+        assert eligible["semantic_support_checked"] is False
+        assert eligible["conflict_checked"] is False
+        assert eligible["source_truth_checked"] is False
         assert eligible["claim_text_included"] is False
         assert len(eligible["evidence"]) == 2
         fetched = server.memory_fetch_evidence(**references[0], context_lines=0)
@@ -97,15 +103,15 @@ def test_claim_gate_is_exposed_and_requires_two_current_records_for_release(tmp_
         server.configure_runtime(*prior)
 
 
-def test_claim_gate_blocks_a_changed_registered_source_and_skips_routine_lookup(tmp_path: Path) -> None:
+def test_evidence_eligibility_blocks_a_changed_source_and_skips_routine_lookup(tmp_path: Path) -> None:
     prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
     try:
         root, references = _configured_project(tmp_path / "research")
-        routine = server.memory_gate_claim("Where is the runtime file?", "factual", "auto", [])
+        routine = server.memory_check_evidence_eligibility("Where is the runtime file?", "factual", "auto", [])
         assert routine["status"] == "not_required"
 
         (root / "docs/runtime.md").write_text("Runtime contract\nGPU offload is enabled.\n", encoding="utf-8")
-        blocked = server.memory_gate_claim(
+        blocked = server.memory_check_evidence_eligibility(
             "GPU offload is enabled for this release.", "factual", "material", [references[0]],
         )
         assert blocked["status"] == "blocked"
@@ -115,18 +121,18 @@ def test_claim_gate_blocks_a_changed_registered_source_and_skips_routine_lookup(
         server.configure_runtime(*prior)
 
 
-def test_claim_gate_is_deterministic_and_rejects_mixed_event_path_hash_bindings(tmp_path: Path) -> None:
+def test_evidence_eligibility_is_deterministic_and_rejects_mixed_bindings(tmp_path: Path) -> None:
     prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
     try:
         _root, references = _configured_project(tmp_path / "research")
-        first = server.memory_gate_claim("The release is ready.", "release", "auto", references)
-        second = server.memory_gate_claim("The release is ready.", "release", "auto", references)
+        first = server.memory_check_evidence_eligibility("The release is ready.", "release", "auto", references)
+        second = server.memory_check_evidence_eligibility("The release is ready.", "release", "auto", references)
         assert first == second
 
         mixed = [dict(references[0]), dict(references[1])]
         mixed[0]["path"] = str(references[1]["path"])
-        blocked = server.memory_gate_claim("The release is ready.", "release", "auto", mixed)
+        blocked = server.memory_check_evidence_eligibility("The release is ready.", "release", "auto", mixed)
         assert blocked["status"] == "blocked"
-        assert any(item["code"] == "CLAIM-EVIDENCE-INVALID" for item in blocked["blockers"])
+        assert any(item["code"] == "EVIDENCE-INTEGRITY-INVALID" for item in blocked["blockers"])
     finally:
         server.configure_runtime(*prior)
