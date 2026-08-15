@@ -36,7 +36,13 @@ def main() -> int:
         subprocess.run([str(research), "--version"], check=True)
         subprocess.run([str(research), "init", str(root / "research")], check=True)
         subprocess.run([str(research), "doctor", "--root", str(root / "research")], check=True)
-        probe = "import universal_research_mcp.core; import universal_research_mcp.governance"
+        probe = (
+            "import importlib.util; "
+            "import universal_research_mcp.core; import universal_research_mcp.governance; "
+            "assert importlib.util.find_spec('universal_research_mcp.providers') is None; "
+            "assert importlib.util.find_spec('universal_research_mcp.agent_runtime') is None; "
+            "assert importlib.util.find_spec('universal_research_mcp.harness') is None"
+        )
         subprocess.run([str(python), "-c", probe], check=True)
         old = subprocess.run([str(python), "-c", "import core"], check=False)
         if old.returncode == 0:

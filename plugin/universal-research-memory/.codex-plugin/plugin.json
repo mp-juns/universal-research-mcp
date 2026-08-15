@@ -1,6 +1,6 @@
 {
   "name": "universal-research-memory",
-  "version": "0.6.0+codex.20260814222415",
+  "version": "0.7.0+codex.20260815004959",
   "description": "Codex-only provenance-first research memory, governed ingestion, and workflows.",
   "homepage": "https://github.com/mp-juns/universal-research-mcp",
   "repository": "https://github.com/mp-juns/universal-research-mcp",
@@ -18,11 +18,11 @@
   "interface": {
     "displayName": "Universal Research",
     "shortDescription": "Codex research memory with governed workflows.",
-    "longDescription": "Universal Research provides source-grounded memory, governed canonical ingestion, and an eleven-role governance contract for Codex. Model selection, agent sessions, and tool execution remain owned by the Codex host. This preview does not configure or call external model APIs or local model servers.",
+    "longDescription": "Universal Research provides source-grounded memory, recoverable governed ingestion, evidence-eligibility checks, and an eleven-role governance contract for Codex. Model selection, relevance review, agent sessions, and tool execution remain owned by the Codex host. The PyPI package does not ship external model APIs, generation-provider implementations, or plugin-owned agent runtimes.",
     "developerName": "mp-juns",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use Codex host-owned execution only. Treat canonical ingestion as a two-step, host-approved operation: prepare an immutable draft, then commit only its exact hash after explicit approval. Do not route work to external APIs or local model servers, and keep visualization off unless explicitly approved."
+    "defaultPrompt": "Use Codex host-owned execution only. Treat evidence eligibility as an integrity/range/count check, never proof of semantic support or truth. Treat canonical ingestion as a two-step, host-approved and recoverable operation bound to an immutable draft and exact receipt. Do not route work to external generation APIs, and keep visualization off unless explicitly approved."
   },
   "mcpServers": "./.mcp.json"
 }

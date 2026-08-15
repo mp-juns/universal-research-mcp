@@ -34,8 +34,8 @@ REQUIRED_RUNTIME_FILES = (
     "universal_research_mcp/cli.py", "universal_research_mcp/server.py",
     "universal_research_mcp/core/input.py", "universal_research_mcp/core/ingest.py",
     "universal_research_mcp/indexing/lexical.py",
-    "universal_research_mcp/indexing/semantic.py", "universal_research_mcp/providers/redaction.py",
-    "universal_research_mcp/providers/deterministic_embedding.py",
+    "universal_research_mcp/indexing/semantic.py", "universal_research_mcp/core/redaction.py",
+    "universal_research_mcp/semantic_backends.py",
     "universal_research_mcp/runtime/paths.py", "universal_research_mcp/runtime/semantic_config.py",
     "universal_research_mcp/runtime/ingest_approval.py",
     "universal_research_mcp/semantic_runtime.py", "universal_research_mcp/tools/distribution.py",
@@ -48,6 +48,11 @@ REQUIRED_GOVERNANCE_FILES = (
       for agent_id in GOVERNANCE_ROLE_IDS for filename in ("role.yaml", "instructions.md")),
 )
 REMOVED_TOP_LEVEL_PREFIXES = ("core/", "governance/", "adapters/", "integrations/", "scripts/")
+UNSUPPORTED_RUNTIME_PREFIXES = (
+    "universal_research_mcp/providers/",
+    "universal_research_mcp/agent_runtime/",
+    "universal_research_mcp/harness/",
+)
 
 
 def validate_wheel(path: Path) -> list[str]:
@@ -63,6 +68,7 @@ def validate_wheel(path: Path) -> list[str]:
         if not any(name.endswith(suffix) for name in names):
             problems.append(suffix)
     problems.extend(sorted(name for name in names if name.startswith(REMOVED_TOP_LEVEL_PREFIXES)))
+    problems.extend(sorted(name for name in names if name.startswith(UNSUPPORTED_RUNTIME_PREFIXES)))
     if not any(name.endswith(".dist-info/entry_points.txt") for name in names):
         problems.append("*.dist-info/entry_points.txt")
     return problems

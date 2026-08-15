@@ -23,13 +23,16 @@ read a secret, create a Skill, or start a subagent.
    `event_id`, path, line range, and `source_sha256` as `expected_sha256`.
 4. Before reporting a material result, comparison, causal statement, release
    decision, or other load-bearing fact, pass each evidence fetch response's
-   `claim_gate_reference` object unchanged to `memory_gate_claim`. Use
+   `claim_gate_reference` object unchanged to
+   `memory_check_evidence_eligibility`. Use
    `materiality="material"` for a load-bearing factual statement. Do not
    substitute the fetch response's current `sha256` for `expected_sha256`.
-5. Do not state a claim when the gate returns `blocked`; state the blocker and
-   uncertainty instead. A routine lookup does not need the gate.
-6. State the verified path, line range, and uncertainty with the conclusion.
-7. If evidence conflicts, preserve the conflict rather than merging it.
+5. Treat `eligible` only as integrity/range/count eligibility. It does not
+   establish semantic support, resolve conflicts, or prove the source true.
+6. Do not state a claim when eligibility is `blocked`. When it is eligible,
+   review relevance and conflicts before stating a bounded conclusion.
+7. State the verified path, line range, and uncertainty with the conclusion.
+8. If evidence conflicts, preserve the conflict rather than merging it.
 
 For ordinary search, use the default configured mode so the MCP resolves the
 explicit project profile and candidate backend. `event_first` is only an

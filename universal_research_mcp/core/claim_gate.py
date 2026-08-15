@@ -1,4 +1,4 @@
-"""Deterministic evidence gate for material research claims.
+"""Deterministic evidence-eligibility gate for material research claims.
 
 Candidate retrieval is intentionally not enough for a load-bearing conclusion.
 This module classifies the *consequence* of a claim, then evaluates only the
@@ -20,7 +20,7 @@ AUTO_MATERIAL_TYPES = frozenset({"result", "comparative", "causal", "release"})
 TWO_SOURCE_TYPES = frozenset({"comparative", "causal", "release"})
 
 
-def claim_gate_plan(claim_type: str, materiality: str = "auto") -> dict[str, Any]:
+def evidence_eligibility_plan(claim_type: str, materiality: str = "auto") -> dict[str, Any]:
     """Classify whether a claim requires source verification.
 
     ``auto`` deliberately uses claim consequence rather than keyword matching:
@@ -52,7 +52,7 @@ def claim_gate_plan(claim_type: str, materiality: str = "auto") -> dict[str, Any
     }
 
 
-def evaluate_claim_gate(
+def evaluate_evidence_eligibility(
     *,
     claim_type: str,
     materiality: str,
@@ -66,14 +66,19 @@ def evaluate_claim_gate(
     merely by echoing a path or hash in model-authored JSON.
     """
 
-    plan = claim_gate_plan(claim_type, materiality)
+    plan = evidence_eligibility_plan(claim_type, materiality)
     checks = [dict(item) for item in evidence_checks]
     if not plan["active"]:
         return {
-            "schema_version": "research-claim-gate/1.0",
+            "schema_version": "research-evidence-eligibility/1.0",
             **plan,
             "status": "not_required",
+            "evidence_eligibility": "not_required",
             "claim_eligibility": "not_required",
+            "claim_verified": False,
+            "semantic_support_checked": False,
+            "conflict_checked": False,
+            "source_truth_checked": False,
             "evidence": [],
             "blockers": [],
             "requires_user_decision": False,
@@ -101,13 +106,13 @@ def evaluate_claim_gate(
         evidence.append(record)
         if not verified:
             blockers.append({
-                "code": "CLAIM-EVIDENCE-INVALID",
+                "code": "EVIDENCE-INTEGRITY-INVALID",
                 "reason": str(check.get("reason") or "evidence could not be verified"),
                 "evidence_index": str(index),
             })
     if len(distinct) < plan["minimum_distinct_evidence"]:
         blockers.append({
-            "code": "CLAIM-EVIDENCE-INSUFFICIENT",
+            "code": "EVIDENCE-ELIGIBILITY-INSUFFICIENT",
             "reason": (
                 f"{claim_type} claim requires {plan['minimum_distinct_evidence']} "
                 "distinct verified evidence records"
@@ -116,11 +121,27 @@ def evaluate_claim_gate(
         })
     blocked = bool(blockers)
     return {
-        "schema_version": "research-claim-gate/1.0",
+        "schema_version": "research-evidence-eligibility/1.0",
         **plan,
         "status": "blocked" if blocked else "eligible",
+        "evidence_eligibility": "blocked" if blocked else "eligible",
         "claim_eligibility": "blocked" if blocked else "eligible",
+        "claim_verified": False,
+        "semantic_support_checked": False,
+        "conflict_checked": False,
+        "source_truth_checked": False,
         "evidence": evidence,
         "blockers": blockers,
         "requires_user_decision": blocked,
     }
+
+
+# Python compatibility aliases. They are not the canonical MCP tool contract.
+claim_gate_plan = evidence_eligibility_plan
+evaluate_claim_gate = evaluate_evidence_eligibility
+
+
+__all__ = [
+    "CLAIM_TYPES", "MATERIALITIES", "evidence_eligibility_plan",
+    "evaluate_evidence_eligibility",
+]

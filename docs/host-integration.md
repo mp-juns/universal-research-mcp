@@ -1,6 +1,6 @@
 # Host Integration Contract
 
-> Support status for 0.4.0: Codex only. Other host adapters and
+> Support status for 0.7.0: Codex only. Other host adapters and
 > local/remote model-provider routes are design work, not supported runtime
 > integrations.
 
@@ -13,7 +13,7 @@ an inconclusive result into a positive conclusion.
 Codex integration uses the repository-local research-memory MCP and plugin
 Skills. Its normal retrieval and governance tools are read-only. The narrow
 `research_prepare_ingest` and `research_commit_ingest` tools are explicitly
-marked mutating and non-idempotent; compatible hosts must surface their normal
+marked mutating; compatible hosts must surface their normal
 write-tool permission flow. `integrations.codex.adapter` renders a
 validated packet plus a hash-bound scope-governor receipt into a host-owned dispatch request and refuses malformed output
 without promoting it to research evidence. It intentionally cannot call Codex's
@@ -27,7 +27,9 @@ approval, and must not claim it did. Instead, the separate local
 one-time receipt for one exact pending draft. The server verifies and consumes
 that receipt together with the immutable draft SHA-256, unchanged
 canonical/source state, and prior human approval record whose scope includes the
-record. If a host is configured to auto-approve writes, that is the host
+record. A write-ahead transaction may resume after partial filesystem failure
+only with that same already-consumed receipt; this is recovery, not a second
+approval or a replay with changed content. If a host is configured to auto-approve writes, that is the host
 owner's policy choice and not a bypass the server can silently convert into
 human authority.
 

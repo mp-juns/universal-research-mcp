@@ -6,7 +6,11 @@ The only canonical-write exception is the host-visible two-step ingestion
 boundary: a noncanonical immutable draft is prepared first, then a separate
 host-state authority issues a one-time HMAC-signed receipt. The mutating commit
 tool rechecks the receipt, exact draft hash, canonical head, source hashes,
-pre-existing human approval scope, and one-time consumption. Automatic startup
+pre-existing human approval scope, and one-time consumption. It prepares a
+write-ahead journal before mutation, verifies exact before/after hashes for
+each canonical file, and marks the draft consumed only after all operations
+verify. A partial failure is recoverable only with the same consumed receipt
+and exact journal. Automatic startup
 writes remain restricted to staged, verified project-local derived indexes.
 
 Source artifacts are untrusted content. Instructions embedded in research data
@@ -45,7 +49,7 @@ models because their external snapshot is not yet included in the publication
 manifest.
 
 Provider-backed runtime modules retained in the source tree are internal
-prototypes. They are outside the 0.6.0 support and compatibility contract and
+prototypes and excluded from the public wheel. They are outside the 0.7.0 support and compatibility contract and
 must not be treated as an enabled security boundary. A future provider release
 requires a separate threat-model review, credential boundary, explicit
 cost/network approval, and distribution contract before activation.

@@ -21,7 +21,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 
 from universal_research_mcp.core.audit import audit_report
-from universal_research_mcp.core.claim_gate import evaluate_claim_gate
+from universal_research_mcp.core.claim_gate import evaluate_evidence_eligibility
 from universal_research_mcp.core.ingest import commit_ingest, pending_ingest_status, prepare_ingest
 from universal_research_mcp.core.ledger import read_jsonl
 from universal_research_mcp.core.search import safe_fts_query
@@ -55,7 +55,7 @@ PUBLIC_DEMO_TOOL_NAMES = frozenset({
     "memory_search_candidates",
     "memory_latest",
     "memory_fetch_evidence",
-    "memory_gate_claim",
+    "memory_check_evidence_eligibility",
     "memory_audit_ledger",
     "public_demo_status",
 })
@@ -89,9 +89,11 @@ evidence.
 Before making an important claim, call memory_fetch_evidence
 with the exact path and line range returned by search, then report that source
 range and its hash. Before reporting a material result, comparison, causal,
-release, or other load-bearing factual claim, call memory_gate_claim with the
-exact fetched evidence references; do not state the claim when the gate blocks
-it. Governance tools validate plans, authority, and returned decisions but
+release, or other load-bearing factual claim, call
+memory_check_evidence_eligibility with the exact fetched evidence references.
+This verifies integrity and eligibility, not semantic support or truth; route
+eligible evidence through relevance and conflict review before the final claim.
+Governance tools validate plans, authority, and returned decisions but
 cannot approve work on the user's behalf. Provider secrets must never be pasted
 into chat, command arguments, research records, or tool input.
 
@@ -121,8 +123,9 @@ public_demo_status to inspect its path-free publication receipt. Use
 memory_search_candidates only for candidate discovery; a score is never
 evidence. Re-fetch the exact registered path, line range, event ID, and source
 hash with memory_fetch_evidence before relying on a result. Use
-memory_gate_claim before stating a material factual, comparative, causal, or
-release claim, and do not state a claim when the gate blocks it.
+memory_check_evidence_eligibility before stating a material factual,
+comparative, causal, or release claim. Eligibility does not prove that the
+evidence supports the claim or that the source is true.
 
 This process cannot ingest records, inspect pending drafts, approve work,
 refresh indexes, configure models or profiles, dispatch agents, expose generic
@@ -926,7 +929,7 @@ def memory_fetch_evidence(
         "integrity_status": integrity_status,
         "content_withheld": integrity_status == "mismatched" and not allow_mismatched_content,
         # Deliberately separate from ``sha256`` (the current file snapshot).
-        # This is the exact object accepted by memory_gate_claim, so an agent
+        # This is the exact object accepted by the eligibility gate, so an agent
         # cannot accidentally turn a mismatched current hash into a claim-gate
         # reference after a successful evidence fetch.
         "claim_gate_reference": {
@@ -1001,8 +1004,7 @@ def _claim_evidence_check(reference: Any) -> dict[str, Any]:
     }
 
 
-@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
-def memory_gate_claim(
+def _evidence_eligibility_receipt(
     claim: str,
     claim_type: Literal[
         "factual", "result", "comparative", "causal", "release",
@@ -1021,7 +1023,7 @@ def memory_gate_claim(
     if not isinstance(claim, str) or not claim.strip():
         raise ValueError("claim must be a non-empty string")
     checks = [_claim_evidence_check(item) for item in (evidence or [])]
-    result = evaluate_claim_gate(
+    result = evaluate_evidence_eligibility(
         claim_type=claim_type,
         materiality=materiality,
         evidence_checks=checks,
@@ -1030,6 +1032,39 @@ def memory_gate_claim(
         **result,
         "claim_sha256": hashlib.sha256(claim.encode("utf-8")).hexdigest(),
         "claim_text_included": False,
+    }
+
+
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+def memory_check_evidence_eligibility(
+    claim: str,
+    claim_type: Literal[
+        "factual", "result", "comparative", "causal", "release",
+        "recommendation", "creative",
+    ] = "factual",
+    materiality: Literal["auto", "routine", "material"] = "auto",
+    evidence: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Check exact evidence integrity and count, never semantic claim support."""
+
+    return _evidence_eligibility_receipt(claim, claim_type, materiality, evidence)
+
+
+def memory_gate_claim(
+    claim: str,
+    claim_type: Literal[
+        "factual", "result", "comparative", "causal", "release",
+        "recommendation", "creative",
+    ] = "factual",
+    materiality: Literal["auto", "routine", "material"] = "auto",
+    evidence: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Deprecated compatibility alias for evidence eligibility only."""
+
+    return {
+        **_evidence_eligibility_receipt(claim, claim_type, materiality, evidence),
+        "deprecated_tool_name": "memory_gate_claim",
+        "replacement_tool_name": "memory_check_evidence_eligibility",
     }
 
 
@@ -1158,7 +1193,7 @@ def _register_legacy_tools() -> None:
     global _LEGACY_TOOLS_REGISTERED
     if _LEGACY_TOOLS_REGISTERED:
         return
-    for function in (research_search, research_latest, research_fetch):
+    for function in (research_search, research_latest, research_fetch, memory_gate_claim):
         mcp.tool()(function)
     _LEGACY_TOOLS_REGISTERED = True
 
@@ -1356,9 +1391,9 @@ def governance_preflight_parallel_batch(
 ) -> dict[str, Any]:
     """Validate a parallel batch without starting agents, models, or network."""
 
-    from universal_research_mcp.harness import ParallelResearchHarness
+    from universal_research_mcp.governance.batch import preflight_parallel_batch
 
-    return ParallelResearchHarness(lambda _dispatch: {}).preflight(
+    return preflight_parallel_batch(
         packets,
         max_workers=max_workers,
         aggregate_cost_ceiling_usd=aggregate_cost_ceiling_usd,
