@@ -115,6 +115,12 @@ returned exact draft ID and hash through research_commit_ingest after the host
 has approved that mutating tool call. Never invent an approval flag: the commit
 also requires a one-time signed host receipt and a pre-existing, human-created
 approval record with matching scope.
+
+Codex native subagents remain host-owned. codex_host_agent_status can inspect
+only descendants of the current root task, and codex_prepare_agent_control can
+only create an immutable proposal. Enabling, disabling, or interrupting those
+descendants requires exact confirmation through the separate host CLI; never
+claim that an MCP proposal changed the host.
 """.strip()
 
 PUBLIC_DEMO_INSTRUCTIONS = """
@@ -1143,6 +1149,41 @@ def research_pending_ingest_status(draft_id: str) -> dict[str, Any]:
 
     _require_private_write_surface()
     return pending_ingest_status(ROOT, draft_id=draft_id)
+
+
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+def codex_host_agent_status() -> dict[str, Any]:
+    """Inspect metadata-only status for this Codex task's spawned descendants.
+
+    The root task and unrelated user tasks are never returned. This tool is
+    read-only and cannot create, enable, disable, or interrupt an agent.
+    """
+
+    from universal_research_mcp.integrations.codex.agent_control import codex_agent_status
+
+    return codex_agent_status()
+
+
+@mcp.tool(annotations=ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=False,
+))
+def codex_prepare_agent_control(
+    action: Literal["disable", "enable", "stop_active"],
+) -> dict[str, Any]:
+    """Prepare, but never apply, one Codex host-agent control proposal.
+
+    The returned hash must be confirmed through the separate host CLI. MCP
+    cannot change Codex configuration or interrupt a turn on its own.
+    """
+
+    from universal_research_mcp.integrations.codex.agent_control import (
+        prepare_codex_agent_control,
+    )
+
+    return prepare_codex_agent_control(ROOT, action=action)
 
 
 def research_search(

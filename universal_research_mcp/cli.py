@@ -525,6 +525,32 @@ def _ingest_command(root: Path, args: argparse.Namespace) -> int:
     return 0
 
 
+def _codex_agents_command(root: Path, args: argparse.Namespace) -> int:
+    """Inspect, prepare, or host-apply bounded Codex descendant controls."""
+
+    from universal_research_mcp.integrations.codex.agent_control import (
+        apply_codex_agent_control,
+        codex_agent_status,
+        prepare_codex_agent_control,
+    )
+
+    if args.codex_agents_action == "status":
+        _emit(codex_agent_status())
+        return 0
+    if args.codex_agents_action == "prepare":
+        _emit(prepare_codex_agent_control(
+            root,
+            action=args.action,
+        ))
+        return 0
+    _emit(apply_codex_agent_control(
+        root,
+        proposal_hash=args.proposal_hash,
+        confirm_proposal_hash=args.confirm_proposal_hash,
+    ))
+    return 0
+
+
 def _semantic_status(root: Path) -> dict[str, Any]:
     from universal_research_mcp.indexing import semantic_status
 
@@ -948,6 +974,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional absolute host-state location outside the research project.",
     )
 
+    codex_agents = subparsers.add_parser(
+        "codex-agents",
+        help="Inspect and host-apply bounded Codex subagent policy.",
+    )
+    codex_agent_actions = codex_agents.add_subparsers(
+        dest="codex_agents_action", required=True,
+    )
+    codex_agent_status = codex_agent_actions.add_parser(
+        "status", help="List metadata-only status for descendants of one root task.",
+    )
+    codex_agent_status.add_argument("--root", type=Path)
+    codex_agent_prepare = codex_agent_actions.add_parser(
+        "prepare", help="Create a non-executing host-control proposal.",
+    )
+    codex_agent_prepare.add_argument("action", choices=("disable", "enable", "stop_active"))
+    codex_agent_prepare.add_argument("--root", type=Path)
+    codex_agent_apply = codex_agent_actions.add_parser(
+        "apply", help="Apply one exact proposal from a trusted host shell.",
+    )
+    codex_agent_apply.add_argument("proposal_hash")
+    codex_agent_apply.add_argument("--confirm-proposal-hash", required=True)
+    codex_agent_apply.add_argument("--root", type=Path)
+
     usage = subparsers.add_parser(
         "usage", help="Summarize observed token usage without estimates.",
     )
@@ -1192,6 +1241,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "ingest":
         return _ingest_command(_root(getattr(args, "root", None)), args)
 
+    if args.command == "codex-agents":
+        return _codex_agents_command(_root(getattr(args, "root", None)), args)
+
     if args.command == "semantic":
         return _semantic_command(_root(getattr(args, "root", None)), args)
 
@@ -1260,7 +1312,7 @@ def legacy_main(argv: Sequence[str] | None = None) -> int:
     commands = {
         "serve", "init", "index", "build-index", "semantic", "profile",
         "public-demo", "doctor", "validate", "usage", "source", "record",
-        "ingest", "harness",
+        "ingest", "codex-agents", "harness",
     }
     if _internal_provider_preview_enabled():
         commands.update({"provider", "agent"})

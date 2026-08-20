@@ -21,7 +21,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-dependencies = ["mcp>=1.27,<2"]
+dependencies = ["mcp>=1.27,<2", "websockets>=15,<17"]
 
 [project.urls]
 Homepage = "https://github.com/mp-juns/universal-research-mcp"
