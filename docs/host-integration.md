@@ -33,6 +33,40 @@ approval or a replay with changed content. If a host is configured to auto-appro
 owner's policy choice and not a bypass the server can silently convert into
 human authority.
 
+## Codex subagent control
+
+Universal Research keeps native multi-agent execution host-owned. The MCP can
+read metadata-only status for descendants of the current root task and prepare
+an immutable `disable`, `enable`, or `stop_active` proposal. It cannot apply the
+proposal, target the root task, or target unrelated user tasks.
+
+The separate trusted-host command applies an exact proposal hash. Disabling
+uses Codex's own feature configuration command, writes a dedicated governed
+profile with both multi-agent controls off, and requests `turn/interrupt` for
+each active descendant returned by the app-server ancestor filter. Enabling
+changes only the future-session policy and never creates an agent. Profile
+changes require a new Codex session; current descendants are handled
+separately through the interrupt protocol.
+
+The host-control client follows Codex's WebSocket JSON-RPC transport. Set
+`UNIVERSAL_RESEARCH_CODEX_APP_SERVER_URL` to a loopback-only `ws://` endpoint,
+or `UNIVERSAL_RESEARCH_CODEX_APP_SERVER_SOCKET` to an enabled Unix-WebSocket
+listener. Non-loopback URLs are rejected. The Codex Desktop-owned app-server
+may expose a control socket while refusing additional clients; Universal
+Research fails closed in that case instead of restarting or taking over the
+desktop process. A separately started or daemon-managed app-server must expose
+the control endpoint before status or interruption can run.
+
+`stop_active` is a graceful `turn/interrupt`, not an operating-system process
+kill. It lists only descendants bound to `CODEX_THREAD_ID`, displays details
+only for currently active descendants, and never treats stored `notLoaded`
+history as active work.
+
+This is a convenience and audit boundary, not an administrator lock. A managed
+deployment that must prevent users from re-enabling multi-agent functionality
+should pin the feature off in Codex `requirements.toml`. A user opening a
+separate top-level task is outside the descendant-control boundary.
+
 Use the non-executing governance tools to prepare a dispatch manifest or the `urgov
 dispatch` commands to print one. Manifest export does not write a project file
 or start an agent. A host may preserve it as an internal audit artifact and

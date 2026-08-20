@@ -156,3 +156,14 @@ receipt step automatically. The current Codex host may execute its requests as
 parallel work when appropriate; never claim the manifest itself has started an
 agent. Use the critical-batch variant only with all four reviewers and one
 shared snapshot hash.
+
+Keep native Codex multi-agent disabled by default for governed work. Use
+`codex_host_agent_status` only for metadata about descendants of the current
+root task. `codex_prepare_agent_control` may prepare `disable`, `enable`, or
+`stop_active`, but it never changes host state. Only the separate trusted-host
+`universal-research codex-agents apply` command may consume the exact proposal.
+Never target the root task or an unrelated user task, never interpret enable as
+permission to spawn, and never report an interrupt until the Codex app-server
+accepts the exact descendant turn interruption. Require a loopback WebSocket or
+an explicitly enabled Unix-WebSocket control endpoint; do not restart, replace,
+or take over a Desktop-owned app-server merely to make host control available.

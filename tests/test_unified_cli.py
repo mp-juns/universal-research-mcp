@@ -24,9 +24,11 @@ def test_default_cli_surface_is_codex_only(monkeypatch: pytest.MonkeyPatch) -> N
     help_text = parser.format_help()
     assert "provider" not in help_text
     assert "harness" in help_text
-    assert "agent" not in help_text
+    assert "codex-agents" in help_text
     with pytest.raises(SystemExit):
         parser.parse_args(["provider", "status"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["agent", "status"])
 
 
 def test_init_creates_queryable_empty_lexical_database_without_semantic_provider(
