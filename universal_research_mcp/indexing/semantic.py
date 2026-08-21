@@ -275,24 +275,31 @@ def _load_semantic_input(root: str | Path) -> _SemanticInput:
         lexical_fingerprint = metadata.get(FINGERPRINT_KEY)
         if lexical_fingerprint != lexical.get("current_fingerprint"):
             raise RuntimeError("lexical index fingerprint changed during semantic planning")
-        rows = connection.execute(
+        event_rows = connection.execute(
             """
             SELECT e.event_id, e.event_type, e.status, e.project, e.workstream,
-                   e.summary, e.source_path, e.source_heading, e.source_sha256,
-                   e.line_start, e.line_end,
-                   EXISTS(
-                       SELECT 1 FROM sources AS s
-                       WHERE s.source_path = e.source_path
-                         AND lower(s.source_sha256) = lower(e.source_sha256)
-                   ) AS source_registered
+                   e.summary, e.source_heading
             FROM events AS e
             ORDER BY event_id
+            """
+        ).fetchall()
+        passage_rows = connection.execute(
+            """
+            SELECT p.event_id, p.source_path, p.source_heading, p.source_sha256,
+                   p.line_start, p.line_end,
+                   EXISTS(
+                       SELECT 1 FROM sources AS s
+                       WHERE s.source_path = p.source_path
+                         AND lower(s.source_sha256) = lower(p.source_sha256)
+                   ) AS source_registered
+            FROM source_passage_fts AS p
+            ORDER BY p.event_id, p.source_path, p.line_start, p.line_end
             """
         ).fetchall()
 
     events: list[_EventDocument] = []
     passages: list[_PassageDocument] = []
-    for sqlite_row in rows:
+    for sqlite_row in event_rows:
         row = dict(sqlite_row)
         text = _event_text(row)
         events.append(
@@ -302,7 +309,8 @@ def _load_semantic_input(root: str | Path) -> _SemanticInput:
                 text_sha256=_sha256(text.encode("utf-8")),
             )
         )
-        passages.extend(_source_passages(row, paths))
+    for sqlite_row in passage_rows:
+        passages.extend(_source_passages(dict(sqlite_row), paths))
 
     digest = hashlib.sha256()
     digest.update(INPUT_FINGERPRINT_VERSION.encode("ascii") + b"\0")

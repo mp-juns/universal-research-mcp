@@ -23,8 +23,18 @@ from universal_research_mcp.runtime import ProjectPaths
 
 FINGERPRINT_VERSION = "canonical-jsonl-sha256-v1"
 FINGERPRINT_KEY = "canonical_bundle_sha256"
+LEXICAL_SCHEMA_VERSION = "1.1"
 REQUIRED_TABLES = frozenset(
-    {"metadata", "sources", "events", "relations", "artifacts", "event_fts", "source_passage_fts"}
+    {
+        "metadata",
+        "sources",
+        "events",
+        "event_sources",
+        "relations",
+        "artifacts",
+        "event_fts",
+        "source_passage_fts",
+    }
 )
 LexicalBuilder = Callable[[Path, Path], dict[str, Any]]
 LexicalProgressReporter = Callable[[int, str], None]
@@ -158,6 +168,18 @@ def _initialize_schema(connection: sqlite3.Connection) -> None:
             requires_human_review INTEGER NOT NULL,
             raw_json TEXT NOT NULL
         );
+        CREATE TABLE event_sources (
+            event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+            source_ordinal INTEGER NOT NULL,
+            source_path TEXT NOT NULL,
+            source_heading TEXT NOT NULL,
+            source_sha256 TEXT,
+            line_start INTEGER,
+            line_end INTEGER,
+            legacy_import INTEGER NOT NULL,
+            requires_human_review INTEGER NOT NULL,
+            PRIMARY KEY (event_id, source_ordinal)
+        );
         CREATE TABLE relations (
             event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
             relation_type TEXT NOT NULL,
@@ -174,10 +196,12 @@ def _initialize_schema(connection: sqlite3.Connection) -> None:
         CREATE INDEX events_date_idx ON events(date);
         CREATE INDEX events_status_idx ON events(status);
         CREATE INDEX events_type_idx ON events(event_type);
+        CREATE INDEX event_sources_path_idx ON event_sources(source_path);
         CREATE INDEX relations_target_idx ON relations(target);
         CREATE VIRTUAL TABLE source_passage_fts USING fts5(
             event_id UNINDEXED,
-            source_path UNINDEXED,
+            source_path,
+            source_heading,
             source_sha256 UNINDEXED,
             line_start UNINDEXED,
             line_end UNINDEXED,
@@ -199,7 +223,7 @@ def _build_empty(output: Path) -> dict[str, Any]:
     with sqlite3.connect(output) as connection:
         _initialize_schema(connection)
         metadata = {
-            "schema_version": "1.0",
+            "schema_version": LEXICAL_SCHEMA_VERSION,
             "index_kind": "sqlite_fts5_bm25_relation_index",
             "source_count": "0",
             "event_count": "0",
@@ -260,6 +284,8 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
         if missing:
             raise RuntimeError(f"lexical index is missing required tables: {missing}")
         metadata = dict(db.execute("SELECT key, value FROM metadata"))
+        if metadata.get("schema_version") != LEXICAL_SCHEMA_VERSION:
+            raise RuntimeError("lexical index schema version mismatch")
         if metadata.get(FINGERPRINT_KEY) != expected_fingerprint:
             raise RuntimeError("lexical index canonical fingerprint mismatch")
         event_count = int(db.execute("SELECT COUNT(*) FROM events").fetchone()[0])
@@ -292,10 +318,11 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
             db.execute(
                 """
                 SELECT COUNT(*)
-                FROM events AS e
+                FROM event_sources AS es
+                JOIN events AS e ON e.event_id = es.event_id
                 JOIN sources AS s
-                  ON s.source_path = e.source_path
-                 AND lower(s.source_sha256) = lower(e.source_sha256)
+                  ON s.source_path = es.source_path
+                 AND lower(s.source_sha256) = lower(es.source_sha256)
                 WHERE e.event_type <> 'reference_document'
                 """
             ).fetchone()[0]
@@ -304,13 +331,13 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
             db.execute(
                 """
                 SELECT COUNT(*)
-                FROM events AS e
+                FROM event_sources AS es
+                JOIN events AS e ON e.event_id = es.event_id
                 LEFT JOIN sources AS s
-                  ON s.source_path = e.source_path
-                 AND lower(s.source_sha256) = lower(e.source_sha256)
+                  ON s.source_path = es.source_path
+                 AND lower(s.source_sha256) = lower(es.source_sha256)
                 WHERE e.event_type <> 'reference_document'
-                  AND e.source_path IS NOT NULL
-                  AND e.source_path <> ''
+                  AND es.source_path <> ''
                   AND s.source_id IS NULL
                 """
             ).fetchone()[0]
@@ -378,6 +405,7 @@ def index_status(root: str | Path) -> dict[str, Any]:
             "reason": f"{type(exc).__name__}: {exc}",
         }
     indexed = metadata.get(FINGERPRINT_KEY)
+    schema_current = metadata.get("schema_version") == LEXICAL_SCHEMA_VERSION
     missing_tables = sorted(REQUIRED_TABLES - tables)
     failed_current_health = bool(
         health
@@ -387,6 +415,7 @@ def index_status(root: str | Path) -> dict[str, Any]:
     current = (
         integrity == "ok"
         and indexed == fingerprint["sha256"]
+        and schema_current
         and not missing_tables
         and not failed_current_health
     )
@@ -396,7 +425,13 @@ def index_status(root: str | Path) -> dict[str, Any]:
         "stale": not current,
         "indexed_fingerprint": indexed,
         "integrity": integrity,
+        "schema_version": metadata.get("schema_version"),
         **({"reason": f"lexical index is missing required tables: {missing_tables}"} if missing_tables else {}),
+        **(
+            {"reason": "lexical index schema version mismatch"}
+            if not schema_current and not missing_tables
+            else {}
+        ),
     }
 
 

@@ -20,9 +20,10 @@ from universal_research_mcp.tools.research_event_corrections import apply_source
 from universal_research_mcp.core.ledger import validate_records
 from universal_research_mcp.core.amendments import resolve_core_amendments
 from universal_research_mcp.core.indexing import index_document, index_document_id, is_core_record
+from universal_research_mcp.indexing.lexical import LEXICAL_SCHEMA_VERSION
 
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = LEXICAL_SCHEMA_VERSION
 
 
 def read_jsonl(path: Path) -> list[dict]:
@@ -49,6 +50,33 @@ def normalize_relation(relation: dict | str, *, event_id: str) -> dict:
         f"{event_id}: relation must be an object or legacy event-ID string, "
         f"got {type(relation).__name__}"
     )
+
+
+def event_sources(event: dict, *, core_record: bool) -> list[dict]:
+    """Return every projected source while retaining legacy single-source input."""
+
+    candidates = event.get("sources") if core_record else None
+    if not isinstance(candidates, list):
+        candidates = [event.get("source")]
+    normalized: list[dict] = []
+    seen: set[tuple[object, ...]] = set()
+    for source in candidates:
+        if not isinstance(source, dict):
+            continue
+        path = source.get("source_path")
+        if not isinstance(path, str) or not path:
+            continue
+        identity = (
+            path,
+            source.get("source_sha256"),
+            source.get("line_start"),
+            source.get("line_end"),
+        )
+        if identity in seen:
+            continue
+        seen.add(identity)
+        normalized.append(source)
+    return normalized
 
 
 def initialize(connection: sqlite3.Connection) -> None:
@@ -81,6 +109,18 @@ def initialize(connection: sqlite3.Connection) -> None:
             requires_human_review INTEGER NOT NULL,
             raw_json TEXT NOT NULL
         );
+        CREATE TABLE event_sources (
+            event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+            source_ordinal INTEGER NOT NULL,
+            source_path TEXT NOT NULL,
+            source_heading TEXT NOT NULL,
+            source_sha256 TEXT,
+            line_start INTEGER,
+            line_end INTEGER,
+            legacy_import INTEGER NOT NULL,
+            requires_human_review INTEGER NOT NULL,
+            PRIMARY KEY (event_id, source_ordinal)
+        );
         CREATE TABLE relations (
             event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
             relation_type TEXT NOT NULL,
@@ -97,10 +137,12 @@ def initialize(connection: sqlite3.Connection) -> None:
         CREATE INDEX events_date_idx ON events(date);
         CREATE INDEX events_status_idx ON events(status);
         CREATE INDEX events_type_idx ON events(event_type);
+        CREATE INDEX event_sources_path_idx ON event_sources(source_path);
         CREATE INDEX relations_target_idx ON relations(target);
         CREATE VIRTUAL TABLE source_passage_fts USING fts5(
             event_id UNINDEXED,
-            source_path UNINDEXED,
+            source_path,
+            source_heading,
             source_sha256 UNINDEXED,
             line_start UNINDEXED,
             line_end UNINDEXED,
@@ -241,8 +283,12 @@ def build(
         )
         for event in events:
             identifier = index_document_id(event)
-            effective_event = index_document(resolved_by_id.get(identifier, event))
-            source = effective_event.get("source", {})
+            resolved_event = resolved_by_id.get(identifier, event)
+            effective_event = index_document(resolved_event)
+            sources_for_event = event_sources(
+                effective_event, core_record=is_core_record(resolved_event)
+            )
+            source = sources_for_event[0] if sources_for_event else {}
             connection.execute(
                 """
                 INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -265,26 +311,52 @@ def build(
                     json.dumps(event, ensure_ascii=False, sort_keys=True),
                 ),
             )
-            passage = _source_passage(project_root, source, registered_hashes)
-            if passage is not None:
+            for ordinal, event_source in enumerate(sources_for_event):
                 connection.execute(
-                    "INSERT INTO source_passage_fts VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO event_sources VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         effective_event["event_id"],
-                        passage[0],
-                        passage[1],
-                        passage[2],
-                        passage[3],
-                        passage[4],
+                        ordinal,
+                        event_source["source_path"],
+                        str(event_source.get("heading") or ""),
+                        event_source.get("source_sha256"),
+                        event_source.get("line_start"),
+                        event_source.get("line_end"),
+                        int(bool(event_source.get("legacy_import"))),
+                        int(bool(event_source.get("requires_human_review"))),
                     ),
                 )
+                passage = _source_passage(
+                    project_root, event_source, registered_hashes
+                )
+                if passage is not None:
+                    connection.execute(
+                        "INSERT INTO source_passage_fts VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            effective_event["event_id"],
+                            passage[0],
+                            str(event_source.get("heading") or ""),
+                            passage[1],
+                            passage[2],
+                            passage[3],
+                            passage[4],
+                        ),
+                    )
+            headings = "\n".join(
+                dict.fromkeys(
+                    str(item.get("heading") or "") for item in sources_for_event
+                )
+            )
+            paths = "\n".join(
+                dict.fromkeys(item["source_path"] for item in sources_for_event)
+            )
             connection.execute(
                 "INSERT INTO event_fts VALUES (?, ?, ?, ?)",
                 (
                     effective_event["event_id"],
                     effective_event["summary"],
-                    source.get("heading", ""),
-                    source.get("source_path", ""),
+                    headings,
+                    paths,
                 ),
             )
             connection.executemany(

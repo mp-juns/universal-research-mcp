@@ -1,6 +1,6 @@
 # Provider-backed multi-agent runtime (internal prototype; unsupported)
 
-> This document describes retained development code, not the supported 0.8.0
+> This document describes retained development code, not the supported 0.8.1
 > public surface. The Codex-only preview does not register this MCP, publish its
 > console entry point, or support Ollama/OpenAI/Anthropic/Moonshot execution.
 > Codex owns model selection and native agent sessions. No compatibility or

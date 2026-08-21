@@ -359,7 +359,7 @@ def search_lexical(query: str, top_k: int, status: str | None = None) -> list[di
         passage_rows = db.execute(
             f"""
             SELECT e.event_id, e.event_type, e.status, e.date, e.summary,
-                   source_passage_fts.source_path, '' AS source_heading,
+                   source_passage_fts.source_path, source_passage_fts.source_heading,
                    source_passage_fts.line_start, source_passage_fts.line_end,
                    source_passage_fts.source_sha256, bm25(source_passage_fts) AS bm25_raw
             FROM source_passage_fts JOIN events AS e ON e.event_id = source_passage_fts.event_id
@@ -704,9 +704,9 @@ def _locator_matches_projection(db: sqlite3.Connection, locator: dict[str, Any])
         locator.get("start_line"),
         locator.get("end_line"),
     )
-    event_match = db.execute(
+    source_match = db.execute(
         """
-        SELECT 1 FROM events
+        SELECT 1 FROM event_sources
         WHERE event_id = ? AND source_path IS ? AND source_sha256 IS ?
           AND line_start IS ? AND line_end IS ?
         """,
@@ -721,7 +721,7 @@ def _locator_matches_projection(db: sqlite3.Connection, locator: dict[str, Any])
         """,
         values,
     ).fetchone()
-    return event_match is not None or passage_match is not None
+    return source_match is not None or passage_match is not None
 
 
 def _apply_candidate_identity_gate(results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -765,7 +765,7 @@ def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
         if event_id is not None:
             rows = db.execute(
                 """
-                SELECT DISTINCT source_sha256 FROM events
+                SELECT DISTINCT source_sha256 FROM event_sources
                 WHERE event_id = ? AND source_path = ?
                   AND source_sha256 IS NOT NULL AND source_sha256 <> ''
                 """,
@@ -774,7 +774,7 @@ def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
         else:
             rows = db.execute(
                 """
-                SELECT source_sha256 FROM events
+                SELECT source_sha256 FROM event_sources
                 WHERE source_path = ? AND source_sha256 IS NOT NULL AND source_sha256 <> ''
                 UNION
                 SELECT source_sha256 FROM sources
