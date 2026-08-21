@@ -13,6 +13,7 @@ from math import isfinite
 from typing import Any, Mapping, Sequence
 
 from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.scope_policy import WRITE_ACTIONS
 
 
 AGENT_CREATION_DISCLOSURE_VERSION = "agent-creation-disclosure/1.0"
@@ -152,6 +153,38 @@ def agent_creation_disclosure_hash(value: object, *, expected_agent_count: int |
     ))
 
 
+def _requested_packet_scope(packets: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Return the exact aggregate scope that the disclosure must describe."""
+
+    paths: set[str] = set()
+    network = False
+    writes = False
+    for packet in packets:
+        if not isinstance(packet, Mapping):
+            raise AgentCreationDisclosureError("agent packet must be an object")
+        scope = packet.get("scope")
+        if not isinstance(scope, Mapping):
+            raise AgentCreationDisclosureError("agent packet scope is missing")
+        allowed_paths = _string_array(scope.get("allowed_paths"), "scope.allowed_paths")
+        allowed_actions = _string_array(
+            scope.get("allowed_actions"),
+            "scope.allowed_actions",
+            allow_empty=True,
+        )
+        allow_network = scope.get("allow_network")
+        if not isinstance(allow_network, bool):
+            raise AgentCreationDisclosureError("scope.allow_network must be boolean")
+        paths.update(allowed_paths)
+        network = network or allow_network
+        writes = writes or bool(set(allowed_actions) & WRITE_ACTIONS)
+    return {
+        "paths": sorted(paths),
+        "network": network,
+        "model_execution": True,
+        "writes": writes,
+    }
+
+
 def validate_agent_creation_packets(
     packets: Sequence[dict[str, Any]],
     *,
@@ -205,6 +238,28 @@ def validate_agent_creation_packets(
             "code": AGENT_CREATION_ISSUE,
             "message": "all requested agents must share the exact approved disclosure",
         })
+    if normalized:
+        try:
+            requested_scope = _requested_packet_scope(packets)
+        except AgentCreationDisclosureError as exc:
+            issues.append({"code": AGENT_CREATION_ISSUE, "message": str(exc)})
+        else:
+            disclosed_scope = normalized[0]["scope"]
+            if sorted(disclosed_scope["paths"]) != requested_scope["paths"]:
+                issues.append({
+                    "code": AGENT_CREATION_ISSUE,
+                    "message": "agent creation disclosure paths do not match the requested packet scope",
+                })
+            if disclosed_scope["network"] is not requested_scope["network"]:
+                issues.append({
+                    "code": AGENT_CREATION_ISSUE,
+                    "message": "agent creation disclosure network scope does not match the requested packets",
+                })
+            if disclosed_scope["writes"] is not requested_scope["writes"]:
+                issues.append({
+                    "code": AGENT_CREATION_ISSUE,
+                    "message": "agent creation disclosure write scope does not match the requested packets",
+                })
     common_approvals: set[str] | None = None
     for packet in packets:
         authority = packet.get("authority") if isinstance(packet, dict) else None

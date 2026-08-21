@@ -32,6 +32,23 @@ def packet() -> dict:
         "workflow_id": "workflow_fixture", "agent_id": "retrieval_governor",
         "requester": {"type": "user", "id": "actor_user"}, "purpose": "Verify evidence.",
         "mode": "lightweight", "scope": scope, "evidence_boundary": evidence,
+        "agent_creation_disclosure": {
+            "schema_version": "agent-creation-disclosure/1.0",
+            "reason": "Use one bounded governance fixture agent.",
+            "delegated_tasks": ["Verify the bounded fixture evidence."],
+            "agent_count": 1,
+            "direct_execution_alternative": "Verify the fixture directly.",
+            "expected_additional_tokens": {
+                "minimum": 0, "likely": 100, "maximum": 1000,
+            },
+            "expected_elapsed_minutes": {
+                "minimum": 0, "likely": 1, "maximum": 5,
+            },
+            "scope": {
+                "paths": ["data/events"], "network": False,
+                "model_execution": True, "writes": False,
+            },
+        },
         "authority": {
             "approval_refs": [], "authority_basis": "read-only review",
             "plan_refs": [], "user_opt_ins": [], "scope_hash": "pending",

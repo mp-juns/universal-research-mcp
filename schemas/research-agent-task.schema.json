@@ -7,7 +7,8 @@
   "required": [
     "schema_version", "governance_version", "run_id", "workflow_id", "agent_id",
     "requester", "purpose", "mode", "scope", "evidence_boundary", "authority",
-    "failure_policy", "success_criteria", "stop_conditions", "role_manifest_hash",
+    "agent_creation_disclosure", "failure_policy", "success_criteria",
+    "stop_conditions", "role_manifest_hash",
     "created_at", "expires_at"
   ],
   "properties": {

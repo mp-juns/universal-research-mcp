@@ -19,6 +19,14 @@ class ContractFileTests(unittest.TestCase):
                 schema = json.loads((ROOT / "schemas" / name).read_text(encoding="utf-8"))
                 self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
 
+    def test_agent_task_schema_requires_creation_disclosure(self) -> None:
+        schema = json.loads(
+            (ROOT / "schemas" / "research-agent-task.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn("agent_creation_disclosure", schema["required"])
+
     def test_pack_declares_non_relaxing_blocking_constraints(self) -> None:
         content = (ROOT / "packs/study_type/research_operations.yaml").read_text(encoding="utf-8")
         self.assertIn("explicit_approval_before_execution", content)

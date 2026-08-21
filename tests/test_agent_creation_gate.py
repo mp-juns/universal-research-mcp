@@ -42,6 +42,11 @@ def _disclosure(*, count: int = 2) -> dict:
 def _packet(disclosure: dict, *, approval: bool = True, opt_in: bool = True) -> dict:
     return {
         "agent_creation_disclosure": deepcopy(disclosure),
+        "scope": {
+            "allowed_paths": deepcopy(disclosure["scope"]["paths"]),
+            "allowed_actions": [],
+            "allow_network": disclosure["scope"]["network"],
+        },
         "authority": {
             "approval_refs": ["approval_agent_creation_01"] if approval else [],
             "user_opt_ins": ["agent_creation"] if opt_in else [],
@@ -104,3 +109,39 @@ def test_disclosure_rejects_unbounded_or_ambiguous_estimates() -> None:
     disclosure["scope"]["model_execution"] = False
     with pytest.raises(AgentCreationDisclosureError, match="model execution"):
         normalize_agent_creation_disclosure(disclosure)
+
+
+@pytest.mark.parametrize(
+    ("mutate_packet", "message"),
+    [
+        (
+            lambda packet: packet["scope"].update(allowed_paths=["private/**"]),
+            "paths do not match",
+        ),
+        (
+            lambda packet: packet["scope"].update(allow_network=True),
+            "network scope does not match",
+        ),
+        (
+            lambda packet: packet["scope"].update(
+                allowed_actions=["edit_derived_artifact"],
+            ),
+            "write scope does not match",
+        ),
+    ],
+)
+def test_disclosure_scope_must_match_requested_packet_scope(
+    mutate_packet,
+    message: str,
+) -> None:
+    disclosure = _disclosure()
+    packets = [_packet(disclosure), _packet(disclosure)]
+    mutate_packet(packets[1])
+
+    issues, normalized = validate_agent_creation_packets(
+        packets,
+        expected_agent_count=2,
+    )
+
+    assert normalized is None
+    assert any(message in issue["message"] for issue in issues)

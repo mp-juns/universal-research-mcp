@@ -28,6 +28,23 @@ def packet(*, capabilities: list[str] | None = None, opt_ins: list[str] | None =
         "requester": {"type": "workflow", "id": "test"},
         "purpose": "Validate one bounded operation.",
         "mode": "lightweight",
+        "agent_creation_disclosure": {
+            "schema_version": "agent-creation-disclosure/1.0",
+            "reason": "Use one bounded governance fixture agent.",
+            "delegated_tasks": ["Validate the bounded fixture operation."],
+            "agent_count": 1,
+            "direct_execution_alternative": "Run the same fixture directly.",
+            "expected_additional_tokens": {
+                "minimum": 0, "likely": 100, "maximum": 1000,
+            },
+            "expected_elapsed_minutes": {
+                "minimum": 0, "likely": 1, "maximum": 5,
+            },
+            "scope": {
+                "paths": ["docs"], "network": False,
+                "model_execution": True, "writes": False,
+            },
+        },
         "scope": {
             "allowed_actions": ["inspect_artifact"],
             "forbidden_actions": list(manifest["authority"]["forbidden_actions"]),
