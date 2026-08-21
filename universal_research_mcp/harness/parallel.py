@@ -14,7 +14,7 @@ from universal_research_mcp.governance.hashing import artifact_hash
 from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR
 from universal_research_mcp.governance.validation import validate_scope_governor_decision, validate_task_packet
 from universal_research_mcp.integrations.codex.adapter import (
-    build_dispatch_request,
+    build_batch_member_dispatch_request,
     build_scope_governor_receipt,
     capture_decision,
     validate_dispatch_manifest,
@@ -70,7 +70,11 @@ class ParallelResearchHarness:
         governor_packet = next(
             packet for packet in packets if packet["agent_id"] == SCOPE_AND_COST_GOVERNOR
         )
-        governor = self._execute_one(-1, governor_packet)
+        governor = self._execute_one(
+            -1,
+            governor_packet,
+            batch_packets=packets,
+        )
         if governor.failure is not None:
             failure_record, recorded = self._record_failure(governor_packet, governor.failure)
             return self._blocked(
@@ -110,7 +114,7 @@ class ParallelResearchHarness:
             governor_receipt = receipt_result["receipt"]
             receipt_recorded = self._record(governor_receipt)
         outcomes, failures, records_complete = self._run_workers(
-            workers, max_workers, governor_receipt,
+            workers, max_workers, governor_receipt, packets,
         )
         records_complete = records_complete and governor_recorded and receipt_recorded
         material_decisions = [
@@ -251,6 +255,7 @@ class ParallelResearchHarness:
         packets: list[dict[str, Any]],
         max_workers: int,
         governor_receipt: dict[str, Any] | None,
+        batch_packets: list[dict[str, Any]],
     ) -> tuple[list[_Outcome], list[dict[str, Any]], bool]:
         if not packets:
             return [], [], True
@@ -264,7 +269,11 @@ class ParallelResearchHarness:
         try:
             while next_index < len(packets) and len(active) < max_workers:
                 future = pool.submit(
-                    self._execute_one, next_index, packets[next_index], governor_receipt,
+                    self._execute_one,
+                    next_index,
+                    packets[next_index],
+                    governor_receipt,
+                    batch_packets,
                 )
                 active[future] = next_index
                 next_index += 1
@@ -291,7 +300,11 @@ class ParallelResearchHarness:
                     continue
                 while next_index < len(packets) and len(active) < max_workers:
                     future = pool.submit(
-                        self._execute_one, next_index, packets[next_index], governor_receipt,
+                        self._execute_one,
+                        next_index,
+                        packets[next_index],
+                        governor_receipt,
+                        batch_packets,
                     )
                     active[future] = next_index
                     next_index += 1
@@ -305,8 +318,13 @@ class ParallelResearchHarness:
         index: int,
         packet: dict[str, Any],
         governor_receipt: dict[str, Any] | None = None,
+        batch_packets: list[dict[str, Any]] | None = None,
     ) -> _Outcome:
-        dispatch = build_dispatch_request(packet, governor_receipt)
+        dispatch = build_batch_member_dispatch_request(
+            packet,
+            batch_packets or [],
+            governor_receipt,
+        )
         if not dispatch.get("dispatchable"):
             return _Outcome(index, packet, None, {
                 "classification": "policy_violation",

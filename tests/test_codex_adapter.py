@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from universal_research_mcp.governance.hashing import artifact_hash, hash_without
 from universal_research_mcp.governance.registry import CRITICAL, load_registry, manifest_hash
 from universal_research_mcp.governance.scope_policy import task_scope_hash
+from universal_research_mcp.governance.validation import validate_task_packet
 from universal_research_mcp.integrations.codex.adapter import (
     build_critical_review_batch,
     build_dispatch_request,
@@ -116,6 +117,16 @@ def scope_receipt(tasks: list[dict], mode: str = "lightweight") -> dict:
 
 
 class CodexAdapterTests(unittest.TestCase):
+    def test_common_task_validator_requires_agent_creation_disclosure(self) -> None:
+        task = packet()
+        task.pop("agent_creation_disclosure")
+
+        issues = validate_task_packet(task)
+
+        self.assertTrue(any(
+            "agent_creation_disclosure" in issue["message"] for issue in issues
+        ))
+
     def test_dispatch_preserves_only_packet_granted_permissions(self) -> None:
         task = packet()
         self.assertFalse(build_dispatch_request(task)["dispatchable"])
@@ -149,6 +160,29 @@ class CodexAdapterTests(unittest.TestCase):
             result = build_dispatch_request(invalid, receipt)
             self.assertFalse(result["dispatchable"])
             self.assertTrue(any("agent creation" in issue["message"] for issue in result["issues"]))
+
+    def test_single_dispatch_rejects_inflated_agent_count(self) -> None:
+        task = packet()
+        task["agent_creation_disclosure"]["agent_count"] = 2
+        task["agent_creation_disclosure"]["delegated_tasks"] = [
+            "Perform governed review task 1.",
+            "Perform governed review task 2.",
+        ]
+        task["authority"]["scope_hash"] = task_scope_hash(task)
+
+        result = build_dispatch_request(task, scope_receipt([task]))
+
+        self.assertFalse(result["dispatchable"])
+        self.assertTrue(any("agent_count" in issue["message"] for issue in result["issues"]))
+
+    def test_dispatch_rejects_disclosure_that_hides_packet_scope(self) -> None:
+        task = packet()
+        task["agent_creation_disclosure"]["scope"]["paths"] = []
+        task["authority"]["scope_hash"] = task_scope_hash(task)
+        result = build_dispatch_request(task, scope_receipt([task]))
+
+        self.assertFalse(result["dispatchable"])
+        self.assertTrue(any("paths do not match" in issue["message"] for issue in result["issues"]))
 
     def test_critical_batch_is_isolated_and_snapshot_bound(self) -> None:
         tasks = [packet(agent_id, "final_review") for agent_id in CRITICAL]

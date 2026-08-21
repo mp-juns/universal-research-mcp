@@ -427,7 +427,7 @@ def test_provider_agent_executor_strict_json_and_aggregate_budget(tmp_path: Path
         input_cost_per_million_tokens_usd="1",
         output_cost_per_million_tokens_usd="1",
     )
-    task = packet("scope_and_cost_governor", max_parallelism=1)
+    task = packet("scope_and_cost_governor", max_parallelism=1, agent_count=1)
     dispatch = _runtime_dispatch(executor, build_dispatch_request(task))
     with pytest.raises(ProviderOutputError, match="unused host reservation"):
         executor(dispatch)
@@ -485,7 +485,9 @@ def test_provider_agent_executor_rejects_response_model_alias_without_retry() ->
 
     dispatch = _runtime_dispatch(
         executor,
-        build_dispatch_request(packet("scope_and_cost_governor", max_parallelism=1)),
+        build_dispatch_request(packet(
+            "scope_and_cost_governor", max_parallelism=1, agent_count=1,
+        )),
     )
     _bind_and_reserve(executor, dispatch)
     with pytest.raises(ProviderOutputError, match="pinned model"):
@@ -516,7 +518,9 @@ def test_provider_agent_executor_rejects_non_json_without_repair() -> None:
     )
     dispatch = _runtime_dispatch(
         executor,
-        build_dispatch_request(packet("scope_and_cost_governor", max_parallelism=1)),
+        build_dispatch_request(packet(
+            "scope_and_cost_governor", max_parallelism=1, agent_count=1,
+        )),
     )
     _bind_and_reserve(executor, dispatch)
     with pytest.raises(ProviderOutputError):

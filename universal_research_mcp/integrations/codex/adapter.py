@@ -286,10 +286,69 @@ def build_dispatch_request(
 ) -> dict[str, Any]:
     """Render one validated and scope-governed non-executing dispatch request."""
 
+    creation_issues, _disclosure = validate_agent_creation_packets(
+        [packet],
+        expected_agent_count=1,
+    )
+    return _build_dispatch_request(
+        packet,
+        governor_receipt,
+        creation_issues=creation_issues,
+    )
+
+
+def build_batch_member_dispatch_request(
+    packet: dict[str, Any],
+    batch_packets: list[dict[str, Any]],
+    governor_receipt: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Render one member only after revalidating its exact complete batch."""
+
+    packet = deepcopy(packet)
+    batch_packets = deepcopy(batch_packets)
+    issues: list[dict[str, str]] = []
+    if not batch_packets:
+        issues.append({
+            "code": "GOV-AGENT-CREATION-001",
+            "message": "agent dispatch batch is empty",
+        })
+    else:
+        for member in batch_packets:
+            issues.extend(validate_task_packet(member))
+        creation_issues, _disclosure = validate_agent_creation_packets(
+            batch_packets,
+            expected_agent_count=len(batch_packets),
+        )
+        issues.extend(creation_issues)
+        packet_hash = artifact_hash(packet)
+        matches = sum(
+            artifact_hash(member) == packet_hash for member in batch_packets
+        )
+        if matches != 1:
+            issues.append({
+                "code": "GOV-AGENT-CREATION-001",
+                "message": "dispatch packet must appear exactly once in the approved batch",
+            })
+    if issues:
+        return {"dispatchable": False, "issues": issues}
+    return _build_dispatch_request(
+        packet,
+        governor_receipt,
+        creation_issues=[],
+    )
+
+
+def _build_dispatch_request(
+    packet: dict[str, Any],
+    governor_receipt: dict[str, Any] | None,
+    *,
+    creation_issues: list[dict[str, str]],
+) -> dict[str, Any]:
+    """Render one request after its creation context has been validated."""
+
     packet = deepcopy(packet)
     governor_receipt = deepcopy(governor_receipt)
     issues = validate_task_packet(packet)
-    creation_issues, _disclosure = validate_agent_creation_packets([packet])
     issues.extend(creation_issues)
     issues.extend(validate_scope_governor_receipt(packet, governor_receipt))
     if issues:
@@ -335,7 +394,11 @@ def build_critical_review_batch(
     snapshots = {str((packet.get("evidence_boundary") or {}).get("snapshot_hash")) for packet in packets}
     workflow_ids = {packet.get("workflow_id") for packet in packets}
     requests = [
-        build_dispatch_request(packet, governor_receipt)
+        _build_dispatch_request(
+            packet,
+            governor_receipt,
+            creation_issues=[],
+        )
         for packet in sorted(packets, key=lambda item: item["agent_id"])
     ]
     invalid = [request for request in requests if not request.get("dispatchable")]

@@ -166,7 +166,7 @@ def validate_scope_governor_decision(
 def validate_task_packet(packet: dict[str, Any], registry: dict[str, dict[str, Any]] | None = None, now: datetime | None = None) -> list[dict[str, str]]:
     registry = registry or load_registry()
     issues: list[dict[str, str]] = []
-    required = {"schema_version", "governance_version", "run_id", "workflow_id", "agent_id", "requester", "purpose", "mode", "scope", "evidence_boundary", "authority", "failure_policy", "success_criteria", "stop_conditions", "role_manifest_hash", "created_at", "expires_at"}
+    required = {"schema_version", "governance_version", "run_id", "workflow_id", "agent_id", "requester", "purpose", "mode", "scope", "evidence_boundary", "authority", "agent_creation_disclosure", "failure_policy", "success_criteria", "stop_conditions", "role_manifest_hash", "created_at", "expires_at"}
     missing = required - set(packet) if isinstance(packet, dict) else required
     if missing:
         return [_issue(OUTPUT_INVALID, f"task packet is missing: {', '.join(sorted(missing))}")]

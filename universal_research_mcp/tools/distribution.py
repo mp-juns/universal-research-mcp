@@ -29,17 +29,24 @@ REQUIRED_BUNDLE_FILES = (
     "plugin/universal-research-memory/skills/research-governance/agents/openai.yaml",
 )
 REQUIRED_RUNTIME_FILES = (
+    "universal_research_mcp/governance/agent_creation.py",
     "universal_research_mcp/governance/prompts.py",
     "universal_research_mcp/integrations/codex/adapter.py",
+    "universal_research_mcp/integrations/codex/agent_control.py",
     "universal_research_mcp/cli.py", "universal_research_mcp/server.py",
     "universal_research_mcp/core/input.py", "universal_research_mcp/core/ingest.py",
     "universal_research_mcp/indexing/lexical.py",
     "universal_research_mcp/indexing/semantic.py", "universal_research_mcp/core/redaction.py",
     "universal_research_mcp/semantic_backends.py",
     "universal_research_mcp/runtime/paths.py", "universal_research_mcp/runtime/semantic_config.py",
+    "universal_research_mcp/runtime/agent_approval.py",
     "universal_research_mcp/runtime/ingest_approval.py",
     "universal_research_mcp/semantic_runtime.py", "universal_research_mcp/tools/distribution.py",
+    "universal_research_mcp/secure_harness/approval.py",
+    "universal_research_mcp/secure_harness/contracts.py",
     "universal_research_mcp/secure_harness/controller.py",
+    "universal_research_mcp/secure_harness/codex_runner.py",
+    "universal_research_mcp/secure_harness/worker.py",
     "universal_research_mcp/secure_harness/worker_server.py",
 )
 REQUIRED_GOVERNANCE_FILES = (
