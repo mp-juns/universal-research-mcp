@@ -45,6 +45,12 @@ class PublicDistributionTests(unittest.TestCase):
             "universal-research-agent-runtime",
             project["project"]["scripts"],
         )
+        self.assertFalse(
+            any(
+                dependency.lower().split("[")[0].startswith("websockets")
+                for dependency in project["project"]["dependencies"]
+            )
+        )
         self.assertIn("MIT License", (ROOT / "LICENSE").read_text(encoding="utf-8"))
 
     def test_distribution_declares_schema_pack_and_plugin_bundle(self) -> None:

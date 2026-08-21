@@ -59,12 +59,15 @@ def codex_command(
     ]
     return [
         "codex", "exec", "--json", "--ephemeral", "--ignore-user-config",
+        "--strict-config",
         "--skip-git-repo-check", "--sandbox", "read-only",
         "--model", normalized["model"], "--cd", str(Path(control_root).resolve()),
         "--output-schema", str(Path(schema_path).resolve()),
         "-c", f'model_reasoning_effort="{normalized["reasoning_effort"]}"',
         "-c", "features.shell_tool=false",
+        "-c", "agents.enabled=false",
         "-c", "features.multi_agent=false",
+        "-c", "features.multi_agent_v2=false",
         "-c", "features.apps=false",
         "-c", "features.browser_use=false",
         "-c", "features.computer_use=false",

@@ -116,11 +116,14 @@ has approved that mutating tool call. Never invent an approval flag: the commit
 also requires a one-time signed host receipt and a pre-existing, human-created
 approval record with matching scope.
 
-Codex native subagents remain host-owned. codex_host_agent_status can inspect
-only descendants of the current root task, and codex_prepare_agent_control can
-only create an immutable proposal. Enabling, disabling, or interrupting those
-descendants requires exact confirmation through the separate host CLI; never
-claim that an MCP proposal changed the host.
+Codex native subagents remain host-owned. In the tested Codex 0.147.0 contract,
+no documented or validated local-stdio-MCP mechanism supplies an authoritative
+per-call task identity or proposal-bound user approval receipt. Therefore
+codex_host_agent_status and
+codex_prepare_agent_control fail closed with a structured unavailable result and
+never read CODEX_THREAD_ID, create a proposal, change host configuration, or
+interrupt a turn. Do not claim current-session capability revocation from a
+profile or feature-file change.
 """.strip()
 
 PUBLIC_DEMO_INSTRUCTIONS = """
@@ -1153,10 +1156,10 @@ def research_pending_ingest_status(draft_id: str) -> dict[str, Any]:
 
 @mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
 def codex_host_agent_status() -> dict[str, Any]:
-    """Inspect metadata-only status for this Codex task's spawned descendants.
+    """Report whether protected current-task Codex control is available.
 
-    The root task and unrelated user tasks are never returned. This tool is
-    read-only and cannot create, enable, disable, or interrupt an agent.
+    Without a host-authenticated per-call thread binding this returns a
+    structured unavailable result and discloses no thread metadata.
     """
 
     from universal_research_mcp.integrations.codex.agent_control import codex_agent_status
@@ -1164,19 +1167,15 @@ def codex_host_agent_status() -> dict[str, Any]:
     return codex_agent_status()
 
 
-@mcp.tool(annotations=ToolAnnotations(
-    readOnlyHint=False,
-    destructiveHint=False,
-    idempotentHint=False,
-    openWorldHint=False,
-))
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
 def codex_prepare_agent_control(
     action: Literal["disable", "enable", "stop_active"],
 ) -> dict[str, Any]:
-    """Prepare, but never apply, one Codex host-agent control proposal.
+    """Fail closed unless a protected Codex host broker is available.
 
-    The returned hash must be confirmed through the separate host CLI. MCP
-    cannot change Codex configuration or interrupt a turn on its own.
+    The tested Codex 0.147.0 stdio MCP contract has no documented or validated
+    authoritative caller-task binding and proposal-bound user approval receipt.
+    No proposal or host state is created.
     """
 
     from universal_research_mcp.integrations.codex.agent_control import (

@@ -239,11 +239,14 @@ def test_codex_command_exposes_only_worker_mcp_and_disables_general_tools(tmp_pa
     )
     rendered = " ".join(command)
     assert "features.shell_tool=false" in command
+    assert "agents.enabled=false" in command
     assert "features.multi_agent=false" in command
+    assert "features.multi_agent_v2=false" in command
     assert "tools.web_search=false" in command
     assert "features.image_generation=false" in command
     assert "tools.view_image=false" in command
     assert "--ignore-user-config" in command
+    assert "--strict-config" in command
     assert "--sandbox" in command and "read-only" in command
     assert "mcp_servers.ur_worker.required=true" in command
     assert "danger-full-access" not in rendered

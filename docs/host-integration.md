@@ -35,37 +35,60 @@ human authority.
 
 ## Codex subagent control
 
-Universal Research keeps native multi-agent execution host-owned. The MCP can
-read metadata-only status for descendants of the current root task and prepare
-an immutable `disable`, `enable`, or `stop_active` proposal. It cannot apply the
-proposal, target the root task, or target unrelated user tasks.
+Universal Research keeps native multi-agent execution host-owned. In the
+currently tested Codex 0.147.0 contract, a local stdio MCP server receives
+neither an authoritative per-call root-thread identity nor a proposal-bound,
+single-use user approval receipt. `CODEX_THREAD_ID` is caller-inherited process
+environment rather than authenticated per-call identity, and repeating a
+proposal SHA-256 proves knowledge rather than human authorization. Loopback
+locality alone does not bind an operation to the current task or to human
+approval. A carefully owned Unix socket can constrain the OS principal, but it
+still needs authenticated, operation-bound task context and approval.
 
-The separate trusted-host command applies an exact proposal hash. Disabling
-uses Codex's own feature configuration command, writes a dedicated governed
-profile with both multi-agent controls off, and requests `turn/interrupt` for
-each active descendant returned by the app-server ancestor filter. Enabling
-changes only the future-session policy and never creates an agent. Profile
-changes require a new Codex session; current descendants are handled
-separately through the interrupt protocol.
+The public surface therefore fails closed:
 
-The host-control client follows Codex's WebSocket JSON-RPC transport. Set
-`UNIVERSAL_RESEARCH_CODEX_APP_SERVER_URL` to a loopback-only `ws://` endpoint,
-or `UNIVERSAL_RESEARCH_CODEX_APP_SERVER_SOCKET` to an enabled Unix-WebSocket
-listener. Non-loopback URLs are rejected. The Codex Desktop-owned app-server
-may expose a control socket while refusing additional clients; Universal
-Research fails closed in that case instead of restarting or taking over the
-desktop process. A separately started or daemon-managed app-server must expose
-the control endpoint before status or interruption can run.
+- `codex_host_agent_status` returns structured `unavailable` and no thread data;
+- `codex_prepare_agent_control` returns `unavailable` and creates no proposal;
+- `universal-research codex-agents` exposes `status` only;
+- direct Python `apply_codex_agent_control` raises before filesystem, process,
+  configuration, or App Server effects.
 
-`stop_active` is a graceful `turn/interrupt`, not an operating-system process
-kill. It lists only descendants bound to `CODEX_THREAD_ID`, displays details
-only for currently active descendants, and never treats stored `notLoaded`
-history as active work.
+This intentionally removes the earlier hash-confirmed apply path. It must not be
+restored by adding a TTY prompt, environment flag, second hash argument, or a
+same-user helper process. Those mechanisms remain callable by a shell-capable
+agent and are not independent authority.
 
-This is a convenience and audit boundary, not an administrator lock. A managed
-deployment that must prevent users from re-enabling multi-agent functionality
-should pin the feature off in Codex `requirements.toml`. A user opening a
-separate top-level task is outside the descendant-control boundary.
+For a fresh isolated Codex worker, the secure harness explicitly applies strict
+configuration with the documented selectors plus a Codex-0.147.0-observed
+defense-in-depth selector off:
+
+```text
+agents.enabled=false
+features.multi_agent=false
+features.multi_agent_v2=false  # observed in the tested 0.147.0 build
+```
+
+These are startup settings. Editing a profile or feature file does not revoke
+tools already loaded into the current task, and an interrupt does not prevent
+the root task from spawning again. A deployment may additionally pin supported
+`features.multi_agent=false` in admin-enforced `requirements.toml`, but only a
+fresh-session probe that rejects spawning establishes the effective result for
+that runtime. Strict parsing catches misspelled known settings; it cannot prove
+that an unknown future backend is disabled. Such a runtime remains unverified
+until a capability/spawn probe passes.
+
+A future protected broker must receive authenticated, operation-bound task
+context from the owning host integration rather than infer identity from an App
+Server connection, issue its own expiring single-use receipt bound to the exact
+proposal, keep authority and consumption state outside the agent workspace,
+pin and authenticate its Codex executable/socket, and maintain a durable
+resumable journal for profile, feature, and per-turn interrupt effects.
+Until that boundary exists, Universal Research makes no claim that it can
+disable or manage current Codex agents. A separate top-level task and a
+same-user process with unrestricted host access remain outside MCP control.
+The secure harness also assumes its host launch environment and the `codex`
+executable resolved from `PATH` are trusted; command construction alone is not
+an adversarial executable-authentication boundary.
 
 Use the non-executing governance tools to prepare a dispatch manifest or the `urgov
 dispatch` commands to print one. Manifest export does not write a project file
