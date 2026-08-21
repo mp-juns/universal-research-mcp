@@ -526,29 +526,16 @@ def _ingest_command(root: Path, args: argparse.Namespace) -> int:
 
 
 def _codex_agents_command(root: Path, args: argparse.Namespace) -> int:
-    """Inspect, prepare, or host-apply bounded Codex descendant controls."""
+    """Report the fail-closed Codex host-control availability boundary."""
 
     from universal_research_mcp.integrations.codex.agent_control import (
-        apply_codex_agent_control,
         codex_agent_status,
-        prepare_codex_agent_control,
     )
 
-    if args.codex_agents_action == "status":
-        _emit(codex_agent_status())
-        return 0
-    if args.codex_agents_action == "prepare":
-        _emit(prepare_codex_agent_control(
-            root,
-            action=args.action,
-        ))
-        return 0
-    _emit(apply_codex_agent_control(
-        root,
-        proposal_hash=args.proposal_hash,
-        confirm_proposal_hash=args.confirm_proposal_hash,
-    ))
-    return 0
+    del root
+    report = codex_agent_status()
+    _emit(report)
+    return 0 if report["status"] == "available" else 2
 
 
 def _semantic_status(root: Path) -> dict[str, Any]:
@@ -976,26 +963,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     codex_agents = subparsers.add_parser(
         "codex-agents",
-        help="Inspect and host-apply bounded Codex subagent policy.",
+        help="Inspect whether protected Codex subagent control is available.",
     )
     codex_agent_actions = codex_agents.add_subparsers(
         dest="codex_agents_action", required=True,
     )
     codex_agent_status = codex_agent_actions.add_parser(
-        "status", help="List metadata-only status for descendants of one root task.",
+        "status", help="Report the protected host-control availability boundary.",
     )
     codex_agent_status.add_argument("--root", type=Path)
-    codex_agent_prepare = codex_agent_actions.add_parser(
-        "prepare", help="Create a non-executing host-control proposal.",
-    )
-    codex_agent_prepare.add_argument("action", choices=("disable", "enable", "stop_active"))
-    codex_agent_prepare.add_argument("--root", type=Path)
-    codex_agent_apply = codex_agent_actions.add_parser(
-        "apply", help="Apply one exact proposal from a trusted host shell.",
-    )
-    codex_agent_apply.add_argument("proposal_hash")
-    codex_agent_apply.add_argument("--confirm-proposal-hash", required=True)
-    codex_agent_apply.add_argument("--root", type=Path)
 
     usage = subparsers.add_parser(
         "usage", help="Summarize observed token usage without estimates.",

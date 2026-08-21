@@ -157,13 +157,19 @@ parallel work when appropriate; never claim the manifest itself has started an
 agent. Use the critical-batch variant only with all four reviewers and one
 shared snapshot hash.
 
-Keep native Codex multi-agent disabled by default for governed work. Use
-`codex_host_agent_status` only for metadata about descendants of the current
-root task. `codex_prepare_agent_control` may prepare `disable`, `enable`, or
-`stop_active`, but it never changes host state. Only the separate trusted-host
-`universal-research codex-agents apply` command may consume the exact proposal.
-Never target the root task or an unrelated user task, never interpret enable as
-permission to spawn, and never report an interrupt until the Codex app-server
-accepts the exact descendant turn interruption. Require a loopback WebSocket or
-an explicitly enabled Unix-WebSocket control endpoint; do not restart, replace,
-or take over a Desktop-owned app-server merely to make host control available.
+Do not spawn native Codex subagents for governed work. Use
+`codex_host_agent_status` only as an availability probe. Without a protected
+host broker it returns `unavailable` and no descendant metadata; the plugin
+does not itself enforce a disabled host default.
+`codex_prepare_agent_control` also returns `unavailable`, creates no proposal,
+and changes no host state. The public CLI has no prepare/apply action. Never use
+`CODEX_THREAD_ID`, a repeated hash, a TTY prompt, a loopback/Unix endpoint, or a
+same-user helper as proof of user authority. Never claim that profile edits
+revoke tools from a current task. In fresh secure-harness workers, require
+`agents.enabled=false`, `features.multi_agent=false`, and
+`features.multi_agent_v2=false`, strict config parsing, and observed spawn
+rejection before claiming effective suppression. Separate top-level tasks and
+unrestricted same-user host processes remain outside MCP control.
+Treat `multi_agent_v2` as a defense-in-depth selector observed in tested Codex
+0.147.0, not as a portable documented host contract. If the spawn probe is not
+run or a new backend is present, report suppression as unverified.
