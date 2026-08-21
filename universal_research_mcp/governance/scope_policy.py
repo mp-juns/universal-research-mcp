@@ -239,6 +239,7 @@ def task_scope_material(packet: dict[str, Any]) -> dict[str, Any]:
     return {
         "scope": packet.get("scope"),
         "evidence_boundary": packet.get("evidence_boundary"),
+        "agent_creation_disclosure": packet.get("agent_creation_disclosure"),
         "failure_policy": {
             "stop": failure.get("stop", "blocking_only"),
             "record": failure.get("record", "ask"),

@@ -97,6 +97,7 @@
         "user_opt_ins": {"$ref": "#/$defs/string_array"}
       }
     },
+    "agent_creation_disclosure": {"$ref": "#/$defs/agent_creation_disclosure"},
     "failure_policy": {"$ref": "#/$defs/failure_policy"},
     "success_criteria": {"$ref": "#/$defs/string_array"},
     "stop_conditions": {"$ref": "#/$defs/string_array"},
@@ -118,6 +119,60 @@
         "stop": {"enum": ["always", "blocking_only", "current_step"]},
         "record": {"enum": ["full", "metadata_only", "ask"]},
         "detail": {"enum": ["full", "redacted", "hashes_only"]}
+      }
+    },
+    "agent_creation_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "reason", "delegated_tasks", "agent_count",
+        "direct_execution_alternative", "expected_additional_tokens",
+        "expected_elapsed_minutes", "scope"
+      ],
+      "properties": {
+        "schema_version": {"const": "agent-creation-disclosure/1.0"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "delegated_tasks": {
+          "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 4000}
+        },
+        "agent_count": {"type": "integer", "minimum": 1, "maximum": 16},
+        "direct_execution_alternative": {
+          "type": "string", "minLength": 1, "maxLength": 4000
+        },
+        "expected_additional_tokens": {"$ref": "#/$defs/nonnegative_integer_range"},
+        "expected_elapsed_minutes": {"$ref": "#/$defs/nonnegative_range"},
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paths", "network", "model_execution", "writes"],
+          "properties": {
+            "paths": {"$ref": "#/$defs/string_array"},
+            "network": {"type": "boolean"},
+            "model_execution": {"const": true},
+            "writes": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "nonnegative_integer_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "likely", "maximum"],
+      "properties": {
+        "minimum": {"type": "integer", "minimum": 0},
+        "likely": {"type": "integer", "minimum": 0},
+        "maximum": {"type": "integer", "minimum": 0}
+      }
+    },
+    "nonnegative_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "likely", "maximum"],
+      "properties": {
+        "minimum": {"type": "number", "minimum": 0},
+        "likely": {"type": "number", "minimum": 0},
+        "maximum": {"type": "number", "minimum": 0}
       }
     }
   }

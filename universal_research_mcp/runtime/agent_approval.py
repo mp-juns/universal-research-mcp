@@ -11,6 +11,7 @@ import re
 import stat
 from typing import Any, Mapping
 
+from universal_research_mcp.governance.agent_creation import agent_creation_disclosure_hash
 from universal_research_mcp.governance.hashing import artifact_hash, canonical_json, hash_without
 
 
@@ -23,6 +24,7 @@ _GRANT_FIELDS = frozenset({
     "project_root_hash",
     "run_id",
     "run_plan_hash",
+    "agent_creation_disclosure_hash",
     "configuration_hash",
     "estimate_snapshot_hash",
     "execution_request_hash",
@@ -141,6 +143,14 @@ def _exact_binding(
         raise AgentApprovalError("run plan and runtime configuration differ")
     if run_plan.get("configuration_hash") != artifact_hash(config):
         raise AgentApprovalError("runtime configuration hash is invalid")
+    disclosed = run_plan.get("agent_creation_disclosure")
+    disclosed_hash = run_plan.get("agent_creation_disclosure_hash")
+    try:
+        expected_disclosure_hash = agent_creation_disclosure_hash(disclosed)
+    except ValueError as exc:
+        raise AgentApprovalError("agent creation disclosure is missing or invalid") from exc
+    if disclosed_hash != expected_disclosure_hash:
+        raise AgentApprovalError("agent creation disclosure hash is invalid")
     budgets = config.get("budgets")
     if not isinstance(budgets, dict):
         raise AgentApprovalError("runtime budget snapshot is missing")
@@ -157,6 +167,7 @@ def _exact_binding(
         "project_root_hash": project_root_hash,
         "run_id": _identifier(run_plan.get("run_id"), "run_id"),
         "run_plan_hash": plan_hash,
+        "agent_creation_disclosure_hash": disclosed_hash,
         "configuration_hash": run_plan["configuration_hash"],
         "estimate_snapshot_hash": _exact_hash(
             estimate_snapshot_hash, "estimate_snapshot_hash",
@@ -289,6 +300,7 @@ class AgentApprovalStore:
             "approved": True,
             "project_root_hash": binding["project_root_hash"],
             "run_plan_hash": binding["run_plan_hash"],
+            "agent_creation_disclosure_hash": binding["agent_creation_disclosure_hash"],
             "estimate_snapshot_hash": binding["estimate_snapshot_hash"],
             "execution_request_hash": binding["execution_request_hash"],
             "provider_id": binding["provider_id"],
@@ -338,6 +350,7 @@ class AgentApprovalStore:
             "approval_ref": grant.get("approval_ref"),
             "run_id": grant.get("run_id"),
             "run_plan_hash": grant.get("run_plan_hash"),
+            "agent_creation_disclosure_hash": grant.get("agent_creation_disclosure_hash"),
             "estimate_snapshot_hash": grant.get("estimate_snapshot_hash"),
             "execution_request_hash": grant.get("execution_request_hash"),
             "provider_id": grant.get("provider_id"),

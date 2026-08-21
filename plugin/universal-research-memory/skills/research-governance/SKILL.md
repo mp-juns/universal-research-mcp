@@ -59,10 +59,24 @@ then use the separate `universal-research ingest approve` authority to issue a
 one-time receipt. The host-visible mutating `research_commit_ingest` consumes
 only that receipt and its exact returned draft hash after human-scope
 validation. Never create an approval record through MCP, pass an `approved=true`
-flag, substitute record content at commit, or retry a consumed draft. Let Codex
-create and display native subagent work under host permissions and the user's entitlement. Keep
-visualization off unless its separate capability scope and explicit user opt-in
-are both present.
+flag, substitute record content at commit, or retry a consumed draft. Create no
+agent merely because parallel work is available. Before any governed agent,
+provider session, or native Codex subagent is requested, first show the user one
+exact disclosure containing: why delegation is materially useful, one bounded
+task per proposed agent, the agent count, the direct single-agent alternative,
+minimum/likely/maximum additional tokens and elapsed minutes, and the exact
+path/network/model/write scope. Ask for approval only after showing that
+disclosure. A prior generic “go ahead”, an approval reference copied by the
+model, silence, or contextual inference is not approval of that disclosure.
+
+If the user explicitly approves the displayed disclosure, bind it unchanged to
+every task packet as `agent_creation_disclosure`, include the
+`agent_creation` user opt-in and one common approval reference, and rerun
+preflight. Any changed reason, task, count, estimate, scope, or approval
+reference requires a new disclosure and a new approval. If approval is absent,
+ambiguous, or cannot be bound at the actual host boundary, do the work directly
+without agents. Keep visualization off unless its separate capability scope and
+explicit user opt-in are both present.
 
 Activate `scope_and_cost_governor` before plan approval in every mode. Require
 it to classify proposed work as `required`, `useful_but_not_required`,
@@ -157,7 +171,8 @@ parallel work when appropriate; never claim the manifest itself has started an
 agent. Use the critical-batch variant only with all four reviewers and one
 shared snapshot hash.
 
-Do not spawn native Codex subagents for governed work. Use
+Do not spawn native Codex subagents for governed work before the exact
+disclosure-and-approval exchange above. Use
 `codex_host_agent_status` only as an availability probe. Without a protected
 host broker it returns `unavailable` and no descendant metadata; the plugin
 does not itself enforce a disabled host default.
@@ -173,3 +188,11 @@ unrestricted same-user host processes remain outside MCP control.
 Treat `multi_agent_v2` as a defense-in-depth selector observed in tested Codex
 0.147.0, not as a portable documented host contract. If the spawn probe is not
 run or a new backend is present, report suppression as unverified.
+
+The Universal provider runtime and secure harness mechanically reject missing
+or changed disclosures; their external one-time approval is consumed before the
+first provider request or Codex worker process. A native Codex `spawn_agent`
+call made outside those paths is host-owned and cannot be intercepted by this
+MCP. For that path, this Skill's ask-first rule is an instruction boundary, not
+a global security claim. When mechanical prevention matters, use a fresh secure
+harness worker with `agents.enabled=false` and keep native subagents unavailable.

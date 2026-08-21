@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from math import isfinite
 from typing import Any, Mapping, Protocol
 
+from universal_research_mcp.governance.agent_creation import validate_agent_creation_packets
 from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
 from universal_research_mcp.governance.hashing import artifact_hash
 from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR
@@ -198,6 +199,11 @@ class ParallelResearchHarness:
             issues.append({"code": "GOV-REGISTRY-002", "message": "agent packets must be unique"})
         for packet in packets:
             issues.extend(validate_task_packet(packet))
+        creation_issues, _disclosure = validate_agent_creation_packets(
+            packets,
+            expected_agent_count=len(packets),
+        )
+        issues.extend(creation_issues)
 
         workers = [packet for packet in packets if packet.get("agent_id") != SCOPE_AND_COST_GOVERNOR]
         critical = [packet for packet in workers if packet.get("agent_id") in CRITICAL]

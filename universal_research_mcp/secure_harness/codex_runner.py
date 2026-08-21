@@ -50,12 +50,19 @@ def codex_command(
     manifest_path: str | Path,
     workspace_path: str | Path,
     schema_path: str | Path,
+    approval_state_root: str | Path | None = None,
 ) -> list[str]:
     normalized = validate_run_plan(plan)
+    selected_approval_state = (
+        Path(approval_state_root)
+        if approval_state_root is not None
+        else Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+    ).expanduser().resolve()
     args = [
         sys.executable, "-m", "universal_research_mcp.secure_harness.worker_server",
         "--root", str(Path(project_root).resolve()), "--plan", str(Path(plan_path).resolve()),
         "--manifest", str(Path(manifest_path).resolve()), "--workspace", str(Path(workspace_path).resolve()),
+        "--approval-state-root", str(selected_approval_state),
     ]
     return [
         "codex", "exec", "--json", "--ephemeral", "--ignore-user-config",
@@ -98,6 +105,7 @@ class CodexRunner:
         manifest_path: str | Path,
         workspace_path: str | Path,
         schema_path: str | Path,
+        approval_state_root: str | Path | None = None,
     ) -> CodexResult:
         normalized = validate_run_plan(plan)
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt.encode("utf-8")) > 1024 * 1024:
@@ -110,6 +118,7 @@ class CodexRunner:
             manifest_path=manifest_path,
             workspace_path=workspace_path,
             schema_path=schema_path,
+            approval_state_root=approval_state_root,
         )
         completed = self._runner(
             command,

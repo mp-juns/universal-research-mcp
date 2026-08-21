@@ -1,4 +1,5 @@
 import unittest
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
 from universal_research_mcp.governance.hashing import artifact_hash, hash_without
@@ -26,14 +27,29 @@ def packet(agent_id: str = "retrieval_governor", mode: str = "lightweight", snap
         "max_parallelism": 1, "estimated_cost_usd": 0, "max_cost_usd": 0,
     }
     boundary = {"record_ids": ["decision_fixture"], "result_ids": [], "dataset_hashes": [], "model_hashes": [], "artifact_revisions": [], "commit_ids": [], "snapshot_hash": snapshot}
+    agent_count = len(CRITICAL) if mode == "final_review" and agent_id in CRITICAL else 1
+    disclosure = {
+        "schema_version": "agent-creation-disclosure/1.0",
+        "reason": "Use isolated evidence-bound review agents for this approved workflow.",
+        "delegated_tasks": [f"Perform governed review task {index + 1}." for index in range(agent_count)],
+        "agent_count": agent_count,
+        "direct_execution_alternative": "The host could perform the same review sequentially without delegated agents.",
+        "expected_additional_tokens": {"minimum": 0, "likely": 1000, "maximum": 10_000},
+        "expected_elapsed_minutes": {"minimum": 1, "likely": 5, "maximum": 30},
+        "scope": {
+            "paths": ["data/events"], "network": False,
+            "model_execution": True, "writes": False,
+        },
+    }
     value = {
         "schema_version": "research-agent-task/1.0", "governance_version": "agent-governance/2.0",
         "run_id": "run_fixture", "workflow_id": "workflow_fixture",
         "agent_id": agent_id, "requester": {"type": "workflow", "id": "host"}, "purpose": "Review evidence.",
         "mode": mode, "scope": scope, "evidence_boundary": boundary,
+        "agent_creation_disclosure": disclosure,
         "authority": {
-            "approval_refs": [], "authority_basis": "review",
-            "plan_refs": [], "user_opt_ins": [], "scope_hash": "pending",
+            "approval_refs": ["approval_agent_creation"], "authority_basis": "review",
+            "plan_refs": [], "user_opt_ins": ["agent_creation"], "scope_hash": "pending",
         },
         "failure_policy": {"stop": "blocking_only", "record": "ask", "detail": "redacted"},
         "success_criteria": ["Return a decision."], "stop_conditions": ["Evidence missing."],
@@ -117,6 +133,22 @@ class CodexAdapterTests(unittest.TestCase):
         invalid = packet()
         invalid["role_manifest_hash"] = "sha256:forged"
         self.assertFalse(build_dispatch_request(invalid)["dispatchable"])
+
+    def test_dispatch_requires_explanation_and_explicit_agent_creation_approval(self) -> None:
+        task = packet()
+        receipt = scope_receipt([task])
+        for mutation in ("disclosure", "opt_in", "approval"):
+            invalid = deepcopy(task)
+            if mutation == "disclosure":
+                invalid.pop("agent_creation_disclosure")
+            elif mutation == "opt_in":
+                invalid["authority"]["user_opt_ins"] = []
+            else:
+                invalid["authority"]["approval_refs"] = []
+            invalid["authority"]["scope_hash"] = task_scope_hash(invalid)
+            result = build_dispatch_request(invalid, receipt)
+            self.assertFalse(result["dispatchable"])
+            self.assertTrue(any("agent creation" in issue["message"] for issue in result["issues"]))
 
     def test_critical_batch_is_isolated_and_snapshot_bound(self) -> None:
         tasks = [packet(agent_id, "final_review") for agent_id in CRITICAL]

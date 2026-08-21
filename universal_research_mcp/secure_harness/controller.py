@@ -8,12 +8,11 @@ import json
 import os
 from pathlib import Path
 import shutil
-import stat
 from typing import Any, Mapping
 
 from universal_research_mcp.governance.hashing import artifact_hash
 
-from .approval import project_root_hash
+from .approval import HarnessApprovalStore, project_root_hash
 from .claims import evaluate_segments
 from .codex_runner import CodexRunner, write_output_schema
 from .contracts import HarnessContractError, build_run_plan, validate_run_plan
@@ -21,7 +20,7 @@ from .docker_backend import doctor as docker_doctor, inspect_plan
 from .snapshot import build_manifest
 
 
-BUNDLE_VERSION = "research-run-plan-bundle/1.0"
+BUNDLE_VERSION = "research-run-plan-bundle/2.0"
 ATTESTATION_VERSION = "secure-harness-attestation/1.0"
 _MAX_JSON_BYTES = 16 * 1024 * 1024
 
@@ -40,7 +39,8 @@ def build_plan_bundle(root: str | Path, specification: Mapping[str, Any]) -> dic
     project = Path(root).resolve(strict=True)
     allowed = {
         "run_id", "workflow_id", "model", "reasoning_effort", "workflow_mode", "verification_mode",
-        "approval_mode", "image", "resources", "operations", "created_at", "expires_at",
+        "approval_mode", "agent_creation_disclosure", "image", "resources", "operations",
+        "created_at", "expires_at",
     }
     unknown = sorted(set(specification) - allowed)
     if unknown:
@@ -55,7 +55,7 @@ def build_plan_bundle(root: str | Path, specification: Mapping[str, Any]) -> dic
         snapshot_paths.extend(operation["paths"])
     manifest = build_manifest(project, snapshot_paths)
     plan = build_run_plan({
-        "schema_version": "research-run-plan/1.0",
+        "schema_version": "research-run-plan/2.0",
         "workflow_mode": "lightweight",
         **dict(specification),
         "project_root_hash": project_root_hash(project),
@@ -207,17 +207,11 @@ def execute_codex(
 ) -> dict[str, Any]:
     project = Path(root).resolve(strict=True)
     plan = validate_run_plan(bundle.get("plan"))
+    approval_store = HarnessApprovalStore(project, state_root=state_root)
+    consumption = approval_store.consume(plan)
     store = HarnessRunStore(project, state_root=state_root)
     run = store.create(bundle, prompt)
     workspace = run / "workspace"
-    if workspace.is_symlink() or not workspace.is_dir():
-        raise HarnessContractError("worker workspace is missing or unsafe")
-    for item in workspace.rglob("*"):
-        info = item.lstat()
-        if stat.S_ISLNK(info.st_mode) or not (stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode)):
-            raise HarnessContractError("worker workspace contains an unsafe file type")
-        if stat.S_ISREG(info.st_mode) and info.st_nlink != 1:
-            raise HarnessContractError("worker workspace contains a hard-linked file")
     result = (runner or CodexRunner()).run(
         plan,
         prompt=prompt,
@@ -227,6 +221,7 @@ def execute_codex(
         manifest_path=run / "manifest.json",
         workspace_path=workspace,
         schema_path=run / "output-schema.json",
+        approval_state_root=approval_store.state_root,
     )
     record = {
         "schema_version": "secure-harness-codex-result/1.0",
@@ -237,12 +232,14 @@ def execute_codex(
         "usage": result.usage,
         "events_hash": result.events_hash,
         "structured_output": result.final_output,
+        "agent_creation_approval_consumption_hash": consumption["consumption_hash"],
         "executed": True,
     }
     record["result_hash"] = artifact_hash(record)
     store.write_result(run, record)
     return {key: record[key] for key in (
-        "schema_version", "run_id", "run_plan_hash", "model", "usage", "events_hash", "result_hash", "executed",
+        "schema_version", "run_id", "run_plan_hash", "model", "usage", "events_hash",
+        "result_hash", "agent_creation_approval_consumption_hash", "executed",
     )}
 
 

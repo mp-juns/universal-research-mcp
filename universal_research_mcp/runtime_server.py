@@ -208,6 +208,8 @@ def _safe_run_plan(report: object) -> dict[str, Any]:
             "schema_version",
             "run_id",
             "workflow_id",
+            "agent_creation_disclosure",
+            "agent_creation_disclosure_hash",
             "configuration",
             "configuration_hash",
             "tasks",

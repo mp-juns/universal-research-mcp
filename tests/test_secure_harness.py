@@ -4,11 +4,12 @@ from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import subprocess
+from types import SimpleNamespace
 
 import pytest
 from jsonschema import Draft202012Validator
 
-from universal_research_mcp.governance.hashing import artifact_hash
+from universal_research_mcp.governance.hashing import artifact_hash, hash_without
 from universal_research_mcp.core.input import append_record, validate_candidate_records
 from universal_research_mcp.indexing import initialize_project
 from universal_research_mcp.secure_harness.approval import (
@@ -26,6 +27,7 @@ from universal_research_mcp.secure_harness.controller import (
     attest_run,
     build_plan_bundle,
     change_review,
+    execute_codex,
     preflight,
     review_run,
 )
@@ -45,6 +47,18 @@ def _spec(
     verification_mode: str = "adaptive",
 ) -> dict:
     now = datetime.now(timezone.utc)
+    resolved_operations = operations or [{
+        "schema_version": "worker-operation/1.0",
+        "operation_id": "test_01",
+        "kind": "test",
+        "paths": ["src/example.py"],
+        "argv": ["python", "-m", "pytest", "-q"],
+        "cwd": ".",
+        "environment": {"PYTHONDONTWRITEBYTECODE": "1"},
+        "timeout_seconds": 60,
+        "network": False,
+        "gpu_devices": [],
+    }]
     return {
         "run_id": "run_secure_01",
         "workflow_id": "workflow_secure_01",
@@ -53,6 +67,28 @@ def _spec(
         "workflow_mode": workflow_mode,
         "verification_mode": verification_mode,
         "approval_mode": approval_mode,
+        "agent_creation_disclosure": {
+            "schema_version": "agent-creation-disclosure/1.0",
+            "reason": "Use one isolated Codex worker for the sealed research operation.",
+            "delegated_tasks": ["Execute the exact sealed worker plan."],
+            "agent_count": 1,
+            "direct_execution_alternative": "The host could execute the sealed operations sequentially without an agent.",
+            "expected_additional_tokens": {
+                "minimum": 0, "likely": 10_000, "maximum": 100_000,
+            },
+            "expected_elapsed_minutes": {
+                "minimum": 1, "likely": 5, "maximum": 60,
+            },
+            "scope": {
+                "paths": sorted({path for item in resolved_operations for path in item["paths"]}),
+                "network": False,
+                "model_execution": True,
+                "writes": any(
+                    item["kind"] in {"patch", "test", "build", "experiment"}
+                    for item in resolved_operations
+                ),
+            },
+        },
         "image": IMAGE,
         "resources": {
             "cpus": 2,
@@ -62,18 +98,7 @@ def _spec(
             "max_total_tokens": 100_000,
             "max_cost_usd": 0,
         },
-        "operations": operations or [{
-            "schema_version": "worker-operation/1.0",
-            "operation_id": "test_01",
-            "kind": "test",
-            "paths": ["src/example.py"],
-            "argv": ["python", "-m", "pytest", "-q"],
-            "cwd": ".",
-            "environment": {"PYTHONDONTWRITEBYTECODE": "1"},
-            "timeout_seconds": 60,
-            "network": False,
-            "gpu_devices": [],
-        }],
+        "operations": resolved_operations,
         "created_at": now.isoformat(),
         "expires_at": (now + timedelta(hours=1)).isoformat(),
     }
@@ -92,6 +117,10 @@ def _fake_doctor(command, **_kwargs):
 
 def test_plan_is_hash_bound_and_rejects_raw_shell_network_and_protected_paths(tmp_path: Path) -> None:
     root = _project(tmp_path)
+    missing_disclosure = _spec()
+    missing_disclosure.pop("agent_creation_disclosure")
+    with pytest.raises(HarnessContractError, match="disclosure"):
+        build_plan_bundle(root, missing_disclosure)
     bundle = build_plan_bundle(root, _spec())
     assert bundle["plan"]["snapshot_hash"] == bundle["snapshot_manifest"]["snapshot_hash"]
     assert bundle["plan"]["run_plan_hash"].startswith("sha256:")
@@ -162,6 +191,101 @@ def test_one_time_approval_binds_project_plan_snapshot_and_resources(tmp_path: P
         store.consume(bundle["plan"])
 
 
+def test_agent_process_is_never_created_without_preconsumed_exact_approval(
+    tmp_path: Path,
+) -> None:
+    root = _project(tmp_path)
+    state = tmp_path / "state"
+    bundle = build_plan_bundle(root, _spec())
+    calls = 0
+
+    class Runner:
+        def run(self, *_args, **_kwargs):
+            nonlocal calls
+            calls += 1
+            raise AssertionError("runner must not be called")
+
+    with pytest.raises(HarnessApprovalError, match="missing"):
+        execute_codex(
+            root,
+            bundle,
+            prompt="Run only the sealed operation.",
+            state_root=state,
+            runner=Runner(),
+        )
+    assert calls == 0
+
+
+def test_agent_approval_is_consumed_before_runner_and_replay_is_blocked(
+    tmp_path: Path,
+) -> None:
+    root = _project(tmp_path)
+    state = tmp_path / "state"
+    bundle = build_plan_bundle(root, _spec())
+    approval_store = HarnessApprovalStore(root, state_root=state)
+    approval_store.create(
+        bundle["plan"],
+        expected_plan_hash=bundle["plan"]["run_plan_hash"],
+        expires_at=(datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+    )
+    calls = 0
+
+    class Runner:
+        def run(self, plan, **kwargs):
+            nonlocal calls
+            calls += 1
+            consumed = approval_store.verify_consumed(plan)
+            assert consumed["agent_creation_disclosure_hash"].startswith("sha256:")
+            assert kwargs["approval_state_root"] == approval_store.state_root
+            return SimpleNamespace(
+                model=plan["model"],
+                usage={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+                events_hash=artifact_hash({"events": 1}),
+                final_output={"segments": []},
+            )
+
+    result = execute_codex(
+        root,
+        bundle,
+        prompt="Run only the sealed operation.",
+        state_root=state,
+        runner=Runner(),
+    )
+    assert calls == 1
+    assert result["agent_creation_approval_consumption_hash"].startswith("sha256:")
+    with pytest.raises(HarnessApprovalError, match="already consumed"):
+        execute_codex(
+            root,
+            bundle,
+            prompt="Run only the sealed operation.",
+            state_root=state,
+            runner=Runner(),
+        )
+    assert calls == 1
+
+
+def test_worker_rejects_resealed_grant_for_a_different_agent_plan(tmp_path: Path) -> None:
+    root = _project(tmp_path)
+    state = tmp_path / "state"
+    bundle = build_plan_bundle(root, _spec())
+    store = HarnessApprovalStore(root, state_root=state)
+    store.create(
+        bundle["plan"],
+        expected_plan_hash=bundle["plan"]["run_plan_hash"],
+        expires_at=(datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+    )
+    store.consume(bundle["plan"])
+
+    grant_path = store._path(bundle["plan"]["run_id"], "grant")
+    grant = json.loads(grant_path.read_text(encoding="utf-8"))
+    grant["model"] = "different-model"
+    grant["approval_hash"] = hash_without(grant, "approval_hash")
+    grant_path.write_text(json.dumps(grant), encoding="utf-8")
+
+    with pytest.raises(HarnessApprovalError, match="exact plan"):
+        store.verify_consumed(bundle["plan"])
+
+
 def test_preflight_detects_snapshot_drift_before_execution(tmp_path: Path) -> None:
     root = _project(tmp_path)
     bundle = build_plan_bundle(root, _spec())
@@ -196,11 +320,13 @@ def test_worker_allows_only_matching_operation_and_never_replays_recipe(tmp_path
     manifest_path = tmp_path / "manifest.json"
     plan_path.write_text(json.dumps(bundle["plan"]), encoding="utf-8")
     manifest_path.write_text(json.dumps(bundle["snapshot_manifest"]), encoding="utf-8")
-    HarnessApprovalStore(root, state_root=state).create(
+    approval_store = HarnessApprovalStore(root, state_root=state)
+    approval_store.create(
         bundle["plan"],
         expected_plan_hash=bundle["plan"]["run_plan_hash"],
         expires_at=(datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
     )
+    approval_store.consume(bundle["plan"])
 
     calls = []
     def run(command, **_kwargs):
@@ -212,7 +338,7 @@ def test_worker_allows_only_matching_operation_and_never_replays_recipe(tmp_path
         plan_path=plan_path,
         manifest_path=manifest_path,
         workspace=tmp_path / "workspace",
-        approval_store=HarnessApprovalStore(root, state_root=state),
+        approval_store=approval_store,
         backend=DockerBackend(run),
     )
     with pytest.raises(HarnessContractError, match="does not match"):

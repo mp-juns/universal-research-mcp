@@ -63,6 +63,8 @@ or establish that a source is true. Those are separate host review stages.
 - deterministic evidence eligibility receipts
 - append-only canonical records and recoverable, journaled ingest
 - fixed-role Codex governance contracts
+- a default-deny agent-creation disclosure and one-time approval binding for
+  governed provider/secure-harness execution
 - a Docker secure harness for sealed benchmark/final-review execution
 - a reviewed, unauthenticated public-demo transport for static corpora
 
@@ -126,6 +128,9 @@ names retain “claim gate” for provenance; the current product contract is
 4. Candidate retrieval never grants claim eligibility.
 5. Evidence eligibility never proves semantic support or truth.
 6. Host approval remains separate from MCP validation.
+7. Governed agent creation requires the user-visible reason, tasks, count,
+   direct alternative, token/time ranges, and scope to be hash-bound before a
+   one-time approval is consumed.
 
 Canonical ingest uses a write-ahead transaction journal. Each target file is
 bound to exact before/after hashes; a failure after a partial append leaves the

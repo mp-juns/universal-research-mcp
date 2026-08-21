@@ -15,6 +15,14 @@ provider request, and validated decision. Independent workers may run in
 parallel only after `scope_and_cost_governor` has reviewed the exact immutable
 run plan.
 
+No provider session may be created from a task packet alone. Every packet in a
+run must carry the same `agent_creation_disclosure`, one common approval
+reference, and the explicit `agent_creation` user opt-in. The disclosure binds
+the reason for delegation, one task per requested agent, total agent count, the
+direct-execution alternative, bounded additional token/time estimates, and
+path/network/model/write scope. Preflight returns the full disclosure and its
+hash so the user can review the explanation before approving anything.
+
 One provider request is one plugin-owned agent session. Session directories,
 request identifiers, prompts, evidence bundles, decisions, and failure records
 are not shared between roles. This is real request and state isolation, but it
@@ -37,20 +45,26 @@ provider can be used.
 
 ## Execution order
 
-1. Validate all task packets, expiry times, scopes, provider allowlists,
+1. Validate the shared agent-creation disclosure, exact agent count, common
+   approval reference, and explicit user opt-in. Missing or changed fields stop
+   before any provider request.
+2. Validate all task packets, expiry times, scopes, provider allowlists,
    failure policies, evidence references, and budgets.
-2. Materialize an immutable run plan containing every task, prompt, evidence,
+3. Materialize an immutable run plan containing every task, prompt, evidence,
    route, model, cost estimate, and concurrency limit.
-3. Persist the governor session and reserve its dispatch before any provider
+4. Present the full disclosure and exact plan/request hashes. A separately
+   authorized, one-time grant must bind the disclosure hash.
+5. Consume that grant before the first provider request is created.
+6. Persist the governor session and reserve its dispatch before any provider
    request is sent.
-4. Require the governor decision to name the exact reviewed run-plan hash.
-5. Create a deterministic receipt bound to that plan and the governed task
+7. Require the governor decision to name the exact reviewed run-plan hash.
+8. Create a deterministic receipt bound to that plan and the governed task
    hashes.
-6. Materialize one isolated session per worker and execute at most the approved
+9. Materialize one isolated session per worker and execute at most the approved
    parallelism.
-7. Stop admitting new work after a blocking failure. Do not retry or switch
+10. Stop admitting new work after a blocking failure. Do not retry or switch
    providers automatically.
-8. Preserve validated decisions and minimum failure tombstones in the runtime
+11. Preserve validated decisions and minimum failure tombstones in the runtime
    record. They do not become canonical research evidence automatically.
 
 ## Runtime records
@@ -144,9 +158,11 @@ universal-research provider configure-remote \
 
 Create task packets that conform to `research-agent-task/1.0`, including one
 `scope_and_cost_governor` packet, exact evidence boundaries, provider/network
-scope, `approval_refs`, budgets, stop conditions, and a fully resolved failure
-policy. Then preflight the exact route and budget. Preflight constructs no
-provider request.
+scope, `approval_refs`, an `agent_creation` user opt-in, the same complete
+`agent_creation_disclosure` on every packet, budgets, stop conditions, and a
+fully resolved failure policy. Its `agent_count` includes the governor because
+that role is also a provider session. Then preflight the exact route and budget.
+Preflight constructs no provider request and displays the disclosure verbatim.
 
 ```bash
 universal-research agent preflight packets.json \
@@ -216,7 +232,8 @@ universal-research agent run packets.json \
   --execute-approved
 ```
 
-The grant is consumed before the first provider call and cannot be reused,
+The grant binds `agent_creation_disclosure_hash`, is consumed before the first
+provider call, and cannot be reused,
 including after a provider or process failure. Grant and consumption records
 retain their content hashes and `authority_source`. A changed packet, estimate,
 provider configuration, budget, route, expiry, execution request, project root,
@@ -265,6 +282,12 @@ directory can create or replace data and recompute the unkeyed hashes. Preventin
 that requires a separately privileged approval broker or an OS-backed signing
 key with an interactive user-presence policy, which this package does not claim
 to provide.
+
+Accordingly, do not let an agent manufacture a disclosure and immediately run
+the approval command as proof that the user agreed. The user must see and
+approve the exact preflight disclosure through a host boundary that the agent
+cannot silently satisfy. Without that boundary, keep execution blocked and do
+the requested work directly.
 
 ## Failure and disclosure
 

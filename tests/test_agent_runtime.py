@@ -64,7 +64,12 @@ class _EvidenceBuilder:
         return bundle
 
 
-def _packet(agent_id: str, *, run_id: str = "run_fixture") -> dict[str, Any]:
+def _packet(
+    agent_id: str,
+    *,
+    run_id: str = "run_fixture",
+    agent_count: int = 2,
+) -> dict[str, Any]:
     registry = load_registry()
     manifest = registry[agent_id]
     boundary, _ = _boundary()
@@ -94,12 +99,33 @@ def _packet(agent_id: str, *, run_id: str = "run_fixture") -> dict[str, Any]:
         "mode": "lightweight",
         "scope": scope,
         "evidence_boundary": boundary,
+        "agent_creation_disclosure": {
+            "schema_version": "agent-creation-disclosure/1.0",
+            "reason": "Use isolated agents for the explicitly approved governed review.",
+            "delegated_tasks": [
+                f"Perform governed review task {index + 1}." for index in range(agent_count)
+            ],
+            "agent_count": agent_count,
+            "direct_execution_alternative": (
+                "The host could perform the same reviews sequentially without agents."
+            ),
+            "expected_additional_tokens": {
+                "minimum": 0, "likely": 1000, "maximum": 20_000,
+            },
+            "expected_elapsed_minutes": {
+                "minimum": 1, "likely": 5, "maximum": 30,
+            },
+            "scope": {
+                "paths": ["docs/**"], "network": False,
+                "model_execution": True, "writes": False,
+            },
+        },
         "authority": {
             "approval_refs": ["approval_fixture"],
             "authority_basis": "explicit fixture approval",
             "scope_hash": "pending",
             "plan_refs": ["plan_fixture"],
-            "user_opt_ins": [],
+            "user_opt_ins": ["agent_creation"],
         },
         "failure_policy": {
             "stop": "blocking_only",
@@ -144,6 +170,7 @@ def _approval(
         "approved": True,
         "grant_id": "grant_fixture",
         "run_plan_hash": plan["run_plan_hash"],
+        "agent_creation_disclosure_hash": plan["agent_creation_disclosure_hash"],
         "estimate_snapshot_hash": artifact_hash(estimate_snapshot),
         "execution_request_hash": execution_request_hash,
         "provider_id": config.provider_id,
@@ -307,9 +334,9 @@ def test_governor_first_independent_sessions_are_actually_parallel_and_hash_boun
     executor = _Executor(parallel_workers=2)
     runtime = _runtime(tmp_path, executor)
     packets = [
-        _packet("retrieval_governor"),
-        _packet("scope_and_cost_governor"),
-        _packet("analysis_objectivity_auditor"),
+        _packet("retrieval_governor", agent_count=3),
+        _packet("scope_and_cost_governor", agent_count=3),
+        _packet("analysis_objectivity_auditor", agent_count=3),
     ]
 
     result = runtime.run(packets, _configuration())

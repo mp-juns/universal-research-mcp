@@ -10,6 +10,12 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from universal_research_mcp.governance.agent_creation import (
+    AGENT_CREATION_OPT_IN,
+    agent_creation_disclosure_hash,
+    normalize_agent_creation_disclosure,
+    validate_agent_creation_packets,
+)
 from universal_research_mcp.governance.hashing import artifact_hash, canonical_json, hash_without
 from universal_research_mcp.governance.prompts import load_prompt_pack, render_prompt_pack
 from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR, load_registry, manifest_hash
@@ -31,10 +37,18 @@ _DISPATCH_FIELDS = frozenset({
     "role_manifest_hash",
     "role_prompt_hash",
     "role_prompt",
+    "agent_creation",
     "execution",
     "role_instructions",
     "scope_governor_receipt_hash",
     "dispatch_hash",
+})
+_AGENT_CREATION_FIELDS = frozenset({
+    "approval_required",
+    "approval_refs",
+    "user_opt_in",
+    "disclosure",
+    "disclosure_hash",
 })
 _ROLE_INSTRUCTION_FIELDS = frozenset({
     "agent_id",
@@ -99,8 +113,16 @@ def _render_dispatch(packet: dict[str, Any]) -> dict[str, Any]:
         "scope_hash": packet["authority"]["scope_hash"],
     }
     critical = packet["agent_id"] in CRITICAL
+    raw_disclosure = packet.get("agent_creation_disclosure")
+    try:
+        disclosure = normalize_agent_creation_disclosure(raw_disclosure)
+        disclosure_hash: str | None = agent_creation_disclosure_hash(disclosure)
+    except ValueError:
+        disclosure = None
+        disclosure_hash = None
+    authority = packet.get("authority") or {}
     return {
-        "schema_version": "urag-codex-dispatch/2.0",
+        "schema_version": "urag-codex-dispatch/3.0",
         "dispatchable": True,
         "host": "codex",
         "run_id": packet["run_id"],
@@ -110,6 +132,13 @@ def _render_dispatch(packet: dict[str, Any]) -> dict[str, Any]:
         "role_manifest_hash": manifest_hash(manifest),
         "role_prompt_hash": prompt_pack["prompt_pack_hash"],
         "role_prompt": render_prompt_pack(prompt_pack),
+        "agent_creation": {
+            "approval_required": True,
+            "approval_refs": sorted(authority.get("approval_refs") or []),
+            "user_opt_in": AGENT_CREATION_OPT_IN in set(authority.get("user_opt_ins") or []),
+            "disclosure": disclosure,
+            "disclosure_hash": disclosure_hash,
+        },
         "execution": {
             "host_dispatch_required": True,
             "parallel_eligible": critical,
@@ -260,6 +289,8 @@ def build_dispatch_request(
     packet = deepcopy(packet)
     governor_receipt = deepcopy(governor_receipt)
     issues = validate_task_packet(packet)
+    creation_issues, _disclosure = validate_agent_creation_packets([packet])
+    issues.extend(creation_issues)
     issues.extend(validate_scope_governor_receipt(packet, governor_receipt))
     if issues:
         return {"dispatchable": False, "issues": issues}
@@ -294,6 +325,11 @@ def build_critical_review_batch(
     packets = deepcopy(packets)
     governor_receipt = deepcopy(governor_receipt)
     issues = validate_critical_review_batch(packets)
+    creation_issues, _disclosure = validate_agent_creation_packets(
+        packets,
+        expected_agent_count=len(CRITICAL),
+    )
+    issues.extend(creation_issues)
     if issues:
         return {"dispatchable": False, "issues": issues}
     snapshots = {str((packet.get("evidence_boundary") or {}).get("snapshot_hash")) for packet in packets}
@@ -306,7 +342,7 @@ def build_critical_review_batch(
     if invalid:
         return {"dispatchable": False, "issues": [issue for request in invalid for issue in request.get("issues", [])]}
     return _seal_manifest({
-        "schema_version": "urag-codex-critical-batch/1.0",
+        "schema_version": "urag-codex-critical-batch/2.0",
         "dispatchable": True,
         "workflow_id": workflow_ids.pop(),
         "evidence_snapshot_hash": snapshots.pop(),
@@ -344,7 +380,7 @@ def _validate_single_dispatch(dispatch: dict[str, Any]) -> list[dict[str, str]]:
             issues.append(_issue(f"dispatch fields are missing: {', '.join(missing)}"))
         if unknown:
             issues.append(_issue(f"dispatch fields are unsupported: {', '.join(unknown)}"))
-    if dispatch.get("schema_version") != "urag-codex-dispatch/2.0":
+    if dispatch.get("schema_version") != "urag-codex-dispatch/3.0":
         issues.append(_issue("unsupported Codex dispatch schema"))
     if dispatch.get("dispatchable") is not True or dispatch.get("host") != "codex":
         issues.append(_issue("manifest is not a dispatchable Codex request"))
@@ -366,6 +402,30 @@ def _validate_single_dispatch(dispatch: dict[str, Any]) -> list[dict[str, str]]:
     receipt_hash = dispatch.get("scope_governor_receipt_hash")
     if receipt_hash is not None and not _is_artifact_hash(receipt_hash):
         issues.append(_issue("scope governor receipt hash is invalid"))
+
+    creation = dispatch.get("agent_creation")
+    if not isinstance(creation, dict) or set(creation) != _AGENT_CREATION_FIELDS:
+        issues.append(_issue("agent creation binding does not match the closed contract"))
+    else:
+        disclosure = creation.get("disclosure")
+        try:
+            expected_disclosure_hash = agent_creation_disclosure_hash(disclosure)
+        except ValueError:
+            expected_disclosure_hash = None
+            issues.append(_issue("agent creation disclosure is invalid"))
+        if creation.get("approval_required") is not True:
+            issues.append(_issue("agent creation approval requirement was removed"))
+        if creation.get("user_opt_in") is not True:
+            issues.append(_issue("agent creation user opt-in is missing"))
+        approval_refs = creation.get("approval_refs")
+        if (
+            not isinstance(approval_refs, list)
+            or not approval_refs
+            or any(not isinstance(item, str) or not item for item in approval_refs)
+        ):
+            issues.append(_issue("agent creation approval reference is missing"))
+        if creation.get("disclosure_hash") != expected_disclosure_hash:
+            issues.append(_issue("agent creation disclosure hash mismatch"))
 
     agent_id = dispatch.get("agent_id")
     registry = load_registry()
@@ -434,14 +494,14 @@ def validate_dispatch_manifest(
 
     if not isinstance(dispatch, dict):
         return [_issue("dispatch manifest must be an object")]
-    if dispatch.get("schema_version") == "urag-codex-dispatch/2.0":
+    if dispatch.get("schema_version") == "urag-codex-dispatch/3.0":
         single_issues = _validate_single_dispatch(dispatch)
         if not _is_artifact_hash(expected_manifest_hash):
             single_issues.append(_issue("a valid host-pinned dispatch hash is required"))
         elif dispatch.get("dispatch_hash") != expected_manifest_hash:
             single_issues.append(_issue("dispatch does not match the host-pinned build-time hash"))
         return single_issues
-    if dispatch.get("schema_version") != "urag-codex-critical-batch/1.0":
+    if dispatch.get("schema_version") != "urag-codex-critical-batch/2.0":
         return [_issue("unsupported dispatch manifest schema")]
 
     issues: list[dict[str, str]] = []

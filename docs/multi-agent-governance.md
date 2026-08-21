@@ -80,6 +80,18 @@ the deterministic controller issues a tamper-evident receipt bound to every
 worker packet and scope hash. Standalone and critical-batch dispatches fail
 closed without that receipt.
 
+Agent creation has an earlier, separate gate. Before requesting any governed
+agent, the host must show the user one exact disclosure covering the delegation
+reason, one bounded task per proposed agent, the total count, the direct
+single-agent alternative, minimum/likely/maximum additional tokens and elapsed
+minutes, and exact path/network/model/write scope. Every packet must carry that
+unchanged disclosure, a common approval reference, and the explicit
+`agent_creation` opt-in. Provider-runtime and secure-harness grants bind its
+hash and are consumed before the first provider request or worker process. A
+changed disclosure or count requires a new approval. These checks govern
+Universal execution paths; they do not intercept an unrestricted host's native
+subagent tool outside those paths.
+
 ## Machine-auditable artifacts
 
 `schemas/research-agent-task.schema.json` defines the task packet. Every worker
