@@ -10,6 +10,9 @@ from typing import Any
 import pytest
 
 from universal_research_mcp import runtime_server
+from universal_research_mcp.governance.agent_creation import (
+    agent_creation_disclosure_hash,
+)
 from universal_research_mcp.governance.hashing import artifact_hash, hash_without
 from universal_research_mcp.runtime.agent_approval import (
     AgentApprovalError,
@@ -20,6 +23,24 @@ from universal_research_mcp.agent_runtime.runtime import (
     build_estimate_snapshot,
     build_execution_request_hash,
 )
+
+
+def _agent_creation_disclosure() -> dict[str, Any]:
+    return {
+        "schema_version": "agent-creation-disclosure/1.0",
+        "reason": "Exercise the execution approval store without creating an agent.",
+        "delegated_tasks": ["Validate the approval-store fixture."],
+        "agent_count": 1,
+        "direct_execution_alternative": "Run the fixture directly in this test process.",
+        "expected_additional_tokens": {"minimum": 0, "likely": 100, "maximum": 500},
+        "expected_elapsed_minutes": {"minimum": 0.0, "likely": 0.1, "maximum": 1.0},
+        "scope": {
+            "paths": [],
+            "network": False,
+            "model_execution": True,
+            "writes": False,
+        },
+    }
 
 
 class _Executor:
@@ -49,12 +70,17 @@ class _Runtime:
     def preflight(self, packets: list[dict[str, Any]], configuration: object) -> dict[str, Any]:
         assert packets == [{"authority": {"approval_refs": ["approval_fixture"]}}]
         assert configuration == "configuration"
+        disclosure = _agent_creation_disclosure()
         return {
             "schema_version": "agent-runtime-preflight/1.0",
             "valid": True,
             "issues": [],
             "run_id": "run_fixture",
-            "run_plan": {"run_plan_hash": "sha256:plan"},
+            "run_plan": {
+                "run_plan_hash": "sha256:plan",
+                "agent_creation_disclosure": disclosure,
+                "agent_creation_disclosure_hash": agent_creation_disclosure_hash(disclosure),
+            },
             "run_plan_hash": "sha256:plan",
             "estimate_snapshot_hash": "sha256:estimate",
             "execution_request_hash": "sha256:execution",
@@ -159,6 +185,10 @@ def test_runtime_mcp_preflight_and_run_hide_prompts_and_raw_output(
     assert preflight["estimate_snapshot_hash"] == "sha256:estimate"
     assert preflight["execution_request_hash"] == "sha256:execution"
     assert preflight["artifact_contents_included"] is False
+    assert preflight["run_plan"]["agent_creation_disclosure"]["reason"].startswith(
+        "Exercise the execution approval store",
+    )
+    assert preflight["run_plan"]["agent_creation_disclosure_hash"].startswith("sha256:")
     assert "prompt" not in preflight
     assert "raw_output" not in preflight
 
@@ -257,12 +287,15 @@ class _Configuration:
 def _run_plan(configuration: object) -> dict[str, Any]:
     assert callable(getattr(configuration, "to_dict", None))
     config = configuration.to_dict()
+    disclosure = _agent_creation_disclosure()
     plan = {
         "schema_version": "agent-run-plan/1.0",
         "run_id": "run_fixture",
         "workflow_id": "workflow_fixture",
         "configuration": config,
         "configuration_hash": artifact_hash(config),
+        "agent_creation_disclosure": disclosure,
+        "agent_creation_disclosure_hash": agent_creation_disclosure_hash(disclosure),
         "tasks": [],
     }
     plan["run_plan_hash"] = hash_without(plan, "run_plan_hash")

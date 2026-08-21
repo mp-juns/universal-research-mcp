@@ -62,6 +62,10 @@ approve a session, alter a record, or settle a scientific conclusion.
 - Keep Expected, Observed, Interpretation, and Uncertainty separate.
 - Do not turn a draft proposal into a canonical record without an explicit
   approval and append-only write workflow.
+- Do not start an agent or subagent from this retrieval workflow. If delegation
+  becomes materially necessary, switch to the research-governance workflow,
+  disclose the reason, tasks, count, direct alternative, token/time ranges, and
+  exact scope, then wait for explicit approval of that exact disclosure.
 
 ## Results format
 

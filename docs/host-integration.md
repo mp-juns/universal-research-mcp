@@ -35,6 +35,22 @@ human authority.
 
 ## Codex subagent control
 
+Universal-governed execution has a default-deny agent-creation contract. Before
+a dispatch, provider session, or secure-harness worker is eligible, the host
+must show one exact disclosure containing the delegation reason, bounded task
+per agent, count, direct-execution alternative, minimum/likely/maximum
+additional tokens and elapsed minutes, and exact path/network/model/write
+scope. The task packets must carry that unchanged disclosure, a common approval
+reference, and an `agent_creation` user opt-in. The disclosure hash is part of
+the task scope, dispatch, run plan, grant, and consumption receipt.
+
+The provider runtime and secure harness consume an external one-time grant
+before the first provider request or Codex worker process. Missing approval,
+changed disclosure, count drift, replay, or approval consumed after launch all
+fail closed. Dispatch-manifest generation remains non-executing and marks host
+approval as required; a host must not interpret a valid manifest as permission
+to spawn.
+
 Universal Research keeps native multi-agent execution host-owned. In the
 currently tested Codex 0.147.0 contract, a local stdio MCP server receives
 neither an authoritative per-call root-thread identity nor a proposal-bound,
@@ -57,6 +73,16 @@ This intentionally removes the earlier hash-confirmed apply path. It must not be
 restored by adding a TTY prompt, environment flag, second hash argument, or a
 same-user helper process. Those mechanisms remain callable by a shell-capable
 agent and are not independent authority.
+
+This does not add an MCP interceptor around Codex's native `spawn_agent` tool.
+Official Codex documentation states that current releases can delegate after a
+direct request or applicable project/Skill instruction, that child agents
+inherit the parent permission mode, and that `agents.enabled=false` disables
+multi-agent tools. Therefore the plugin can require the explanation/approval
+exchange in its governed Skill and can launch fresh secure workers with agent
+tools disabled, but it cannot retroactively block a native spawn performed in a
+different or unrestricted host path. See the official
+[Codex subagents documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents).
 
 For a fresh isolated Codex worker, the secure harness explicitly applies strict
 configuration with the documented selectors plus a Codex-0.147.0-observed

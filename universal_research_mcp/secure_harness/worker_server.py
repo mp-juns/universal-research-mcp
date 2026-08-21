@@ -8,6 +8,7 @@ from typing import Any, Sequence
 
 from mcp.server.fastmcp import FastMCP
 
+from .approval import HarnessApprovalStore
 from .worker import WorkerSession
 
 
@@ -63,12 +64,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--workspace", type=Path, required=True)
+    parser.add_argument("--approval-state-root", type=Path, required=True)
     args = parser.parse_args(argv)
     configure_session(WorkerSession(
         project_root=args.root,
         plan_path=args.plan,
         manifest_path=args.manifest,
         workspace=args.workspace,
+        approval_store=HarnessApprovalStore(args.root, state_root=args.approval_state_root),
     ))
     mcp.run(transport="stdio")
     return 0

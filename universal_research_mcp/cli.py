@@ -117,7 +117,8 @@ def _agent_inspection_summary(report: dict[str, Any], *, artifact_root: Path) ->
             key: plan.get(key)
             for key in (
                 "schema_version", "run_id", "workflow_id", "configuration",
-                "configuration_hash", "tasks", "run_plan_hash",
+                "configuration_hash", "agent_creation_disclosure",
+                "agent_creation_disclosure_hash", "tasks", "run_plan_hash",
             )
             if key in plan
         },
@@ -248,7 +249,8 @@ def _agent_command(root: Path, args: argparse.Namespace) -> int:
                 key: (report.get("run_plan") or {}).get(key)
                 for key in (
                     "schema_version", "run_id", "workflow_id", "configuration",
-                    "configuration_hash", "tasks", "run_plan_hash",
+                    "configuration_hash", "agent_creation_disclosure",
+                    "agent_creation_disclosure_hash", "tasks", "run_plan_hash",
                 )
                 if key in (report.get("run_plan") or {})
             },

@@ -14,6 +14,10 @@ from typing import Any, Callable, Mapping
 from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
 from universal_research_mcp.governance.escalation import evaluate_gate
 from universal_research_mcp.governance.hashing import artifact_hash, hash_without
+from universal_research_mcp.governance.agent_creation import (
+    agent_creation_disclosure_hash,
+    validate_agent_creation_packets,
+)
 from universal_research_mcp.governance.prompts import load_prompt_pack, render_prompt_pack
 from universal_research_mcp.governance.registry import CRITICAL, SCOPE_AND_COST_GOVERNOR, load_registry
 from universal_research_mcp.governance.validation import (
@@ -420,6 +424,9 @@ class AgentRuntime:
         expected = {
             "approved": True,
             "run_plan_hash": prepared.run_plan_hash,
+            "agent_creation_disclosure_hash": prepared.run_plan.get(
+                "agent_creation_disclosure_hash",
+            ),
             "estimate_snapshot_hash": prepared.estimate_snapshot_hash,
             "execution_request_hash": prepared.execution_request_hash,
             "provider_id": prepared.configuration.provider_id,
@@ -451,6 +458,7 @@ class AgentRuntime:
             "approved": True,
             "approval_ref": grant["approval_ref"],
             "run_plan_hash": grant["run_plan_hash"],
+            "agent_creation_disclosure_hash": grant["agent_creation_disclosure_hash"],
             "estimate_snapshot_hash": grant["estimate_snapshot_hash"],
             "execution_request_hash": grant["execution_request_hash"],
             "configuration_hash": grant["configuration_hash"],
@@ -522,6 +530,11 @@ class AgentRuntime:
     def _prepare(self, packets: list[dict[str, Any]], config: RunConfiguration) -> _PreparedRun:
         copied = tuple(deepcopy(packets)) if isinstance(packets, list) else ()
         issues = list(config.issues())
+        creation_issues, creation_disclosure = validate_agent_creation_packets(
+            copied,
+            expected_agent_count=len(copied) if copied else None,
+        )
+        issues.extend(creation_issues)
         if len(copied) < 2:
             issues.append({"code": "RUNTIME-PLAN", "message": "one governor and at least one worker are required"})
         run_ids = {str(packet.get("run_id") or "") for packet in copied if isinstance(packet, dict)}
@@ -587,6 +600,15 @@ class AgentRuntime:
             "schema_version": "agent-run-plan/1.0",
             "run_id": run_id,
             "workflow_id": workflow_id,
+            "agent_creation_disclosure": creation_disclosure,
+            "agent_creation_disclosure_hash": (
+                agent_creation_disclosure_hash(
+                    creation_disclosure,
+                    expected_agent_count=len(copied),
+                )
+                if creation_disclosure is not None
+                else None
+            ),
             "configuration": config.to_dict(),
             "configuration_hash": artifact_hash(config.to_dict()),
             "tasks": sorted([

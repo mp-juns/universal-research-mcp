@@ -28,6 +28,22 @@ not register a provider execution MCP, expose a provider console entry point,
 or call a local or external model service. Model selection, native agent
 sessions, tool permissions, and product entitlement remain owned by Codex.
 
+Universal-governed agent execution is default-deny unless every requested
+agent shares one exact user-visible creation disclosure, a common approval
+reference, and the explicit `agent_creation` opt-in. The disclosure covers the
+reason, delegated tasks, count, direct alternative, token/time ranges, and
+path/network/model/write scope. Provider-runtime and secure-harness grants bind
+its hash and are consumed before the first provider request or Codex worker
+process. This does not intercept native Codex subagent tools outside Universal's
+execution paths. The plugin rule to ask first is instruction-level there; a
+fresh secure-harness worker instead disables native multi-agent tools.
+
+Neither a copied approval reference nor a same-user CLI invocation proves fresh
+human presence. That proof requires a host approval UI, sandbox rule, separately
+privileged broker, or OS-backed signing policy that the agent cannot satisfy on
+its own. The package claims exact binding, ordering, and one-time consumption,
+not universal control of an unrestricted host process.
+
 The optional public demo transport is a separate, unauthenticated read-only
 surface. It starts only from an explicit project root with a reviewed
 `public-demo-manifest/1.0` document. That manifest enumerates and hashes the

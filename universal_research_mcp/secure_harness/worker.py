@@ -20,7 +20,7 @@ MAX_TOOL_TEXT_BYTES = 1024 * 1024
 
 
 class WorkerSession:
-    """Consume one approval, then expose only operations sealed in that plan."""
+    """Verify pre-consumed approval, then expose only sealed operations."""
 
     def __init__(
         self,
@@ -40,7 +40,7 @@ class WorkerSession:
         self.workspace = materialize_snapshot(self.project_root, self.manifest, workspace)
         self.backend = backend or DockerBackend()
         self.approval_store = approval_store or HarnessApprovalStore(self.project_root)
-        self.consumption = self.approval_store.consume(self.plan)
+        self.consumption = self.approval_store.verify_consumed(self.plan)
         self._completed: set[str] = set()
 
     @staticmethod

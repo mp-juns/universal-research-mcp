@@ -10,18 +10,61 @@ from pathlib import Path
 import stat
 from typing import Any, Mapping
 
+from universal_research_mcp.governance.agent_creation import agent_creation_disclosure_hash
 from universal_research_mcp.governance.hashing import hash_without
 
 from .contracts import validate_run_plan
 
 
-APPROVAL_VERSION = "harness-approval/1.0"
-CONSUMPTION_VERSION = "harness-approval-consumption/1.0"
+APPROVAL_VERSION = "harness-approval/2.0"
+CONSUMPTION_VERSION = "harness-approval-consumption/2.0"
 _MAX_BYTES = 64 * 1024
+_APPROVAL_FIELDS = frozenset({
+    "schema_version",
+    "project_root_hash",
+    "run_id",
+    "run_plan_hash",
+    "agent_creation_disclosure_hash",
+    "snapshot_hash",
+    "image",
+    "model",
+    "reasoning_effort",
+    "workflow_mode",
+    "approval_mode",
+    "resources",
+    "operation_ids",
+    "created_at",
+    "expires_at",
+    "authority_source",
+    "one_time",
+    "approval_hash",
+})
+_CONSUMPTION_FIELDS = frozenset({
+    "schema_version",
+    "run_id",
+    "run_plan_hash",
+    "agent_creation_disclosure_hash",
+    "approval_hash",
+    "consumed_at",
+    "authority_source",
+    "consumption_hash",
+})
 
 
 class HarnessApprovalError(RuntimeError):
     """Raised when exact host-owned approval is unavailable or invalid."""
+
+
+def _timestamp(value: object, label: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise HarnessApprovalError(f"{label} is missing")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise HarnessApprovalError(f"{label} is invalid") from exc
+    if parsed.tzinfo is None:
+        raise HarnessApprovalError(f"{label} must include a timezone")
+    return parsed.astimezone(timezone.utc)
 
 
 def project_root_hash(root: str | Path) -> str:
@@ -57,6 +100,7 @@ class HarnessApprovalStore:
         if lexical != resolved:
             raise HarnessApprovalError("host state root cannot contain symlinks")
         digest = project_root_hash(self.project_root).removeprefix("sha256:")
+        self.state_root = lexical
         self.directory = lexical / "universal-research-mcp" / "harness-approvals" / digest
 
     def _path(self, run_id: str, suffix: str) -> Path:
@@ -64,23 +108,15 @@ class HarnessApprovalStore:
             raise HarnessApprovalError("invalid run ID")
         return self.directory / f"{run_id}.{suffix}.json"
 
-    def create(self, plan: Mapping[str, Any], *, expected_plan_hash: str, expires_at: str) -> dict[str, Any]:
-        normalized = validate_run_plan(plan)
-        if normalized["project_root_hash"] != project_root_hash(self.project_root):
-            raise HarnessApprovalError("plan is bound to another project")
-        if normalized["run_plan_hash"] != expected_plan_hash:
-            raise HarnessApprovalError("expected plan hash does not match")
-        try:
-            expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
-        except ValueError as exc:
-            raise HarnessApprovalError("approval expiry must be ISO-8601") from exc
-        if expiry.tzinfo is None or expiry.astimezone(timezone.utc) <= datetime.now(timezone.utc):
-            raise HarnessApprovalError("approval expiry must be timezone-qualified and in the future")
-        approval = {
-            "schema_version": APPROVAL_VERSION,
-            "project_root_hash": normalized["project_root_hash"],
+    def _plan_binding(self, normalized: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            "project_root_hash": project_root_hash(self.project_root),
             "run_id": normalized["run_id"],
             "run_plan_hash": normalized["run_plan_hash"],
+            "agent_creation_disclosure_hash": agent_creation_disclosure_hash(
+                normalized["agent_creation_disclosure"],
+                expected_agent_count=1,
+            ),
             "snapshot_hash": normalized["snapshot_hash"],
             "image": normalized["image"],
             "model": normalized["model"],
@@ -89,10 +125,29 @@ class HarnessApprovalStore:
             "approval_mode": normalized["approval_mode"],
             "resources": normalized["resources"],
             "operation_ids": [item["operation_id"] for item in normalized["operations"]],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": expiry.astimezone(timezone.utc).isoformat(),
             "authority_source": "explicit_local_cli_approval",
             "one_time": True,
+        }
+
+    def create(self, plan: Mapping[str, Any], *, expected_plan_hash: str, expires_at: str) -> dict[str, Any]:
+        normalized = validate_run_plan(plan)
+        if normalized["project_root_hash"] != project_root_hash(self.project_root):
+            raise HarnessApprovalError("plan is bound to another project")
+        if normalized["run_plan_hash"] != expected_plan_hash:
+            raise HarnessApprovalError("expected plan hash does not match")
+        disclosure_hash = agent_creation_disclosure_hash(
+            normalized["agent_creation_disclosure"],
+            expected_agent_count=1,
+        )
+        expiry = _timestamp(expires_at, "approval expiry")
+        if expiry <= datetime.now(timezone.utc):
+            raise HarnessApprovalError("approval expiry must be timezone-qualified and in the future")
+        approval = {
+            "schema_version": APPROVAL_VERSION,
+            **self._plan_binding(normalized),
+            "agent_creation_disclosure_hash": disclosure_hash,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": expiry.isoformat(),
         }
         approval["approval_hash"] = hash_without(approval, "approval_hash")
         self._create_json(self._path(normalized["run_id"], "grant"), approval)
@@ -105,35 +160,24 @@ class HarnessApprovalStore:
         grant_path = self._path(normalized["run_id"], "grant")
         consumed_path = self._path(normalized["run_id"], "consumed")
         grant = self._read_json(grant_path)
-        if grant.get("schema_version") != APPROVAL_VERSION:
+        if set(grant) != _APPROVAL_FIELDS or grant.get("schema_version") != APPROVAL_VERSION:
             raise HarnessApprovalError("approval schema is unsupported")
         if grant.get("approval_hash") != hash_without(grant, "approval_hash"):
             raise HarnessApprovalError("approval integrity hash mismatch")
-        expected = {
-            "project_root_hash": project_root_hash(self.project_root),
-            "run_id": normalized["run_id"],
-            "run_plan_hash": normalized["run_plan_hash"],
-            "snapshot_hash": normalized["snapshot_hash"],
-            "image": normalized["image"],
-            "model": normalized["model"],
-            "reasoning_effort": normalized["reasoning_effort"],
-            "approval_mode": normalized["approval_mode"],
-            "resources": normalized["resources"],
-            "operation_ids": [item["operation_id"] for item in normalized["operations"]],
-            "authority_source": "explicit_local_cli_approval",
-            "one_time": True,
-        }
-        if "workflow_mode" in grant:
-            expected["workflow_mode"] = normalized["workflow_mode"]
+        expected = self._plan_binding(normalized)
         if any(grant.get(key) != item for key, item in expected.items()):
             raise HarnessApprovalError("approval does not match the exact plan")
-        expiry = datetime.fromisoformat(str(grant["expires_at"]))
+        created = _timestamp(grant.get("created_at"), "approval created_at")
+        expiry = _timestamp(grant.get("expires_at"), "approval expires_at")
+        if expiry <= created:
+            raise HarnessApprovalError("approval expiry is not after creation")
         if expiry <= datetime.now(timezone.utc):
             raise HarnessApprovalError("approval has expired")
         consumption = {
             "schema_version": CONSUMPTION_VERSION,
             "run_id": normalized["run_id"],
             "run_plan_hash": normalized["run_plan_hash"],
+            "agent_creation_disclosure_hash": expected["agent_creation_disclosure_hash"],
             "approval_hash": grant["approval_hash"],
             "consumed_at": datetime.now(timezone.utc).isoformat(),
             "authority_source": "explicit_local_cli_approval",
@@ -143,6 +187,51 @@ class HarnessApprovalStore:
             self._create_json(consumed_path, consumption)
         except HarnessApprovalError as exc:
             raise HarnessApprovalError("approval was already consumed or cannot be marked safely") from exc
+        return consumption
+
+    def verify_consumed(self, plan: Mapping[str, Any]) -> dict[str, Any]:
+        """Verify that exact user approval was consumed before agent creation."""
+
+        normalized = validate_run_plan(plan)
+        grant = self._read_json(self._path(normalized["run_id"], "grant"))
+        consumption = self._read_json(self._path(normalized["run_id"], "consumed"))
+        expected_disclosure_hash = agent_creation_disclosure_hash(
+            normalized["agent_creation_disclosure"],
+            expected_agent_count=1,
+        )
+        if (
+            set(grant) != _APPROVAL_FIELDS
+            or grant.get("schema_version") != APPROVAL_VERSION
+            or grant.get("approval_hash") != hash_without(grant, "approval_hash")
+        ):
+            raise HarnessApprovalError("approval grant is invalid")
+        plan_binding = self._plan_binding(normalized)
+        if any(grant.get(key) != item for key, item in plan_binding.items()):
+            raise HarnessApprovalError("approval grant does not match the exact plan")
+        created = _timestamp(grant.get("created_at"), "approval created_at")
+        expiry = _timestamp(grant.get("expires_at"), "approval expires_at")
+        if expiry <= created:
+            raise HarnessApprovalError("approval expiry is not after creation")
+        if set(consumption) != _CONSUMPTION_FIELDS:
+            raise HarnessApprovalError("approval consumption schema is unsupported")
+        expected = {
+            "schema_version": CONSUMPTION_VERSION,
+            "run_id": normalized["run_id"],
+            "run_plan_hash": normalized["run_plan_hash"],
+            "agent_creation_disclosure_hash": expected_disclosure_hash,
+            "approval_hash": grant.get("approval_hash"),
+            "authority_source": "explicit_local_cli_approval",
+        }
+        if any(consumption.get(key) != item for key, item in expected.items()):
+            raise HarnessApprovalError("approval consumption does not match the exact plan")
+        if consumption.get("consumption_hash") != hash_without(
+            consumption,
+            "consumption_hash",
+        ):
+            raise HarnessApprovalError("approval consumption integrity hash mismatch")
+        consumed_at = _timestamp(consumption.get("consumed_at"), "approval consumed_at")
+        if consumed_at < created or consumed_at >= expiry:
+            raise HarnessApprovalError("approval was not consumed during its valid interval")
         return consumption
 
     def _read_json(self, path: Path) -> dict[str, Any]:

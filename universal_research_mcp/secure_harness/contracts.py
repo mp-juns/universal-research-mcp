@@ -14,10 +14,14 @@ from pathlib import Path, PurePosixPath
 import re
 from typing import Any, Mapping
 
+from universal_research_mcp.governance.agent_creation import (
+    AgentCreationDisclosureError,
+    normalize_agent_creation_disclosure,
+)
 from universal_research_mcp.governance.hashing import hash_without
 
 
-RUN_PLAN_VERSION = "research-run-plan/1.0"
+RUN_PLAN_VERSION = "research-run-plan/2.0"
 OPERATION_VERSION = "worker-operation/1.0"
 CLAIM_VERSION = "claim-inventory/1.0"
 APPROVAL_MODES = frozenset({"plan_once", "sensitive_stage", "each_operation"})
@@ -184,7 +188,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         "schema_version", "run_id", "workflow_id", "project_root_hash", "model",
         "reasoning_effort", "workflow_mode", "verification_mode", "approval_mode", "image",
         "snapshot_hash", "resources", "operations", "created_at", "expires_at",
-        "run_plan_hash",
+        "agent_creation_disclosure", "run_plan_hash",
     }
     unknown = sorted(set(value) - allowed)
     if unknown:
@@ -224,6 +228,27 @@ def validate_run_plan(value: object) -> dict[str, Any]:
     identities = [item["operation_id"] for item in normalized_operations]
     if len(identities) != len(set(identities)):
         raise HarnessContractError("operation IDs must be unique")
+    try:
+        disclosure = normalize_agent_creation_disclosure(
+            value.get("agent_creation_disclosure"),
+            expected_agent_count=1,
+        )
+    except AgentCreationDisclosureError as exc:
+        raise HarnessContractError(str(exc)) from exc
+    disclosed_scope = disclosure["scope"]
+    expected_paths = sorted({
+        path for operation in normalized_operations for path in operation["paths"]
+    })
+    expected_writes = any(
+        operation["kind"] in {"patch", "test", "build", "experiment"}
+        for operation in normalized_operations
+    )
+    if sorted(disclosed_scope["paths"]) != expected_paths:
+        raise HarnessContractError("agent creation disclosure paths do not match the plan")
+    if disclosed_scope["network"] is not False:
+        raise HarnessContractError("agent creation disclosure cannot grant worker network")
+    if disclosed_scope["writes"] is not expected_writes:
+        raise HarnessContractError("agent creation disclosure write scope does not match the plan")
     normalized = {
         "schema_version": RUN_PLAN_VERSION,
         "run_id": _identifier(value.get("run_id"), "run_id"),
@@ -234,6 +259,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         "workflow_mode": workflow_mode,
         "verification_mode": verification,
         "approval_mode": approval,
+        "agent_creation_disclosure": disclosure,
         "image": image,
         "snapshot_hash": snapshot_hash,
         "resources": _resources(value.get("resources")),
@@ -245,11 +271,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
     expires = datetime.fromisoformat(normalized["expires_at"])
     if expires <= created:
         raise HarnessContractError("run plan must expire after creation")
-    # Legacy 1.0 plans did not carry workflow_mode. Preserve their immutable
-    # hash while treating them as lightweight; newly built plans always carry it.
     material = {**normalized, "run_plan_hash": None}
-    if "workflow_mode" not in value:
-        material.pop("workflow_mode")
     computed = hash_without(material, "run_plan_hash")
     supplied = value.get("run_plan_hash")
     if supplied is not None and supplied != computed:

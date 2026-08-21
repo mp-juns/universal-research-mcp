@@ -38,6 +38,7 @@ def packet(
     snapshot: str = "sha256:snapshot",
     max_parallelism: int = 2,
     max_cost: float = 1.0,
+    agent_count: int = 2,
 ) -> dict:
     manifest = load_registry()[agent_id]
     scope = {
@@ -71,10 +72,31 @@ def packet(
         "mode": mode,
         "scope": scope,
         "evidence_boundary": evidence,
+        "agent_creation_disclosure": {
+            "schema_version": "agent-creation-disclosure/1.0",
+            "reason": "Use isolated agents for the explicitly approved harness workflow.",
+            "delegated_tasks": [
+                f"Perform governed harness task {index + 1}." for index in range(agent_count)
+            ],
+            "agent_count": agent_count,
+            "direct_execution_alternative": (
+                "The host could perform these reviews sequentially without agents."
+            ),
+            "expected_additional_tokens": {
+                "minimum": 0, "likely": 1000, "maximum": 20_000,
+            },
+            "expected_elapsed_minutes": {
+                "minimum": 1, "likely": 5, "maximum": 30,
+            },
+            "scope": {
+                "paths": ["data/events"], "network": False,
+                "model_execution": True, "writes": False,
+            },
+        },
         "authority": {
-            "approval_refs": [], "authority_basis": "test approval",
+            "approval_refs": ["approval_agent_creation"], "authority_basis": "test approval",
             "scope_hash": "pending", "plan_refs": ["plan_fixture"],
-            "user_opt_ins": [],
+            "user_opt_ins": ["agent_creation"],
         },
         "failure_policy": {
             "stop": "blocking_only", "record": "ask", "detail": "redacted",
@@ -138,9 +160,9 @@ def task_map(packets: list[dict]) -> dict[str, dict]:
 
 def test_governor_runs_before_workers_and_independent_workers_are_parallel() -> None:
     packets = [
-        packet("retrieval_governor"),
-        packet("scope_and_cost_governor", max_parallelism=1),
-        packet("analysis_objectivity_auditor"),
+        packet("retrieval_governor", agent_count=3),
+        packet("scope_and_cost_governor", max_parallelism=1, agent_count=3),
+        packet("analysis_objectivity_auditor", agent_count=3),
     ]
     tasks = task_map(packets)
     barrier = threading.Barrier(2)
@@ -221,9 +243,9 @@ def test_packet_cost_estimate_is_mandatory_when_no_explicit_map_is_supplied() ->
 
 def test_first_execution_failure_stops_new_submission_without_retry_or_force_kill() -> None:
     packets = [
-        packet("scope_and_cost_governor", max_parallelism=1),
-        packet("retrieval_governor", max_parallelism=1),
-        packet("analysis_objectivity_auditor", max_parallelism=1),
+        packet("scope_and_cost_governor", max_parallelism=1, agent_count=3),
+        packet("retrieval_governor", max_parallelism=1, agent_count=3),
+        packet("analysis_objectivity_auditor", max_parallelism=1, agent_count=3),
     ]
     tasks = task_map(packets)
     calls: list[str] = []
@@ -273,11 +295,12 @@ def test_harness_blocks_contradictory_passing_governor_before_worker() -> None:
 
 
 def test_critical_batch_requires_exactly_four_same_snapshot_reviewers() -> None:
-    governor = packet(
+    incomplete_governor = packet(
         "scope_and_cost_governor", mode="final_review", max_parallelism=1,
+        agent_count=4,
     )
-    incomplete = [governor, *[
-        packet(agent_id, mode="final_review", max_parallelism=4)
+    incomplete = [incomplete_governor, *[
+        packet(agent_id, mode="final_review", max_parallelism=4, agent_count=4)
         for agent_id in sorted(CRITICAL)[:-1]
     ]]
     calls: list[str] = []
@@ -287,8 +310,12 @@ def test_critical_batch_requires_exactly_four_same_snapshot_reviewers() -> None:
     assert blocked["reason"] == "preflight_rejected"
     assert calls == []
 
-    complete = [governor, *[
-        packet(agent_id, mode="final_review", max_parallelism=4)
+    complete_governor = packet(
+        "scope_and_cost_governor", mode="final_review", max_parallelism=1,
+        agent_count=5,
+    )
+    complete = [complete_governor, *[
+        packet(agent_id, mode="final_review", max_parallelism=4, agent_count=5)
         for agent_id in sorted(CRITICAL)
     ]]
     tasks = task_map(complete)

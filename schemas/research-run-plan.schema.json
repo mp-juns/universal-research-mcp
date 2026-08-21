@@ -3,9 +3,9 @@
   "$id": "https://github.com/mp-juns/universal-research-mcp/schemas/research-run-plan.schema.json",
   "title": "Sealed research run plan",
   "type": "object",
-  "required": ["schema_version", "run_id", "workflow_id", "project_root_hash", "snapshot_hash", "model", "reasoning_effort", "verification_mode", "approval_mode", "image", "resources", "operations", "created_at", "expires_at", "run_plan_hash"],
+  "required": ["schema_version", "run_id", "workflow_id", "project_root_hash", "snapshot_hash", "model", "reasoning_effort", "verification_mode", "approval_mode", "agent_creation_disclosure", "image", "resources", "operations", "created_at", "expires_at", "run_plan_hash"],
   "properties": {
-    "schema_version": {"const": "research-run-plan/1.0"},
+    "schema_version": {"const": "research-run-plan/2.0"},
     "run_id": {"type": "string", "minLength": 1},
     "workflow_id": {"type": "string", "minLength": 1},
     "project_root_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
@@ -15,12 +15,72 @@
     "workflow_mode": {"enum": ["lightweight", "benchmark", "final_review"]},
     "verification_mode": {"enum": ["adaptive", "strict"]},
     "approval_mode": {"enum": ["plan_once", "sensitive_stage", "each_operation"]},
+    "agent_creation_disclosure": {"$ref": "#/$defs/agent_creation_disclosure"},
     "image": {"type": "string", "pattern": "@sha256:[0-9a-f]{64}$"},
     "resources": {"type": "object"},
     "operations": {"type": "array", "minItems": 1, "items": {"type": "object"}},
     "created_at": {"type": "string", "format": "date-time"},
     "expires_at": {"type": "string", "format": "date-time"},
     "run_plan_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "agent_creation_disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "reason", "delegated_tasks", "agent_count",
+        "direct_execution_alternative", "expected_additional_tokens",
+        "expected_elapsed_minutes", "scope"
+      ],
+      "properties": {
+        "schema_version": {"const": "agent-creation-disclosure/1.0"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "delegated_tasks": {
+          "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 4000}
+        },
+        "agent_count": {"const": 1},
+        "direct_execution_alternative": {
+          "type": "string", "minLength": 1, "maxLength": 4000
+        },
+        "expected_additional_tokens": {"$ref": "#/$defs/nonnegative_integer_range"},
+        "expected_elapsed_minutes": {"$ref": "#/$defs/nonnegative_range"},
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["paths", "network", "model_execution", "writes"],
+          "properties": {
+            "paths": {
+              "type": "array", "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "network": {"const": false},
+            "model_execution": {"const": true},
+            "writes": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "nonnegative_integer_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "likely", "maximum"],
+      "properties": {
+        "minimum": {"type": "integer", "minimum": 0},
+        "likely": {"type": "integer", "minimum": 0},
+        "maximum": {"type": "integer", "minimum": 0}
+      }
+    },
+    "nonnegative_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "likely", "maximum"],
+      "properties": {
+        "minimum": {"type": "number", "minimum": 0},
+        "likely": {"type": "number", "minimum": 0},
+        "maximum": {"type": "number", "minimum": 0}
+      }
+    }
   },
   "additionalProperties": false
 }
