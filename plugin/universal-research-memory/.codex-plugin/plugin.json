@@ -1,6 +1,6 @@
 {
   "name": "universal-research-memory",
-  "version": "0.8.1+codex.20260821233705",
+  "version": "0.8.2+codex.20260822055937",
   "description": "Codex-only provenance-first research memory, governed ingestion, and workflows.",
   "homepage": "https://github.com/mp-juns/universal-research-mcp",
   "repository": "https://github.com/mp-juns/universal-research-mcp",

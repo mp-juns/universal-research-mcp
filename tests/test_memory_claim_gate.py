@@ -4,6 +4,8 @@ import asyncio
 import hashlib
 from pathlib import Path
 
+import pytest
+
 from universal_research_mcp import server
 from universal_research_mcp.core.input import append_record, register_source
 from universal_research_mcp.indexing.lexical import ensure_lexical_index, initialize_project
@@ -99,6 +101,44 @@ def test_evidence_eligibility_is_exposed_and_requires_two_current_records_for_re
         assert len(eligible["evidence"]) == 2
         fetched = server.memory_fetch_evidence(**references[0], context_lines=0)
         assert fetched["claim_gate_reference"] == references[0]
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_identity_gate_accepts_source_less_canonical_records_but_not_forged_null_locators(
+    tmp_path: Path,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _configured_project(tmp_path / "research")
+
+        result = server.memory_search_candidates(
+            "approval_claim_gate", mode="lexical",
+        )
+        approval = next(
+            item for item in result["results"]
+            if item["event_id"] == "approval_claim_gate"
+        )
+        assert result["routing"]["identity_gate"]["status"] == "passed"
+        assert approval["canonical_identity_verified"] is True
+        assert approval["evidence_eligible"] is False
+        assert approval["path"] is None
+
+        evidence = server.memory_search_candidates(
+            "Claim gate evidence", mode="lexical", status="completed",
+        )["results"][0]
+        forged = dict(evidence)
+        forged.update({
+            "path": None,
+            "heading": None,
+            "start_line": None,
+            "end_line": None,
+            "source_sha256": None,
+        })
+        with pytest.raises(
+            RuntimeError, match="candidate locator failed the canonical identity gate",
+        ):
+            server._apply_candidate_identity_gate([forged])
     finally:
         server.configure_runtime(*prior)
 

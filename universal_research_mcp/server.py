@@ -704,6 +704,14 @@ def _locator_matches_projection(db: sqlite3.Connection, locator: dict[str, Any])
         locator.get("start_line"),
         locator.get("end_line"),
     )
+    event_match = db.execute(
+        """
+        SELECT 1 FROM events
+        WHERE event_id = ? AND source_path IS ? AND source_sha256 IS ?
+          AND line_start IS ? AND line_end IS ?
+        """,
+        values,
+    ).fetchone()
     source_match = db.execute(
         """
         SELECT 1 FROM event_sources
@@ -721,7 +729,11 @@ def _locator_matches_projection(db: sqlite3.Connection, locator: dict[str, Any])
         """,
         values,
     ).fetchone()
-    return source_match is not None or passage_match is not None
+    return (
+        event_match is not None
+        or source_match is not None
+        or passage_match is not None
+    )
 
 
 def _apply_candidate_identity_gate(results: list[dict[str, Any]]) -> dict[str, Any]:
