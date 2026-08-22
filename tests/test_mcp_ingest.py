@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 from pathlib import Path
+import sqlite3
 
 import pytest
 
@@ -103,6 +104,136 @@ def test_mcp_ingest_commits_exact_draft_and_refreshes_derived_indexes(
             server.research_commit_ingest(
                 prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"],
             )
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_mcp_ingest_indexes_and_fetches_every_source_ref(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root = tmp_path / "research"
+        state_root = tmp_path / "host-state"
+        monkeypatch.setenv(
+            "UNIVERSAL_RESEARCH_INGEST_APPROVAL_STATE_ROOT", str(state_root)
+        )
+        initialize_project(root)
+        append_record(root, _approval(), approval_bootstrap=True)
+        configure_demo(root, auto_refresh=True)
+
+        code = root / "src/release_gate.py"
+        build = root / "pyproject.toml"
+        code.parent.mkdir(parents=True)
+        code.write_text(
+            "def release_gate() -> str:\n    return 'code-source-token'\n",
+            encoding="utf-8",
+        )
+        build.write_text(
+            "[project]\nname = \"fixture\"\nbuild-token = \"verified\"\n",
+            encoding="utf-8",
+        )
+        code_hash = _sha256(code)
+        build_hash = _sha256(build)
+        record = {
+            **_record("src/release_gate.py", code_hash),
+            "record_id": "observation_code_build",
+            "source_refs": [
+                {
+                    "artifact_revision_id": f"artifact_code@sha256:{code_hash}",
+                    "locator": {
+                        "kind": "line_range",
+                        "path": "src/release_gate.py",
+                        "start": 1,
+                        "end": 2,
+                        "heading": "Release gate code",
+                    },
+                    "verification_status": "integrity_verified",
+                },
+                {
+                    "artifact_revision_id": f"artifact_build@sha256:{build_hash}",
+                    "locator": {
+                        "kind": "line_range",
+                        "path": "pyproject.toml",
+                        "start": 1,
+                        "end": 3,
+                        "heading": "Build configuration",
+                    },
+                    "verification_status": "integrity_verified",
+                },
+            ],
+            "artifact_refs": ["artifact_code", "artifact_build"],
+            "payload": {"summary": "Code and build files were ingested together."},
+        }
+        server.configure_runtime(root)
+        prepared = server.research_prepare_ingest(
+            record,
+            "approval_ingest",
+            [
+                {
+                    "path": "src/release_gate.py",
+                    "source_id": "src_release_gate",
+                    "source_type": "python",
+                },
+                {
+                    "path": "pyproject.toml",
+                    "source_id": "src_pyproject",
+                    "source_type": "toml",
+                },
+            ],
+        )
+        receipt = _receipt(root, prepared, state_root)
+        committed = server.research_commit_ingest(
+            prepared["draft_id"], prepared["draft_sha256"], receipt["receipt_id"]
+        )
+
+        assert committed["derived_refresh"]["lexical"]["status"] == "current"
+        assert committed["derived_refresh"]["semantic"]["status"] == "current"
+        with sqlite3.connect(root / "data/index/research.sqlite") as db:
+            projected = db.execute(
+                "SELECT source_path, source_sha256 FROM event_sources "
+                "WHERE event_id = ? ORDER BY source_ordinal",
+                ("observation_code_build",),
+            ).fetchall()
+            passages = db.execute(
+                "SELECT source_path FROM source_passage_fts "
+                "WHERE event_id = ? ORDER BY source_path",
+                ("observation_code_build",),
+            ).fetchall()
+        assert projected == [
+            ("src/release_gate.py", code_hash),
+            ("pyproject.toml", build_hash),
+        ]
+        assert passages == [("pyproject.toml",), ("src/release_gate.py",)]
+
+        for path, end, digest, token in (
+            ("src/release_gate.py", 2, code_hash, "code-source-token"),
+            ("pyproject.toml", 3, build_hash, "build-token"),
+        ):
+            evidence = server.memory_fetch_evidence(
+                path,
+                1,
+                end,
+                0,
+                event_id="observation_code_build",
+                expected_sha256=digest,
+            )
+            assert evidence["integrity_status"] == "matched"
+            assert token in evidence["content"]
+            assert server.indexed_source_hashes(
+                path, "observation_code_build"
+            ) == [digest]
+
+        with sqlite3.connect(root / "data/index/semantic.sqlite") as db:
+            semantic_paths = db.execute(
+                "SELECT source_path FROM passage_embeddings "
+                "WHERE event_id = ? ORDER BY source_path",
+                ("observation_code_build",),
+            ).fetchall()
+        assert semantic_paths == [("pyproject.toml",), ("src/release_gate.py",)]
+        assert server.memory_search_candidates(
+            "build-token", mode="lexical"
+        )["results"][0]["path"] == "pyproject.toml"
     finally:
         server.configure_runtime(*prior)
 

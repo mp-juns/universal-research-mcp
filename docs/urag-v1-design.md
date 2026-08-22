@@ -15,5 +15,5 @@ those operations only after scope validation.
 The Codex adapter renders an already validated packet into a host-owned request
 and captures a structured decision without access to the private host scheduler.
 Provider-backed harness code and non-Codex adapters are retained design
-prototypes, not supported runtime integrations in the 0.8.0 release. Any future
+prototypes, not supported runtime integrations in the 0.8.1 release. Any future
 host keeps its own model entitlement and tool permission layer.

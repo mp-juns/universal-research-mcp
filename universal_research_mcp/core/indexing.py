@@ -24,7 +24,11 @@ def _summary(record: dict[str, Any]) -> str:
     return f"{record.get('record_kind', 'research')} record {record.get('record_id', 'unknown')}"
 
 
-def _source(record: dict[str, Any]) -> dict[str, Any]:
+def _sources(record: dict[str, Any]) -> list[dict[str, Any]]:
+    """Project every valid Core source reference in canonical order."""
+
+    projected: list[dict[str, Any]] = []
+    positions: dict[tuple[Any, ...], int] = {}
     for evidence in record.get("source_refs", []):
         if not isinstance(evidence, dict):
             continue
@@ -39,16 +43,37 @@ def _source(record: dict[str, Any]) -> dict[str, Any]:
             start = None
         if not isinstance(end, int):
             end = None
-        return {
+        source = {
             "source_path": locator["path"],
             "source_sha256": match.group(1) if match else None,
-            "heading": str(locator.get("heading") or record.get("record_kind") or "Research record"),
+            "heading": str(
+                locator.get("heading")
+                or record.get("record_kind")
+                or "Research record"
+            ),
             "line_start": start,
             "line_end": end,
             "legacy_import": False,
-            "requires_human_review": evidence.get("verification_status") != "human_verified",
+            "requires_human_review": (
+                evidence.get("verification_status") != "human_verified"
+            ),
         }
-    return {}
+        identity = (
+            source["source_path"],
+            source["source_sha256"],
+            source["line_start"],
+            source["line_end"],
+        )
+        existing = positions.get(identity)
+        if existing is None:
+            positions[identity] = len(projected)
+            projected.append(source)
+        else:
+            projected[existing]["requires_human_review"] = bool(
+                projected[existing]["requires_human_review"]
+                or source["requires_human_review"]
+            )
+    return projected
 
 
 def core_record_to_index_document(record: dict[str, Any]) -> dict[str, Any]:
@@ -62,6 +87,7 @@ def core_record_to_index_document(record: dict[str, Any]) -> dict[str, Any]:
     if not is_core_record(record):
         raise ValueError("core_record_to_index_document requires schema_version core/1.0")
     payload = record.get("payload") or {}
+    sources = _sources(record)
     return {
         "event_id": record["record_id"],
         "date": str(record["occurred_at"])[:10],
@@ -80,7 +106,10 @@ def core_record_to_index_document(record: dict[str, Any]) -> dict[str, Any]:
             for artifact_ref in record.get("artifact_refs", [])
             if isinstance(artifact_ref, str)
         ],
-        "source": _source(record),
+        # Keep the first source in the legacy slot while exposing the complete
+        # ordered projection to newer derived-index builders.
+        "source": sources[0] if sources else {},
+        "sources": sources,
         "core_payload": payload,
     }
 

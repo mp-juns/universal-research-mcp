@@ -73,9 +73,13 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
             database.parent.mkdir(parents=True)
             with sqlite3.connect(database) as connection:
                 connection.execute("CREATE TABLE events (event_id TEXT, source_path TEXT, source_sha256 TEXT)")
+                connection.execute(
+                    "CREATE TABLE event_sources "
+                    "(event_id TEXT, source_path TEXT, source_sha256 TEXT)"
+                )
                 connection.execute("CREATE TABLE sources (source_path TEXT, source_sha256 TEXT)")
                 connection.execute(
-                    "INSERT INTO events VALUES (?, ?, ?)",
+                    "INSERT INTO event_sources VALUES (?, ?, ?)",
                     ("event_1", "docs/evidence.md", digest),
                 )
             server.configure_runtime(root, database)
@@ -100,9 +104,13 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
             database.parent.mkdir(parents=True)
             with sqlite3.connect(database) as connection:
                 connection.execute("CREATE TABLE events (event_id TEXT, source_path TEXT, source_sha256 TEXT)")
+                connection.execute(
+                    "CREATE TABLE event_sources "
+                    "(event_id TEXT, source_path TEXT, source_sha256 TEXT)"
+                )
                 connection.execute("CREATE TABLE sources (source_path TEXT, source_sha256 TEXT)")
                 connection.executemany(
-                    "INSERT INTO events VALUES (?, ?, ?)",
+                    "INSERT INTO event_sources VALUES (?, ?, ?)",
                     [
                         ("event_old", "docs/evidence.md", "0" * 64),
                         ("event_current", "docs/evidence.md", current),

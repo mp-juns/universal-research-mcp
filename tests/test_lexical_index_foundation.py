@@ -13,6 +13,7 @@ from jsonschema import Draft202012Validator
 import universal_research_mcp.tools.build_research_ledger_index as ledger_builder
 from universal_research_mcp import server
 from universal_research_mcp.indexing.lexical import (
+    LEXICAL_SCHEMA_VERSION,
     ensure_lexical_index,
     index_status,
     initialize_project,
@@ -121,6 +122,29 @@ class LexicalIndexFoundationTests(unittest.TestCase):
             initialize_project(root)
 
             self.assertEqual(manifest.read_text(encoding="utf-8"), original)
+
+    def test_old_schema_is_stale_and_rebuilt_without_canonical_change(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initialize_project(root)
+            database = root / "data/index/research.sqlite"
+            with sqlite3.connect(database) as db:
+                db.execute(
+                    "UPDATE metadata SET value = '1.0' WHERE key = 'schema_version'"
+                )
+
+            stale = index_status(root)
+            self.assertEqual(stale["status"], "stale")
+            self.assertEqual(stale["reason"], "lexical index schema version mismatch")
+            rebuilt = ensure_lexical_index(root)
+
+            self.assertTrue(rebuilt["executed"])
+            self.assertEqual(rebuilt["decision"], "refreshed")
+            with sqlite3.connect(database) as db:
+                schema_version = db.execute(
+                    "SELECT value FROM metadata WHERE key = 'schema_version'"
+                ).fetchone()
+            self.assertEqual(schema_version, (LEXICAL_SCHEMA_VERSION,))
 
     def test_populated_fixture_uses_compatibility_builder(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
