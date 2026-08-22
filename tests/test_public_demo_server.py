@@ -222,7 +222,7 @@ def test_public_server_verifies_manifest_before_streamable_http(tmp_path: Path) 
         restrict.assert_called_once_with()
         run.assert_called_once_with(transport="streamable-http")
         assert server.PUBLIC_DEMO_STATE["status"] == "verified"
-        assert server.public_demo_status()["application_version"] == "0.8.1"
+        assert server.public_demo_status()["application_version"] == "0.8.2"
     finally:
         server.configure_runtime(*previous_paths)
         server.PUBLIC_DEMO_STATE = previous_state
