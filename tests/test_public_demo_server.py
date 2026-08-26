@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from universal_research_mcp import server
+from universal_research_mcp import __version__, server
 from universal_research_mcp.cli import main as cli_main
 from universal_research_mcp.core.input import append_record, register_source
 from universal_research_mcp.indexing.lexical import ensure_lexical_index, initialize_project
@@ -222,7 +222,7 @@ def test_public_server_verifies_manifest_before_streamable_http(tmp_path: Path) 
         restrict.assert_called_once_with()
         run.assert_called_once_with(transport="streamable-http")
         assert server.PUBLIC_DEMO_STATE["status"] == "verified"
-        assert server.public_demo_status()["application_version"] == "0.8.2"
+        assert server.public_demo_status()["application_version"] == __version__
     finally:
         server.configure_runtime(*previous_paths)
         server.PUBLIC_DEMO_STATE = previous_state

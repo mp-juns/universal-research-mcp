@@ -1,6 +1,6 @@
 # Universal Research Framework Architecture
 
-> Public integration scope for 0.8.2 is Codex only. Provider-backed runtime
+> Public integration scope for 0.8.3 is Codex only. Provider-backed runtime
 > modules below are retained as repository prototypes, excluded from the PyPI
 > wheel, and not covered by a public compatibility promise.
 
