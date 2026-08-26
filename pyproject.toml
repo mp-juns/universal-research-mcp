@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.8.4"
+version = "0.8.5"
 description = "Governed MCP for provenance-first research memory, evidence re-verification, and controlled canonical ingestion."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -27,7 +27,7 @@ dependencies = ["mcp>=1.27,<2"]
 Homepage = "https://github.com/mp-juns/universal-research-mcp"
 Repository = "https://github.com/mp-juns/universal-research-mcp"
 Issues = "https://github.com/mp-juns/universal-research-mcp/issues"
-Documentation = "https://github.com/mp-juns/universal-research-mcp#readme"
+Documentation = "https://github.com/mp-juns/universal-research-mcp/blob/main/docs/user-guide.md"
 
 [project.optional-dependencies]
 test = [
@@ -96,6 +96,7 @@ enable_error_code = ["arg-type", "assignment", "attr-defined", "operator", "unio
   "docs/secure-harness.md",
   "docs/semantic-retrieval.md",
   "docs/security.md",
+  "docs/user-guide.md",
 ]
 "share/universal-research-mcp/docs/decisions" = ["docs/decisions/*.md"]
 "share/universal-research-mcp/schemas" = ["schemas/*.json"]

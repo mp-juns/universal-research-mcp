@@ -82,6 +82,7 @@ class PublicDistributionTests(unittest.TestCase):
                 "docs/secure-harness.md",
                 "docs/semantic-retrieval.md",
                 "docs/security.md",
+                "docs/user-guide.md",
             },
         )
         self.assertEqual(
@@ -103,6 +104,7 @@ class PublicDistributionTests(unittest.TestCase):
         self.assertIn("universal_research_mcp/secure_harness/worker.py", REQUIRED_RUNTIME_FILES)
         self.assertNotIn("universal_research_mcp/runtime_server.py", REQUIRED_RUNTIME_FILES)
         self.assertIn("docs/host-integration.md", REQUIRED_BUNDLE_FILES)
+        self.assertIn("docs/user-guide.md", REQUIRED_BUNDLE_FILES)
         self.assertNotIn("docs/agent-runtime.md", REQUIRED_BUNDLE_FILES)
         self.assertEqual(
             {

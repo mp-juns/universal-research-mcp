@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "urmcp"
-version = "0.8.4"
+version = "0.8.5"
 description = "Short PyPI install alias for Universal Research MCP."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,12 +21,12 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-dependencies = ["universal-research-mcp==0.8.4"]
+dependencies = ["universal-research-mcp==0.8.5"]
 
 [project.urls]
 Homepage = "https://github.com/mp-juns/universal-research-mcp"
 Repository = "https://github.com/mp-juns/universal-research-mcp"
-Documentation = "https://github.com/mp-juns/universal-research-mcp#readme"
+Documentation = "https://github.com/mp-juns/universal-research-mcp/blob/main/docs/user-guide.md"
 Issues = "https://github.com/mp-juns/universal-research-mcp/issues"
 
 [project.scripts]
