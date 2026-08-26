@@ -1,0 +1,485 @@
+{
+  "accounting": {
+    "abc_normalized_list_cost_usd": 0.1642216,
+    "actual_provider_billing_usd": null,
+    "all_known_normalized_list_cost_usd": 0.2099096,
+    "fixed_normalization_rates_per_million_tokens": {
+      "cached_input": 0.2,
+      "input": 2,
+      "output": 12
+    },
+    "known_plus_unknown_reservation_usd": 0.9185176,
+    "normalization_is_not_current_pricing_or_actual_billing": true,
+    "preliminary_diagnostic_processes": 7,
+    "provider_internal_request_count": null,
+    "real_codex_processes_including_preliminary_diagnostics": 10,
+    "reservation_is_not_verified_provider_usage_or_billing": true,
+    "tool_backed_abc_processes": 3,
+    "unknown_usage_attempt_count": 4,
+    "unknown_usage_reserved_usd": 0.708608
+  },
+  "arms": [
+    {
+      "answer": {
+        "behavior": "answer",
+        "evidence_refs": [
+          {
+            "end_line": 2,
+            "integrity_status": "matched",
+            "path": "docs/primary.md",
+            "start_line": 1
+          },
+          {
+            "end_line": 2,
+            "integrity_status": "matched",
+            "path": "docs/corroboration.md",
+            "start_line": 1
+          },
+          {
+            "end_line": 3,
+            "integrity_status": "matched",
+            "path": "data/events/daily/2026-08-13/events.jsonl",
+            "start_line": 1
+          },
+          {
+            "end_line": 17,
+            "integrity_status": "matched",
+            "path": "data/index/index-health.json",
+            "start_line": 11
+          }
+        ],
+        "material_claim_emitted": true,
+        "schema_version": "benchmark-automation-answer/1.0",
+        "task_id": "abc2auto.t001",
+        "uncertainty": "resolved",
+        "verdict": "supported"
+      },
+      "attempt": "attempt-08",
+      "condition": "filesystem",
+      "declared_input_stop_ceiling": 64000,
+      "evaluation": {
+        "audit_ready_success": 0,
+        "benchmark_id": "mcp_abc_v2_automation_v1",
+        "confirmatory_inference_eligible": false,
+        "errors": [
+          "evidence_binding_precise"
+        ],
+        "evaluation_mode": "deterministic_exact",
+        "human_evaluator_count": 0,
+        "metrics": {
+          "behavior_correct": 1,
+          "contract_valid": 1,
+          "evidence_binding_complete": 1,
+          "evidence_binding_precise": 0,
+          "material_claim_safety": 1,
+          "semantic_decision_correct": 1,
+          "task_binding_correct": 1,
+          "uncertainty_correct": 1,
+          "verdict_correct": 1
+        },
+        "schema_version": "benchmark-automation-evaluation/1.0",
+        "task_id": "abc2auto.t001",
+        "track": "automation_exploratory"
+      },
+      "fixture_fingerprint": "sha256:925cd08f02a8f63b37b769e03c173dfb8b9094643e9e43ba7cd94ddd26962f2c",
+      "integration_success": false,
+      "latency_ms": 27081,
+      "normalized_list_cost_usd": 0.045804,
+      "original_ceiling_stop": true,
+      "run_status": "stopped",
+      "source_result_hash": "sha256:6234a34634d23adec97bdfeecdcf8bf8dc1b113968834484a7c0ebb8bf7bb320",
+      "successful_tool_calls": 6,
+      "tool_policy": {
+        "blockers": [],
+        "failed_tool_counts": {},
+        "observed_tool_counts": {
+          "fs_inventory": 1,
+          "fs_read": 5
+        },
+        "passed": true
+      },
+      "usage": {
+        "cached_input_tokens": 52480,
+        "input_tokens": 66378,
+        "output_tokens": 626,
+        "reasoning_output_tokens": 107,
+        "total_tokens": 67004
+      }
+    },
+    {
+      "answer": {
+        "behavior": "abstain",
+        "evidence_refs": [
+          {
+            "end_line": 2,
+            "integrity_status": "matched",
+            "path": "docs/primary.md",
+            "start_line": 1
+          },
+          {
+            "end_line": 2,
+            "integrity_status": "matched",
+            "path": "docs/corroboration.md",
+            "start_line": 1
+          }
+        ],
+        "material_claim_emitted": false,
+        "schema_version": "benchmark-automation-answer/1.0",
+        "task_id": "abc2auto.t001",
+        "uncertainty": "unresolved",
+        "verdict": "not_supportable"
+      },
+      "attempt": "attempt-09",
+      "condition": "mcp_evidence_only",
+      "declared_input_stop_ceiling": 128000,
+      "evaluation": {
+        "audit_ready_success": 0,
+        "benchmark_id": "mcp_abc_v2_automation_v1",
+        "confirmatory_inference_eligible": false,
+        "errors": [
+          "behavior_correct",
+          "verdict_correct",
+          "semantic_decision_correct",
+          "material_claim_safety",
+          "uncertainty_correct"
+        ],
+        "evaluation_mode": "deterministic_exact",
+        "human_evaluator_count": 0,
+        "metrics": {
+          "behavior_correct": 0,
+          "contract_valid": 1,
+          "evidence_binding_complete": 1,
+          "evidence_binding_precise": 1,
+          "material_claim_safety": 0,
+          "semantic_decision_correct": 0,
+          "task_binding_correct": 1,
+          "uncertainty_correct": 0,
+          "verdict_correct": 0
+        },
+        "schema_version": "benchmark-automation-evaluation/1.0",
+        "task_id": "abc2auto.t001",
+        "track": "automation_exploratory"
+      },
+      "fixture_fingerprint": "sha256:925cd08f02a8f63b37b769e03c173dfb8b9094643e9e43ba7cd94ddd26962f2c",
+      "integration_success": true,
+      "latency_ms": 23712,
+      "normalized_list_cost_usd": 0.054596,
+      "original_ceiling_stop": false,
+      "run_status": "completed",
+      "source_result_hash": "sha256:4127dd942ecf8dc5f4cb8fcfc6ddf92e0403f5f65a4c44445c034a60dd1f7067",
+      "successful_tool_calls": 5,
+      "tool_policy": {
+        "blockers": [],
+        "failed_tool_counts": {},
+        "observed_tool_counts": {
+          "fs_inventory": 1,
+          "memory_fetch_evidence": 2,
+          "memory_search_candidates": 1,
+          "research_index_status": 1
+        },
+        "passed": true
+      },
+      "usage": {
+        "cached_input_tokens": 30720,
+        "input_tokens": 51226,
+        "output_tokens": 620,
+        "reasoning_output_tokens": 176,
+        "total_tokens": 51846
+      }
+    },
+    {
+      "answer": {
+        "behavior": "answer",
+        "evidence_refs": [
+          {
+            "end_line": 2,
+            "integrity_status": "matched",
+            "path": "docs/primary.md",
+            "start_line": 1
+          },
+          {
+            "end_line": 2,
+            "integrity_status": "matched",
+            "path": "docs/corroboration.md",
+            "start_line": 1
+          }
+        ],
+        "material_claim_emitted": true,
+        "schema_version": "benchmark-automation-answer/1.0",
+        "task_id": "abc2auto.t001",
+        "uncertainty": "resolved",
+        "verdict": "supported"
+      },
+      "attempt": "attempt-10",
+      "condition": "mcp_claim_gate",
+      "declared_input_stop_ceiling": 128000,
+      "evaluation": {
+        "audit_ready_success": 1,
+        "benchmark_id": "mcp_abc_v2_automation_v1",
+        "confirmatory_inference_eligible": false,
+        "errors": [],
+        "evaluation_mode": "deterministic_exact",
+        "human_evaluator_count": 0,
+        "metrics": {
+          "behavior_correct": 1,
+          "contract_valid": 1,
+          "evidence_binding_complete": 1,
+          "evidence_binding_precise": 1,
+          "material_claim_safety": 1,
+          "semantic_decision_correct": 1,
+          "task_binding_correct": 1,
+          "uncertainty_correct": 1,
+          "verdict_correct": 1
+        },
+        "schema_version": "benchmark-automation-evaluation/1.0",
+        "task_id": "abc2auto.t001",
+        "track": "automation_exploratory"
+      },
+      "fixture_fingerprint": "sha256:925cd08f02a8f63b37b769e03c173dfb8b9094643e9e43ba7cd94ddd26962f2c",
+      "integration_success": true,
+      "latency_ms": 27128,
+      "normalized_list_cost_usd": 0.0638216,
+      "original_ceiling_stop": false,
+      "run_status": "completed",
+      "source_result_hash": "sha256:ce99ff625f1744c68afcab3f36a9f64f68cc419a1d194df9a92e25a229c38968",
+      "successful_tool_calls": 5,
+      "tool_policy": {
+        "blockers": [],
+        "failed_tool_counts": {},
+        "observed_tool_counts": {
+          "memory_check_evidence_eligibility": 1,
+          "memory_fetch_evidence": 2,
+          "memory_search_candidates": 1,
+          "research_index_status": 1
+        },
+        "passed": true
+      },
+      "usage": {
+        "cached_input_tokens": 26368,
+        "input_tokens": 51760,
+        "output_tokens": 647,
+        "reasoning_output_tokens": 94,
+        "total_tokens": 52407
+      }
+    }
+  ],
+  "artifact_kind": "sanitized_historical_projection_not_original_receipt",
+  "attested_governed_benchmark": false,
+  "confirmatory_inference_eligible": false,
+  "design": {
+    "condition_count": 3,
+    "evidence_state": "current_supported",
+    "expected_behavior": "answer",
+    "expected_verdict": "supported",
+    "full_trial_matrix_result": false,
+    "repetitions_per_condition_in_abc_check": 1,
+    "task_count": 1,
+    "task_id": "abc2auto.t001",
+    "uniform_input_budget": false
+  },
+  "human_evaluator_count": 0,
+  "limitations": [
+    "one development task, no repetitions",
+    "A retained its 64000-input stop; B/C used a revised 128000-input diagnostic ceiling",
+    "separate diagnostic worker lease, not the production batch approval/resume path",
+    "rolling model alias; provider-internal request count and actual billing unavailable",
+    "raw model streams discarded; original full-stream hashes cannot be rederived",
+    "all failed diagnostic attempts retained; no scientific superiority inference",
+    "source-checkout integration test, not a released-package efficacy measurement",
+    "public projection omits raw streams, prompts, authority and local paths",
+    "original full-stream hashes cannot be reproduced from a sanitized projection",
+    "earlier studies are not pooled with these diagnostic observations"
+  ],
+  "llm_judge_count": 0,
+  "model": {
+    "model_id": "gpt-5.6-terra",
+    "provider": "codex-host",
+    "reasoning_effort": "medium",
+    "revision_kind": "rolling_alias"
+  },
+  "provenance": {
+    "evaluator_sha256": "sha256:b95904310d040360cc81385cba78eea6b75d42429963591bd6c11865475480cb",
+    "exact_gold_evaluation_and_behavioral_analysis_recomputed_locally": true,
+    "executed_patch_sha256": "sha256:b3d8d8df7a2d8a5df6fce96d002d354c5724c076fc3295e2e832682c18b6d1e8",
+    "execution_base_commit": "ef6b1f9aa58ff4a624a68f4d5ebca5e63960b9ce",
+    "original_archives_public": false,
+    "original_report_and_ten_result_hashes_checked_locally": true,
+    "public_projection_is_not_execution_attestation": true,
+    "task_corpus_sha256": "sha256:78d670a1178fa8e9ca9ae4cd2913fbb415fd99afd2e6f34b513c36f53f09da9b"
+  },
+  "public_export_hash": "sha256:787a3028904180d75379b8bb99b8892e8c39fb8b07aaf9d45c71c4e92029ad60",
+  "report_date": "2026-08-26",
+  "retained_attempts": [
+    {
+      "attempt": "attempt-01",
+      "condition_recorded": null,
+      "diagnostic_classification": "codex_process_failed",
+      "latency_ms": 6455,
+      "normalized_list_cost_usd": null,
+      "original_critical_stop": true,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:b82cd07165e6f8910f8f4dcb5c8cbd1bc6e1502432ede26074db12fd6dfc6e4b",
+      "tool_receipt_count": 0,
+      "usage": null,
+      "usage_accounting": "unknown"
+    },
+    {
+      "attempt": "attempt-02",
+      "condition_recorded": null,
+      "diagnostic_classification": "codex_process_failed",
+      "latency_ms": 6226,
+      "normalized_list_cost_usd": null,
+      "original_critical_stop": false,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:b7414a2bc0f72241cf3fd25245c0517418c1311bfc6c1edc4adb601e32183f6c",
+      "tool_receipt_count": 0,
+      "usage": null,
+      "usage_accounting": "unknown"
+    },
+    {
+      "attempt": "attempt-03",
+      "condition_recorded": null,
+      "diagnostic_classification": "provider_output_schema_rejected",
+      "latency_ms": 4123,
+      "normalized_list_cost_usd": null,
+      "original_critical_stop": false,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:4c230a643824746a3a59d485a2fe0e400b4bf4ea1997f0e7c47af8ea5fec207c",
+      "tool_receipt_count": 0,
+      "usage": null,
+      "usage_accounting": "unknown"
+    },
+    {
+      "attempt": "attempt-04",
+      "condition_recorded": null,
+      "diagnostic_classification": "codex_process_failed",
+      "latency_ms": 7453,
+      "normalized_list_cost_usd": 0.013436,
+      "original_critical_stop": false,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:3508083a7a29ba621b7d3ff22cfeb2959b7d118517a58018dbeb9208fbebad4f",
+      "tool_receipt_count": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "input_tokens": 6352,
+        "output_tokens": 61,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 6413
+      },
+      "usage_accounting": "provider_reported"
+    },
+    {
+      "attempt": "attempt-05",
+      "condition_recorded": "filesystem",
+      "diagnostic_classification": null,
+      "latency_ms": 9472,
+      "normalized_list_cost_usd": 0.016102,
+      "original_critical_stop": true,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:6d084e208f9634083b5bbb40b84c476da7ba0de53dad7b6765bba88452d72235",
+      "tool_receipt_count": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "input_tokens": 7415,
+        "output_tokens": 106,
+        "reasoning_output_tokens": 40,
+        "total_tokens": 7521
+      },
+      "usage_accounting": "provider_reported"
+    },
+    {
+      "attempt": "attempt-06",
+      "condition_recorded": "filesystem",
+      "diagnostic_classification": null,
+      "latency_ms": 9207,
+      "normalized_list_cost_usd": 0.01615,
+      "original_critical_stop": true,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:2c57415a74daa0b6b33f53356cb8fc3e056b4d5844a99c8f857b49827cecd873",
+      "tool_receipt_count": 0,
+      "usage": {
+        "cached_input_tokens": 0,
+        "input_tokens": 7415,
+        "output_tokens": 110,
+        "reasoning_output_tokens": 44,
+        "total_tokens": 7525
+      },
+      "usage_accounting": "provider_reported"
+    },
+    {
+      "attempt": "attempt-07",
+      "condition_recorded": "filesystem",
+      "diagnostic_classification": null,
+      "latency_ms": 9254,
+      "normalized_list_cost_usd": null,
+      "original_critical_stop": true,
+      "phase": "preliminary_startup_diagnostic",
+      "source_result_hash": "sha256:853d5c729f250bd320fdae6b1c47faffd7242e45bfd2820352e0c7200d8d60b9",
+      "tool_receipt_count": 0,
+      "usage": null,
+      "usage_accounting": "unknown"
+    },
+    {
+      "attempt": "attempt-08",
+      "condition_recorded": "filesystem",
+      "diagnostic_classification": null,
+      "latency_ms": 27081,
+      "normalized_list_cost_usd": 0.045804,
+      "original_critical_stop": true,
+      "phase": "tool_backed_abc_check",
+      "source_result_hash": "sha256:6234a34634d23adec97bdfeecdcf8bf8dc1b113968834484a7c0ebb8bf7bb320",
+      "tool_receipt_count": 6,
+      "usage": {
+        "cached_input_tokens": 52480,
+        "input_tokens": 66378,
+        "output_tokens": 626,
+        "reasoning_output_tokens": 107,
+        "total_tokens": 67004
+      },
+      "usage_accounting": "provider_reported"
+    },
+    {
+      "attempt": "attempt-09",
+      "condition_recorded": "mcp_evidence_only",
+      "diagnostic_classification": null,
+      "latency_ms": 23712,
+      "normalized_list_cost_usd": 0.054596,
+      "original_critical_stop": false,
+      "phase": "tool_backed_abc_check",
+      "source_result_hash": "sha256:4127dd942ecf8dc5f4cb8fcfc6ddf92e0403f5f65a4c44445c034a60dd1f7067",
+      "tool_receipt_count": 5,
+      "usage": {
+        "cached_input_tokens": 30720,
+        "input_tokens": 51226,
+        "output_tokens": 620,
+        "reasoning_output_tokens": 176,
+        "total_tokens": 51846
+      },
+      "usage_accounting": "provider_reported"
+    },
+    {
+      "attempt": "attempt-10",
+      "condition_recorded": "mcp_claim_gate",
+      "diagnostic_classification": null,
+      "latency_ms": 27128,
+      "normalized_list_cost_usd": 0.0638216,
+      "original_critical_stop": false,
+      "phase": "tool_backed_abc_check",
+      "source_result_hash": "sha256:ce99ff625f1744c68afcab3f36a9f64f68cc419a1d194df9a92e25a229c38968",
+      "tool_receipt_count": 5,
+      "usage": {
+        "cached_input_tokens": 26368,
+        "input_tokens": 51760,
+        "output_tokens": 647,
+        "reasoning_output_tokens": 94,
+        "total_tokens": 52407
+      },
+      "usage_accounting": "provider_reported"
+    }
+  ],
+  "schema_version": "completed-abc-integration-public/1.0",
+  "scope": "one_completed_public_development_task_integration_diagnostic",
+  "source_analysis_hash": "sha256:30c50e39962d3ac5f832ac9cd5bcbf6b23834d58bd61c7af279393ccad3b4a34",
+  "source_report_created_at": "2026-08-26T01:01:38.119785+00:00",
+  "source_report_hash": "sha256:e674981a120d1e1448e2c18b3b73aabb3e6a9acacebb7e77a7adab3f7f94e942"
+}

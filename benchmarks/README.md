@@ -4,6 +4,12 @@ This directory contains a preregistration-ready, provider-neutral benchmark
 contract. It prepares the experiment but does not authorize or execute live
 model/API calls. No confirmatory live A/B result exists for this repository.
 
+For already completed observations, start with the
+[completed-results index](results/README.md). It keeps the directional,
+claim-safety, authority-safety, four-arm development and one-task A/B/C
+integration reports separate. Do not pool their trials or treat startup
+diagnostics, static tests, or simulations as efficacy measurements.
+
 Primary comparison:
 
 - `filesystem`: the agent receives the same immutable source snapshot through
@@ -70,3 +76,20 @@ provider, pricing snapshot, budgets, source-bundle fingerprint, and execution
 command. API credentials may be supplied only through the process environment
 or an approved secret store and must never enter a task, trace, ledger, log, or
 Git commit.
+
+## Completed A/B/C integration diagnostic
+
+The [2026-08-26 integration report](results/abc-integration-diagnostic-20260826.md)
+contains three tool-backed responses to one public synthetic task, plus the
+seven preceding startup attempts. It uses deterministic exact scoring with
+zero human evaluators and zero LLM judges. Filesystem retains its original
+64,000-input ceiling stop; the other two conditions used a revised 128,000
+diagnostic ceiling. The strict scores 0/1, 0/1 and 1/1 are not a uniform-budget
+comparison, repeated experiment, or confirmatory result.
+
+Its [sanitized JSON projection](results/abc-integration-diagnostic-20260826.json)
+preserves all ten attempt identities, known usage and four unknown-usage rows.
+It omits operational logs, local paths, authority records and raw model streams.
+Unknown usage is not converted to zero; normalized list-price accounting is
+separate from unavailable actual provider billing. No in-progress trial data
+is published here.

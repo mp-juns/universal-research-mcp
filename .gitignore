@@ -26,7 +26,16 @@ benchmarks/results/
 # Public result summaries are source-controlled only when deliberately named
 # below; raw outputs and unreviewed results remain excluded.
 !benchmarks/results/
+benchmarks/results/*
+!benchmarks/results/README.md
+!benchmarks/results/codex-directional-v1.md
+!benchmarks/results/codex-directional-v1.json
+!benchmarks/results/codex-directional-v1-source.md
+!benchmarks/results/codex-claim-safety-v3.md
+!benchmarks/results/authority-safety-pilot-v1.md
 !benchmarks/results/integrity-claim-gate-v1-development-20260813.json
 !benchmarks/results/integrity-claim-gate-v1-development-20260813.md
+!benchmarks/results/abc-integration-diagnostic-20260826.md
+!benchmarks/results/abc-integration-diagnostic-20260826.json
 data/events/daily/
 data/events/sources.jsonl
