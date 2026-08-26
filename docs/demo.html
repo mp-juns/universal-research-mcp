@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light">
+  <title>Universal Research MCP · 60초 설명형 데모</title>
+  <style>
+    :root { --ink:#14243b; --muted:#54657b; --teal:#146e65; --blue:#245d9f; --line:#d9e2ed; --page:#f3f6fa; --amber:#975405; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--page); color:var(--ink); font-family:system-ui,-apple-system,"Noto Sans CJK KR","Segoe UI",sans-serif; line-height:1.6; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible { outline:3px solid #327de2; outline-offset:4px; }
+    button:disabled { cursor:default; opacity:.4; }
+    .shell { max-width:1380px; margin:auto; padding:30px 40px 25px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:20px; padding-bottom:22px; border-bottom:1px solid var(--line); }
+    .brand { font-weight:800; font-size:19px; letter-spacing:-.4px; }
+    .brand span { margin-left:12px; font-size:13px; letter-spacing:.6px; color:var(--teal); }
+    .badge { font-size:12px; font-weight:750; letter-spacing:.7px; border:1px solid #cad7e7; border-radius:30px; padding:6px 13px; white-space:nowrap; color:#365374; }
+    .intro { display:flex; align-items:end; justify-content:space-between; gap:28px; padding:30px 0 24px; }
+    .eyebrow { margin:0 0 8px; font-size:12px; letter-spacing:2px; font-weight:800; color:var(--teal); }
+    h1 { margin:0; font-size:clamp(28px,3.1vw,43px); line-height:1.2; letter-spacing:-1.3px; }
+    .intro p:last-child { margin:12px 0 0; font-size:16px; color:var(--muted); }
+    .duration { color:#74859b; font-size:40px; font-weight:300; line-height:1.1; white-space:nowrap; }
+    .duration small { font-size:15px; font-weight:600; }
+    .disclosure { padding:12px 17px; background:#e8eef6; border-radius:10px; color:#37516f; font-size:13px; margin-bottom:24px; }
+    .disclosure strong { color:#172f52; }
+    .workspace { display:grid; grid-template-columns:226px minmax(0,1fr); gap:25px; align-items:start; }
+    .steps { display:grid; gap:10px; }
+    .step { border:1px solid transparent; background:transparent; border-radius:12px; text-align:left; padding:15px 14px; color:var(--muted); display:grid; grid-template-columns:32px 1fr; gap:10px; }
+    .step:hover { background:#e8eef6; }
+    .step[aria-current="step"] { color:var(--ink); border-color:#c5d7d3; background:#e1f1ed; }
+    .step-number { font-size:15px; font-weight:700; color:#7c8da3; padding-top:1px; }
+    .step[aria-current="step"] .step-number { color:var(--teal); }
+    .step strong { display:block; font-size:16px; font-weight:700; }
+    .step small { display:block; font-size:12px; margin-top:3px; font-variant-numeric:tabular-nums; }
+    .nav-note { border-top:1px solid var(--line); margin:22px 12px 0; padding-top:17px; color:var(--muted); font-size:12px; }
+    .stage { overflow:hidden; border-radius:19px; background:white; border:1px solid var(--line); }
+    .stage-heading { background:var(--ink); color:white; padding:25px 30px 23px; }
+    .stage-meta { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:10px; }
+    #stage-kicker { color:#b8cbe2; font-size:11px; letter-spacing:1.7px; font-weight:700; }
+    #status { background:#28415f; color:#e0eaff; border-radius:20px; padding:4px 11px; font-size:11px; font-weight:700; }
+    h2 { margin:0; font-size:clamp(25px,2.4vw,34px); line-height:1.35; letter-spacing:-.8px; }
+    #stage-description { color:#c3d2e4; font-size:14px; margin:10px 0 0; }
+    .panes { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); min-height:352px; }
+    .pane { padding:24px; min-width:0; }
+    .pane:first-child { border-right:1px solid var(--line); background:#fafbfd; }
+    .pane-label { font-size:10px; font-weight:800; color:#60758f; letter-spacing:1.5px; margin-bottom:20px; }
+    #source-title { font-size:19px; font-weight:750; margin:0 0 12px; line-height:1.5; overflow-wrap:anywhere; }
+    #source-detail { white-space:pre-line; font-size:14px; line-height:1.9; color:var(--muted); margin:0; }
+    .source-tag { display:inline-block; font-size:11px; color:#42605a; background:#e1eee9; padding:5px 9px; border-radius:6px; margin-top:21px; }
+    pre { margin:0; font-size:clamp(12px,1.05vw,15px); line-height:1.9; color:#235c65; font-family:ui-monospace,"DejaVu Sans Mono",monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .example-caption { color:#6e7c91; font-size:11px; margin:17px 0 0; }
+    .takeaway { padding:17px 25px; border-top:1px solid #d3e5df; background:#e8f5ef; font-weight:650; color:#1d6151; font-size:14px; }
+    .stage.warning .takeaway { background:#fff3df; color:#805111; border-color:#ecd8b8; }
+    .stage.warning #status { background:#654d30; color:#ffe0a1; }
+    .stage.warning pre { color:var(--amber); }
+    .narration { padding:17px 3px 0; display:grid; grid-template-columns:66px 1fr; gap:13px; font-size:13px; color:var(--muted); }
+    .narration span { font-size:10px; font-weight:800; letter-spacing:1px; padding-top:4px; color:#6d7e96; }
+    #narration { margin:0; min-height:44px; }
+    .controls { display:grid; grid-template-columns:auto minmax(150px,1fr) auto; align-items:center; gap:24px; padding:23px 0 18px; }
+    .buttons { display:flex; align-items:center; gap:9px; }
+    .primary { background:var(--ink); color:white; border:1px solid var(--ink); padding:11px 19px; border-radius:9px; font-size:14px; font-weight:700; min-width:116px; }
+    .secondary { background:white; border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:11px 13px; font-size:14px; }
+    .timeline { display:flex; align-items:center; gap:15px; }
+    input[type="range"] { width:100%; accent-color:var(--teal); cursor:pointer; min-width:0; }
+    #clock { font-size:13px; font-variant-numeric:tabular-nums; color:var(--muted); white-space:nowrap; min-width:86px; }
+    .counter { font-size:12px; color:var(--muted); white-space:nowrap; }
+    footer { border-top:1px solid var(--line); padding-top:17px; color:#66778e; font-size:11px; display:flex; justify-content:space-between; gap:20px; }
+    footer strong { color:#3c536f; font-weight:600; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (max-width:1050px) {
+      .shell { padding:24px; }
+      .workspace { grid-template-columns:180px minmax(0,1fr); gap:16px; }
+      .step { padding:13px 8px; grid-template-columns:26px 1fr; gap:5px; }
+      .step strong { font-size:14px; }
+      .panes { grid-template-columns:1fr; min-height:0; }
+      .pane:first-child { border-right:0; border-bottom:1px solid var(--line); }
+      pre { font-size:13px; }
+      .controls { gap:14px; }
+    }
+    @media (max-width:650px) {
+      .shell { padding:19px 17px; }
+      header { align-items:start; gap:10px; }
+      .brand { font-size:16px; }
+      .brand span { display:block; margin:3px 0 0; font-size:11px; }
+      .badge { font-size:9px; padding:4px 8px; }
+      .intro { padding-top:25px; }
+      .intro p:last-child { font-size:14px; }
+      .duration { display:none; }
+      .disclosure { font-size:12px; }
+      .workspace { display:block; }
+      .steps { grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; margin-bottom:15px; }
+      .step { display:block; text-align:center; padding:9px 2px; border-color:var(--line); background:white; }
+      .step-number { display:block; font-size:12px; }
+      .step strong { font-size:11px; line-height:1.4; margin-top:5px; }
+      .step small,.nav-note { display:none; }
+      .stage-heading { padding:21px; }
+      .stage-meta { gap:6px; }
+      #stage-kicker { font-size:9px; letter-spacing:1px; }
+      #status { font-size:9px; }
+      .pane { padding:21px; }
+      .controls { grid-template-columns:1fr; gap:16px; }
+      .buttons { justify-content:center; }
+      .counter { display:none; }
+      .narration { grid-template-columns:1fr; gap:5px; }
+      footer { display:block; font-size:10px; }
+      footer span { display:block; margin-top:6px; }
+    }
+    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">Universal Research MCP <span>v0.8.4</span></div>
+      <div class="badge">ILLUSTRATED WALKTHROUGH</div>
+    </header>
+    <section class="intro" aria-label="데모 소개">
+      <div>
+        <p class="eyebrow">CANDIDATE → SOURCE → REVIEW</p>
+        <h1>검색 결과가 근거가 되기까지.</h1>
+        <p>무엇을 확인하고, 무엇은 확인하지 못하는지 60초로 살펴봅니다.</p>
+      </div>
+      <div class="duration" aria-hidden="true">60 <small>SECONDS</small></div>
+    </section>
+    <div class="disclosure"><strong>가상 자료로 만든 설명형 시연입니다.</strong> 실제 MCP 실행 녹화나 벤치마크가 아닙니다. 모델 호출·파일 변경·승인 발급·외부 연결을 하지 않습니다.</div>
+    <div class="workspace">
+      <nav aria-label="데모 장면">
+        <div class="steps">
+          <button class="step" type="button" data-scene="0" aria-current="step"><span class="step-number">01</span><span><strong>검색 후보</strong><small>00–12 seconds</small></span></button>
+          <button class="step" type="button" data-scene="1"><span class="step-number">02</span><span><strong>원문 확인</strong><small>12–24 seconds</small></span></button>
+          <button class="step" type="button" data-scene="2"><span class="step-number">03</span><span><strong>근거 적격성</strong><small>24–36 seconds</small></span></button>
+          <button class="step" type="button" data-scene="3"><span class="step-number">04</span><span><strong>변경 시 차단</strong><small>36–48 seconds</small></span></button>
+          <button class="step" type="button" data-scene="4"><span class="step-number">05</span><span><strong>호스트 검토</strong><small>48–60 seconds</small></span></button>
+        </div>
+        <div class="nav-note">검색 후보와 유효한 근거,<br>유효한 근거와 참인 주장을<br>각각 구분합니다.</div>
+      </nav>
+      <div>
+        <section class="stage" id="stage" aria-labelledby="stage-title">
+          <div class="stage-heading">
+            <div class="stage-meta"><span id="stage-kicker"></span><span id="status"></span></div>
+            <h2 id="stage-title" aria-live="polite"></h2>
+            <p id="stage-description"></p>
+          </div>
+          <div class="panes">
+            <div class="pane">
+              <div class="pane-label" id="source-label"></div>
+              <h3 id="source-title"></h3>
+              <p id="source-detail"></p>
+              <span class="source-tag" id="source-tag"></span>
+            </div>
+            <div class="pane">
+              <div class="pane-label" id="response-label"></div>
+              <pre id="response"></pre>
+              <p class="example-caption" id="example-caption"></p>
+            </div>
+          </div>
+          <div class="takeaway" id="takeaway"></div>
+        </section>
+        <div class="narration"><span>내레이션</span><p id="narration"></p></div>
+      </div>
+    </div>
+    <section class="controls" aria-label="재생 제어">
+      <div class="buttons">
+        <button class="secondary" id="previous" type="button" aria-label="이전 장면">←</button>
+        <button class="primary" id="play" type="button" aria-pressed="false">60초 재생</button>
+        <button class="secondary" id="next" type="button" aria-label="다음 장면">→</button>
+      </div>
+      <div class="timeline">
+        <label for="timeline" class="sr-only">시연 시간 (0초부터 60초)</label>
+        <input id="timeline" type="range" min="0" max="60" step="1" value="0" aria-valuetext="0초 / 60초">
+        <output id="clock" for="timeline">00:00 / 01:00</output>
+      </div>
+      <div class="counter" id="counter">장면 1 / 5</div>
+    </section>
+    <footer>
+      <strong>INTEGRITY ≠ TRUTH · 해시는 파일 버전을 확인합니다. 의미와 진실은 증명하지 않습니다.</strong>
+      <span>오프라인 단일 파일 · 5장면 × 12초 · 기능 동결 기준 v0.8.4</span>
+    </footer>
+    <noscript><p>이 시연의 장면 전환에는 JavaScript가 필요합니다. 같은 내용을 docs/demo.md에서 읽을 수 있습니다.</p></noscript>
+  </main>
+  <script>
+    'use strict';
+    // Illustrative fields only. This page does not call MCP or issue receipts.
+    const scenes = [
+      {
+        kicker:'01 / MEMORY_SEARCH_CANDIDATES', status:'CANDIDATE ONLY',
+        title:'찾았다는 것과 확인했다는 것.',
+        description:'검색은 출발점입니다. 결과를 곧바로 사실로 승격하지 않습니다.',
+        sourceLabel:'ILLUSTRATIVE SEARCH HIT', sourceTitle:'examples/research-note.md',
+        sourceDetail:'이벤트  example-017\n등록 범위  10–12행\n출처와 파일 버전은 다음 단계에서 확인합니다.', sourceTag:'가상의 파일 · 예시 이벤트',
+        responseLabel:'REPRESENTATIVE RESPONSE FIELDS',
+        response:'{\n  "mode": "lexical",\n  "candidate_only": true,\n  "results": [\n    { "event_id": "example-017" }\n  ]\n}',
+        caption:'응답 일부를 단순화했습니다. 실제 검색 결과가 아닙니다.',
+        takeaway:'다음 단계 → 등록된 원문 위치를 읽고 현재 버전을 확인합니다.',
+        narration:'검색 결과를 찾았지만 아직 검증된 근거는 아닙니다. 후보임을 명시하고 정확한 원문 위치를 넘깁니다.'
+      },
+      {
+        kicker:'02 / MEMORY_FETCH_EVIDENCE', status:'SOURCE MATCHED',
+        title:'같은 파일, 정확히 등록된 범위.',
+        description:'이벤트·경로·줄 범위·SHA-256을 묶어 현재 원문과 대조합니다.',
+        sourceLabel:'ILLUSTRATIVE SOURCE / LINES 10–12', sourceTitle:'가상의 연구 노트',
+        sourceDetail:'10  샘플 A에서 지연 감소를 관찰했다.\n11  관측 한 번만으로 일반화하지 않는다.\n12  반복 실험이 필요하다.', sourceTag:'주변 문맥 ≠ 인용 범위',
+        responseLabel:'REPRESENTATIVE FETCH FIELDS',
+        response:'{\n  "canonical_locator_verified": true,\n  "range_valid": true,\n  "integrity_status": "matched",\n  "start_line": 10,\n  "end_line": 12,\n  "context_start_line": 9,\n  "context_end_line": 13\n}',
+        caption:'해시와 claim_gate_reference 등 나머지 응답 필드는 생략했습니다.',
+        takeaway:'주변 문맥을 넓혀도 claim_gate_reference의 등록 범위는 그대로입니다.',
+        narration:'이벤트, 파일 경로, 등록된 줄 범위와 SHA-256을 확인합니다. 주변 문맥은 보여줄 수 있지만 인용 범위를 바꾸지는 않습니다.'
+      },
+      {
+        kicker:'03 / EVIDENCE ELIGIBILITY', status:'ELIGIBLE ≠ TRUE',
+        title:'근거 자격은 통과. 진실 판정은 별개.',
+        description:'유효한 근거를 갖췄는지 검사하고, 수행하지 않은 검사는 명시합니다.',
+        sourceLabel:'MATERIAL FACTUAL CLAIM / EXAMPLE', sourceTitle:'검사에 통과해도 남는 질문',
+        sourceDetail:'이 자료가 주장을 실제로 뒷받침하나?\n다른 자료와 충돌하지 않나?\n원문 자체가 믿을 만한가?', sourceTag:'관련성·충돌·진실성은 별도 검토',
+        responseLabel:'REPRESENTATIVE ELIGIBILITY FIELDS',
+        response:'{\n  "evidence_eligibility": "eligible",\n  "claim_verified": false,\n  "semantic_support_checked": false,\n  "conflict_checked": false,\n  "source_truth_checked": false\n}',
+        caption:'근거 수 조건까지 충족한 예시입니다. 일반 질의는 not_required일 수 있습니다.',
+        takeaway:'eligible을 “이 주장은 참이다”로 해석하지 않습니다.',
+        narration:'중요한 사실 주장에 필요한 근거가 현재 유효한지 검사합니다. 통과해도 주장이 참이라는 뜻은 아니며, 의미 검사는 수행하지 않았다고 표시합니다.'
+      },
+      {
+        kicker:'04 / CHANGED SOURCE', status:'EVIDENCE BLOCKED', warning:true,
+        title:'등록 뒤 파일이 바뀌었다면?',
+        description:'이전 해시와 현재 해시가 다르면 같은 근거라고 간주하지 않습니다.',
+        sourceLabel:'ALTERNATIVE SCENARIO / NO FILE IS MODIFIED', sourceTitle:'등록된 버전 ≠ 현재 버전',
+        sourceDetail:'기본 fetch에서는 변경된 내용을 숨깁니다.\n적격성 검사에서도 이 근거를 차단합니다.\n진단용 읽기는 근거 자격을 복구하지 않습니다.', sourceTag:'실제 파일을 변경하지 않는 가상 분기',
+        responseLabel:'TWO SEPARATE ILLUSTRATIVE RESPONSES',
+        response:'fetch\n{\n  "integrity_status": "mismatched",\n  "content_withheld": true\n}\n\neligibility\n{ "evidence_eligibility": "blocked" }',
+        caption:'fetch 결과와 별도 적격성 검사 결과를 나눠 표시했습니다.',
+        takeaway:'변경을 숨기지 않습니다. 근거를 다시 확보하거나 답변을 보류합니다.',
+        narration:'등록 후 파일이 바뀌면 내용은 기본적으로 숨기고 적격성을 차단합니다. 진단 모드로 읽는 것은 근거 자격을 복구하지 않습니다.'
+      },
+      {
+        kicker:'05 / HOST RESPONSIBILITY', status:'HUMAN / HOST REVIEW',
+        title:'마지막 판단의 책임을 남겨둡니다.',
+        description:'호스트는 의미와 충돌을 검토하고, 충분한 근거가 있을 때만 답합니다.',
+        sourceLabel:'OUTSIDE THE DETERMINISTIC CHECK', sourceTitle:'답변 또는 명시적 보류',
+        sourceDetail:'주장과 근거의 관련성을 검토합니다.\n상충하는 자료와 한계를 함께 살핍니다.\n확신할 수 없다면 불확실성을 밝힙니다.', sourceTag:'이 화면은 실제 검토 완료 판정이 아님',
+        responseLabel:'SEPARATE MCP WRITE BOUNDARY',
+        response:'기록을 바꾸는 경우\n\n불변 초안 준비\n        ↓\n외부의 명시적 승인\n        ↓\n승인된 트랜잭션만 반영\n\n실패 시 같은 저널로 복구',
+        caption:'조회 흐름과 쓰기 승인은 별개입니다. 이 시연은 승인·기록을 만들지 않습니다.',
+        takeaway:'추적 가능한 근거와 명시적 책임 경계. 그것이 이 프로젝트의 범위입니다.',
+        narration:'호스트는 관련성과 충돌을 검토한 뒤 답하거나 보류합니다. 기록을 변경하려면 이 조회 흐름과 별개로 외부 승인이 필요합니다.'
+      }
+    ];
+    const ids = ['stage','stage-kicker','status','stage-title','stage-description','source-label','source-title','source-detail','source-tag','response-label','response','example-caption','takeaway','narration','play','previous','next','timeline','clock','counter'];
+    const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    const stepButtons = Array.from(document.querySelectorAll('[data-scene]'));
+    const duration = 60;
+    let elapsed = 0;
+    let playing = false;
+    let lastFrame = null;
+    let activeScene = -1;
+    let frame = null;
+
+    function render() {
+      const index = Math.min(scenes.length - 1, Math.floor(elapsed / 12));
+      if (index !== activeScene) {
+        activeScene = index;
+        const scene = scenes[index];
+        const mapping = {'stage-kicker':'kicker','status':'status','stage-title':'title','stage-description':'description','source-label':'sourceLabel','source-title':'sourceTitle','source-detail':'sourceDetail','source-tag':'sourceTag','response-label':'responseLabel','response':'response','example-caption':'caption','takeaway':'takeaway','narration':'narration'};
+        for (const [id, key] of Object.entries(mapping)) ui[id].textContent = scene[key];
+        ui.stage.classList.toggle('warning', Boolean(scene.warning));
+        stepButtons.forEach((button, position) => {
+          if (position === index) button.setAttribute('aria-current', 'step');
+          else button.removeAttribute('aria-current');
+        });
+      }
+      const seconds = Math.floor(elapsed);
+      ui.clock.textContent = `${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')} / 01:00`;
+      ui.timeline.value = String(seconds);
+      ui.timeline.setAttribute('aria-valuetext', `${seconds}초 / 60초`);
+      ui.counter.textContent = `장면 ${index + 1} / 5`;
+      ui.previous.disabled = index === 0;
+      ui.next.disabled = index === scenes.length - 1;
+      ui.play.textContent = playing ? '일시정지' : elapsed >= duration ? '다시 재생' : elapsed > 0 ? '이어 재생' : '60초 재생';
+      ui.play.setAttribute('aria-pressed', String(playing));
+    }
+    function pause() {
+      playing = false;
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+    }
+    function tick(now) {
+      if (!playing) return;
+      const delta = lastFrame === null ? 0 : Math.max(0, now - lastFrame);
+      elapsed = Math.min(duration, elapsed + delta / 1000);
+      lastFrame = now;
+      if (elapsed >= duration) pause();
+      render();
+      if (playing) frame = requestAnimationFrame(tick);
+    }
+    function seek(seconds) {
+      pause();
+      elapsed = Math.max(0, Math.min(duration, seconds));
+      render();
+    }
+    ui.play.addEventListener('click', () => {
+      if (playing) pause();
+      else {
+        if (elapsed >= duration) elapsed = 0;
+        playing = true;
+        lastFrame = null;
+        frame = requestAnimationFrame(tick);
+      }
+      render();
+    });
+    ui.previous.addEventListener('click', () => seek(Math.max(0, activeScene - 1) * 12));
+    ui.next.addEventListener('click', () => seek(Math.min(scenes.length - 1, activeScene + 1) * 12));
+    ui.timeline.addEventListener('input', () => seek(Number(ui.timeline.value)));
+    stepButtons.forEach(button => button.addEventListener('click', () => seek(Number(button.dataset.scene) * 12)));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); render(); } });
+    render();
+  </script>
+</body>
+</html>
