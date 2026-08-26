@@ -5,13 +5,15 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from universal_research_mcp import cli
-from universal_research_mcp.runtime import semantic_setup
+from universal_research_mcp.runtime import model_snapshot, semantic_setup
 from universal_research_mcp.runtime.model_snapshot import MANIFEST_NAME, read_snapshot_identity, verify_snapshot
 from universal_research_mcp.runtime.semantic_config import load_semantic_config
+from universal_research_mcp.runtime.project_io import ProjectFiles
 from universal_research_mcp.server import configure_runtime, research_semantic_models, research_semantic_setup_plan
 
 
@@ -315,3 +317,53 @@ def test_existing_setup_lock_is_not_removed_or_ignored(tmp_path: Path, mocked_se
         _execute(plan)
     assert mocked_setup == {"commands": [], "downloads": []}
     assert lock.read_text(encoding="utf-8") == "another setup"
+
+
+def _stat_fields(metadata: os.stat_result) -> dict[str, int]:
+    return {
+        name: getattr(metadata, name)
+        for name in ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+    }
+
+
+def test_snapshot_hash_accepts_different_path_and_handle_ctimes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "fixture.bin"
+    payload = b"fixture bytes"
+    path.write_bytes(payload)
+    actual_fstat = os.fstat
+
+    def descriptor_stat(descriptor: int):
+        fields = _stat_fields(actual_fstat(descriptor))
+        # Windows lstat can report birth time while fstat reports change time.
+        fields["st_ctime_ns"] += 1_000_000_000
+        return SimpleNamespace(**fields)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(model_snapshot.os, "fstat", descriptor_stat)
+        record = model_snapshot._file_record(ProjectFiles(tmp_path), path)
+    assert record == {"size_bytes": len(payload), "sha256": model_snapshot.hashlib.sha256(payload).hexdigest()}
+
+
+@pytest.mark.parametrize("field", ["st_ino", "st_size", "st_mtime_ns", "st_ctime_ns"])
+def test_snapshot_hash_still_rejects_descriptor_changes_during_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str,
+) -> None:
+    path = tmp_path / "fixture.bin"
+    path.write_bytes(b"fixture bytes")
+    actual_fstat = os.fstat
+    calls = 0
+
+    def descriptor_stat(descriptor: int):
+        nonlocal calls
+        calls += 1
+        fields = _stat_fields(actual_fstat(descriptor))
+        if calls == 2:
+            fields[field] += 1
+        return SimpleNamespace(**fields)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(model_snapshot.os, "fstat", descriptor_stat)
+        with pytest.raises(ValueError, match="changed while hashing"):
+            model_snapshot._file_record(ProjectFiles(tmp_path), path)

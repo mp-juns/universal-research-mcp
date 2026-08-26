@@ -83,12 +83,21 @@ def _file_record(files: ProjectFiles, path: Path) -> dict[str, Any]:
     with os.fdopen(descriptor, "rb") as handle:
         opened = os.fstat(handle.fileno())
         files.path(path)
-        if _file_signature(before) != _file_signature(opened):
+        # Windows lstat/fstat can report different meanings for ctime. Compare
+        # it only within the same API below, while checking identity here.
+        if (
+            not os.path.samestat(before, opened)
+            or before.st_size != opened.st_size
+            or before.st_mtime_ns != opened.st_mtime_ns
+        ):
             raise ValueError("model snapshot file changed while opening")
         digest = hashlib.file_digest(handle, "sha256").hexdigest()
         after = os.fstat(handle.fileno())
     files.path(path)
-    if _file_signature(before) != _file_signature(after) or _file_signature(before) != _file_signature(path.lstat()):
+    if (
+        _file_signature(opened) != _file_signature(after)
+        or _file_signature(before) != _file_signature(path.lstat())
+    ):
         raise ValueError("model snapshot file changed while hashing")
     return {"size_bytes": after.st_size, "sha256": digest}
 
