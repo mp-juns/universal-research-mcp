@@ -15,7 +15,7 @@ flowchart LR
 This workflow describes the supported read boundary. It is not a live trace or
 proof of benchmark efficacy.
 
-> Public integration scope for 0.8.4 is Codex only. Provider-backed runtime
+> Public integration scope for 0.8.5 is Codex only. Provider-backed runtime
 > modules below are retained as repository prototypes, excluded from the PyPI
 > wheel, and not covered by a public compatibility promise.
 

@@ -4,12 +4,12 @@
 
 **Research memory with traceable sources and explicit write approval.**
 
-[![Version](https://img.shields.io/badge/version-v0.8.4-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.4/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.4/)
+[![Version](https://img.shields.io/badge/version-v0.8.5-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.5/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.5/)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
 
-[60-second workflow](docs/demo.md) · [Architecture](#architecture) · [Design decisions](#three-design-decisions) · [Evidence & limits](#experiments-and-limits)
+[한국어 사용자 설명서](docs/user-guide.md) · [60-second workflow](docs/demo.md) · [Architecture](#architecture) · [Design decisions](#three-design-decisions) · [Evidence & limits](#experiments-and-limits)
 
 </div>
 
@@ -21,9 +21,10 @@ source range** and checks its **current SHA-256 revision**.
 **The contract:** search returns candidates; verification establishes source
 integrity; the host still reviews relevance, conflicts, and the final claim.
 
-> **Main branch update.** Session-scope confirmation is an unreleased
-> post-v0.8.4 workflow hardening change. It is not part of the tagged PyPI
-> 0.8.4 artifact and does not grant operating-system or host permissions.
+> **v0.8.5 documentation release.** The runtime feature baseline remains
+> frozen at v0.8.4. This release adds the detailed Korean user guide and ships
+> the session-scope confirmation workflow; it adds no retrieval or ingest
+> capability and grants no operating-system or host permissions.
 
 ## The problem it addresses
 
@@ -94,13 +95,17 @@ Read the decisions and alternatives:
 
 ## Try the released package
 
+For the complete installation, Codex setup, source-registration, approved
+ingest, semantic retrieval, troubleshooting, and update flow, read the
+**[Korean user guide](docs/user-guide.md)**.
+
 ```bash
-python -m pip install "universal-research-mcp==0.8.4"
+python -m pip install "universal-research-mcp==0.8.5"
 universal-research --version
 universal-research init ./my-research
 ```
 
-Expected version: `0.8.4`. Initialization creates an **empty** project; it does
+Expected version: `0.8.5`. Initialization creates an **empty** project; it does
 not crawl your files. Use the [input tutorial](docs/input-cli-tutorial.md) to
 register sources and create an approved record before expecting search results.
 
@@ -119,7 +124,7 @@ automatic indexing in the CLI. Do not use a read-only reference project as the
 writable research root. See the [host integration guide](docs/host-integration.md)
 for the full setup.
 
-### What ships in v0.8.4
+### What ships in v0.8.5
 
 - Lexical, local semantic, hybrid, and adaptive **candidate** retrieval.
 - Exact registered-range fetch and deterministic evidence-eligibility receipts.
@@ -179,7 +184,7 @@ retained for provenance, not a claim that the tool verifies truth.
 | --- | --- | --- |
 | Earlier retrieval and safety pilots | Completed, exploratory | Narrow source-mutation observations and overhead, including negative findings. |
 | A/B/C integration diagnostic, 2026-08-26 | Completed; one task, three responses plus seven startup diagnostics | Tool integration with retained failures. Unequal input budgets and no repetitions prevent an efficacy comparison. |
-| Full 432-trial comparison | **Not a completed result** | A planned count is not evidence. No finished 432-trial result is claimed for v0.8.4. |
+| Full 432-trial comparison | **Not a completed result** | A planned count is not evidence. No finished 432-trial result is claimed for v0.8.5. |
 | Software tests and release checks | Engineering verification | Contract and packaging behavior; not participant-model benchmark results. |
 
 [All five completed reports](benchmarks/results/README.md) ·
@@ -195,7 +200,7 @@ retained for provenance, not a claim that the tool verifies truth.
   an unrestricted host. Approval enforcement has a defined execution boundary.
 - This is not an authenticated private remote service or a multi-tenant SaaS.
   Public deployment needs a separately reviewed operational boundary.
-- Historical synthetic results do not establish released-v0.8.4 efficacy,
+- Historical synthetic results do not establish released-v0.8.5 efficacy,
   production reliability, or statistically decisive superiority.
 
 [Security model](docs/security.md) · [Governance contracts](docs/multi-agent-governance.md)

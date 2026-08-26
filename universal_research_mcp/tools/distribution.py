@@ -17,6 +17,7 @@ GOVERNANCE_ROLE_IDS = (
 )
 REQUIRED_BUNDLE_FILES = (
     "docs/failure-policy.md", "docs/host-integration.md", "docs/secure-harness.md", "docs/security.md",
+    "docs/user-guide.md",
     "schemas/core-record.schema.json", "schemas/agent-runtime-event.schema.json",
     "schemas/index-health.schema.json", "schemas/pack-manifest.schema.json",
     "schemas/project-profile.schema.json", "schemas/research-agent-decision.schema.json",

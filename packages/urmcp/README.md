@@ -17,5 +17,6 @@ prefer an explicit package name:
 python -m pip install --upgrade universal-research-mcp
 ```
 
-See the main project README for supported Codex integration, semantic retrieval
-setup, source registration, guarded ingestion, and operational boundaries.
+See the [Korean user guide](https://github.com/mp-juns/universal-research-mcp/blob/main/docs/user-guide.md)
+for installation, Codex integration, source registration, guarded ingestion,
+semantic retrieval, troubleshooting, and operational boundaries.
