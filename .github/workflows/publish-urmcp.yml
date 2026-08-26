@@ -25,11 +25,9 @@ jobs:
         run: python scripts/require_urmcp_release_tag.py "$GITHUB_REF_NAME"
       - run: python -m build packages/urmcp --outdir packages/urmcp/dist
       - run: python scripts/validate_urmcp_alias_artifact.py packages/urmcp/dist/*.whl
+      # Keep the packaging alias PyPI-only. A GitHub Release would be archived
+      # by Zenodo as another version of the core software repository.
       - name: Publish alias distribution to PyPI by Trusted Publishing
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           packages-dir: packages/urmcp/dist/
-      - name: Create the GitHub Release after PyPI publication
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
