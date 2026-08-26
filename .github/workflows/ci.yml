@@ -60,7 +60,7 @@ jobs:
       - run: python -m build
       - if: matrix.validate_wheel
         run: python scripts/validate_distribution_artifact.py dist/*.whl
-      - run: python scripts/ci_smoke.py dist/*.whl
+      - run: python scripts/ci_smoke.py --boundary-tests dist/*.whl
 
   urmcp-alias:
     name: urmcp alias package

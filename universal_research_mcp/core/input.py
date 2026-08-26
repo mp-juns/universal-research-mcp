@@ -14,9 +14,11 @@ from pathlib import Path
 import re
 from typing import Any, Iterable
 
+from universal_research_mcp.core.canonical_io import apply_append, canonical_write_lock, prepare_append
 from universal_research_mcp.core.ledger import ValidationIssue, read_jsonl, validate_records
 from universal_research_mcp.core.proposals import _approval_allows
 from universal_research_mcp.runtime import ProjectPaths
+from universal_research_mcp.runtime.project_io import ProjectFiles
 
 
 SOURCE_ID = re.compile(r"^src_[A-Za-z0-9._-]+$")
@@ -42,7 +44,7 @@ def all_records(paths: ProjectPaths) -> list[dict[str, Any]]:
     return [
         record
         for ledger in sorted((paths.events_root / "daily").glob("*/events.jsonl"))
-        for record in read_jsonl(ledger)
+        for record in read_jsonl(ProjectFiles(paths.root).path(ledger))
     ]
 
 
@@ -62,7 +64,7 @@ def read_record_input(path: Path) -> list[dict[str, Any]]:
 
 
 def _registered_sources(paths: ProjectPaths) -> list[dict[str, Any]]:
-    manifest = paths.events_root / "sources.jsonl"
+    manifest = ProjectFiles(paths.root).path(paths.events_root / "sources.jsonl")
     return read_jsonl(manifest) if manifest.is_file() else []
 
 
@@ -84,22 +86,23 @@ def register_source(
     if not source_type.strip():
         raise ValueError("source_type must be a non-empty string")
     relative = source.relative_to(paths.root).as_posix()
-    existing = _registered_sources(paths)
-    if any(item.get("source_path") == relative for item in existing):
-        raise ValueError("source path is already registered; register a new path for a new revision")
-    if any(item.get("source_id") == source_id for item in existing):
-        raise ValueError("source_id is already registered")
-    paths.events_root.mkdir(parents=True, exist_ok=True)
-    manifest = paths.events_root / "sources.jsonl"
-    record = {
-        "source_id": source_id,
-        "source_path": relative,
-        "source_sha256": _sha256(source),
-        "source_type": source_type,
-        "legacy_import": False,
-    }
-    with manifest.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+    with canonical_write_lock(paths):
+        existing = _registered_sources(paths)
+        if any(item.get("source_path") == relative for item in existing):
+            raise ValueError("source path is already registered; register a new path for a new revision")
+        if any(item.get("source_id") == source_id for item in existing):
+            raise ValueError("source_id is already registered")
+        record = {
+            "source_id": source_id,
+            "source_path": relative,
+            "source_sha256": _sha256(source),
+            "source_type": source_type,
+            "legacy_import": False,
+        }
+        apply_append(paths, prepare_append(
+            paths, target=paths.events_root / "sources.jsonl",
+            append_value=record, kind="source_registration",
+        ))
     return record
 
 
@@ -233,15 +236,16 @@ def append_record(root: str | Path, record: dict[str, Any], *, approval_ref: str
             raise ValueError("record append requires --approval-ref")
         if approval_ref not in (record.get("approval_refs") or []):
             raise ValueError("record must carry the explicit --approval-ref")
-    issues = validate_candidate_records(root, [record])
-    if issues:
-        rendered = "; ".join(f"{item.path}: {item.message}" for item in issues)
-        raise ValueError(f"canonical append refused: {rendered}")
     paths = ProjectPaths.from_root(root)
-    ledger = ledger_path_for_record(paths, record)
-    ledger.parent.mkdir(parents=True, exist_ok=True)
-    with ledger.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+    with canonical_write_lock(paths):
+        issues = validate_candidate_records(root, [record])
+        if issues:
+            rendered = "; ".join(f"{item.path}: {item.message}" for item in issues)
+            raise ValueError(f"canonical append refused: {rendered}")
+        ledger = ledger_path_for_record(paths, record)
+        apply_append(paths, prepare_append(
+            paths, target=ledger, append_value=record, kind="event_record",
+        ))
     return ledger
 
 

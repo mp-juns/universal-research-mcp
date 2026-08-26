@@ -78,7 +78,7 @@ jobs:
         with:
           name: release-distributions
           path: dist/
-      - run: python scripts/ci_smoke.py dist/*.whl
+      - run: python scripts/ci_smoke.py --boundary-tests dist/*.whl
 
   release-gate:
     name: Release gate

@@ -13,6 +13,20 @@ verify. A partial failure is recoverable only with the same consumed receipt
 and exact journal. Automatic startup
 writes remain restricted to staged, verified project-local derived indexes.
 
+All ingest draft/journal/consumption/audit paths and the shared CLI/MCP canonical
+lock reject symlink and reparse-point parents before creation. File operations
+reject symlink, reparse-point, non-regular and multiply-linked final targets.
+POSIX directory descriptors keep writes from following a replaced parent
+symlink. The portable fallback checks every component but is not a sandbox
+against unrestricted same-user filesystem mutation; directory fsync is not
+portable to Windows. These protections do not broaden the human approval scope.
+
+Event-bound evidence must match a complete registered path/hash/line-range
+locator before fetching. Display context has separate bounds and never expands
+the eligibility reference. Current-file bounds and the revision hash are both
+required for eligibility. The two-evidence policy counts distinct event IDs;
+it does not certify independent sources, observations or authors.
+
 Source artifacts are untrusted content. Instructions embedded in research data
 cannot expand role authority, request secrets, alter a verdict, or override the
 task packet. Role manifests, task scope, and the controller's deterministic

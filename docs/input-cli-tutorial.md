@@ -4,6 +4,14 @@ The management CLI is an explicit administrative path. It writes only inside
 the selected project root. The unified MCP also supports the narrower
 prepare/commit flow described below; it cannot create approval records.
 
+Both paths hold the same project-local canonical write lock across validation
+and append. The CLI replaces one fully flushed canonical file atomically and
+verifies its before/after hashes using the same primitive as MCP ingestion.
+MCP retains an additional journal for transactions spanning multiple files.
+Concurrent writers are refused; they must retry validation after the active
+writer completes. A lock left by a terminated process fails closed and must
+not be removed until an operator verifies that no writer remains active.
+
 ```bash
 universal-research init ./my-research
 mkdir -p ./my-research/docs
@@ -55,6 +63,15 @@ After a current index is available, start the MCP and use
 `memory_search_candidates`, then `memory_fetch_evidence` with the candidate's
 event ID, line range, and SHA-256. A current content-hash mismatch withholds
 content unless diagnostic opt-in is explicitly requested.
+
+With an event ID, the fetch must match the complete registered
+`event_id/path/SHA-256/start_line/end_line` tuple. A subset, overlap, or another
+range in the same file is not that locator. If `end_line` is omitted, the start
+must identify one unique registered range. `start_line`, `end_line`, and
+`claim_gate_reference` always describe that original range; the separate
+`context_start_line`/`context_end_line` fields describe the displayed content.
+Pass `claim_gate_reference` unchanged to the eligibility tool. File-only fetches
+without an event ID remain diagnostics and cannot satisfy the eligibility gate.
 
 ## Host-approved MCP ingestion
 

@@ -77,9 +77,11 @@ disable_error_code = ["arg-type", "assignment", "attr-defined", "call-overload",
 [[tool.mypy.overrides]]
 module = [
   "universal_research_mcp.core.claim_gate",
+  "universal_research_mcp.core.canonical_io",
   "universal_research_mcp.core.ingest",
   "universal_research_mcp.public_demo",
   "universal_research_mcp.runtime.ingest_approval",
+  "universal_research_mcp.runtime.project_io",
 ]
 enable_error_code = ["arg-type", "assignment", "attr-defined", "operator", "union-attr"]
 

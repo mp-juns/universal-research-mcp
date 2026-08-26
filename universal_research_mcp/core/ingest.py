@@ -10,7 +10,6 @@ authority that decides whether to permit a mutating tool call.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -19,6 +18,12 @@ import re
 import secrets
 from typing import Any
 
+from universal_research_mcp.core.canonical_io import (
+    append_state as _transaction_operation_state,
+    apply_append as _apply_transaction_operation,
+    canonical_write_lock as _commit_lock,
+    prepare_append as _operation,
+)
 from universal_research_mcp.core.input import (
     SOURCE_ID,
     _registered_sources,
@@ -29,6 +34,7 @@ from universal_research_mcp.core.input import (
 )
 from universal_research_mcp.indexing import canonical_fingerprint, ensure_lexical_index, index_status
 from universal_research_mcp.runtime import ProjectPaths
+from universal_research_mcp.runtime.project_io import ProjectFiles
 from universal_research_mcp.semantic_runtime import build_configured_semantic_index, configured_backend
 
 
@@ -53,15 +59,13 @@ def _digest(value: dict[str, Any]) -> str:
 
 
 def _draft_roots(paths: ProjectPaths) -> tuple[Path, Path, Path]:
-    root = paths.root / "data" / "ingest-drafts"
-    return root / "pending", root / "consumed", paths.root / "data" / "audit"
+    # Check every ingest directory before even the first pending/lock write.
+    _ = paths.ingest_transactions
+    return paths.ingest_pending, paths.ingest_consumed, paths.ingest_audit
 
 
 def _transaction_path(paths: ProjectPaths, draft_id: str) -> Path:
-    return (
-        paths.root / "data" / "ingest-drafts" / "transactions"
-        / f"{_safe_draft_id(draft_id)}.json"
-    )
+    return paths.ingest_transactions / f"{_safe_draft_id(draft_id)}.json"
 
 
 def _safe_draft_id(draft_id: str) -> str:
@@ -70,72 +74,30 @@ def _safe_draft_id(draft_id: str) -> str:
     return draft_id
 
 
-def _create_only_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def _create_only_json(paths: ProjectPaths, path: Path, payload: dict[str, Any]) -> None:
     encoded = _canonical_bytes(payload) + b"\n"
     if len(encoded) > MAX_DRAFT_BYTES:
         raise ValueError("ingest draft exceeds the maximum safe size")
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
     try:
-        descriptor = os.open(path, flags, 0o600)
+        ProjectFiles(paths.root).create(path, encoded)
     except FileExistsError as exc:
         raise ValueError("immutable ingest artifact already exists") from exc
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(encoded)
-            handle.flush()
-            os.fsync(handle.fileno())
-    except BaseException:
-        try:
-            path.unlink(missing_ok=True)
-        finally:
-            raise
 
 
-def _fsync_directory(path: Path) -> None:
-    flags = os.O_RDONLY
-    if hasattr(os, "O_DIRECTORY"):
-        flags |= os.O_DIRECTORY
-    descriptor = os.open(path, flags)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def _replace_json(path: Path, payload: dict[str, Any]) -> None:
+def _replace_json(paths: ProjectPaths, path: Path, payload: dict[str, Any]) -> None:
     """Durably replace a mutable transaction journal in its own directory."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
     encoded = _canonical_bytes(payload) + b"\n"
     if len(encoded) > MAX_DRAFT_BYTES:
         raise ValueError("ingest transaction exceeds the maximum safe size")
-    temporary = path.parent / f".{path.name}.{secrets.token_hex(8)}.tmp"
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    descriptor = os.open(temporary, flags, 0o600)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(encoded)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        _fsync_directory(path.parent)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
+    ProjectFiles(paths.root).replace(path, encoded)
 
 
 def _load_transaction(paths: ProjectPaths, draft_id: str) -> dict[str, Any] | None:
     path = _transaction_path(paths, draft_id)
-    if not path.exists():
+    raw = ProjectFiles(paths.root).read(path, max_bytes=MAX_DRAFT_BYTES)
+    if raw is None:
         return None
-    if path.is_symlink() or not path.is_file():
-        raise ValueError("ingest transaction journal is unsafe")
-    raw = path.read_bytes()
     if len(raw) < 1 or len(raw) > MAX_DRAFT_BYTES:
         raise ValueError("ingest transaction journal size is invalid")
     try:
@@ -149,58 +111,6 @@ def _load_transaction(paths: ProjectPaths, draft_id: str) -> dict[str, Any] | No
         raise ValueError("ingest transaction journal integrity check failed")
     value["transaction_sha256"] = declared
     return value
-
-
-def _bytes_sha256(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _safe_canonical_target(paths: ProjectPaths, relative: str) -> Path:
-    target = paths.root / relative
-    resolved = paths.resolve_relative(relative)
-    if resolved != target:
-        raise ValueError("canonical transaction target contains a symlink")
-    current = paths.root
-    for part in Path(relative).parts[:-1]:
-        current = current / part
-        if current.exists() and current.is_symlink():
-            raise ValueError("canonical transaction parent contains a symlink")
-    if target.exists():
-        metadata = target.lstat()
-        if target.is_symlink() or not target.is_file():
-            raise ValueError("canonical transaction target is unsafe")
-        if metadata.st_nlink != 1:
-            raise ValueError("canonical transaction target has multiple hard links")
-    return target
-
-
-def _operation(
-    paths: ProjectPaths,
-    *,
-    target: Path,
-    append_value: dict[str, Any] | list[dict[str, Any]],
-    kind: str,
-) -> dict[str, Any]:
-    relative = target.relative_to(paths.root).as_posix()
-    safe_target = _safe_canonical_target(paths, relative)
-    before = safe_target.read_bytes() if safe_target.exists() else b""
-    values = append_value if isinstance(append_value, list) else [append_value]
-    append_bytes = "".join(
-        json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n"
-        for value in values
-    ).encode("utf-8")
-    after = before + append_bytes
-    return {
-        "kind": kind,
-        "target": relative,
-        "before_exists": safe_target.exists(),
-        "before_size": len(before),
-        "before_sha256": _bytes_sha256(before),
-        "append_text": append_bytes.decode("utf-8"),
-        "append_sha256": _bytes_sha256(append_bytes),
-        "after_size": len(after),
-        "after_sha256": _bytes_sha256(after),
-    }
 
 
 def _validate_transaction_binding(
@@ -220,71 +130,12 @@ def _validate_transaction_binding(
         raise ValueError("ingest transaction has no canonical operations")
 
 
-def _transaction_operation_state(
-    paths: ProjectPaths, operation: dict[str, Any],
-) -> str:
-    target = operation.get("target")
-    if not isinstance(target, str):
-        raise ValueError("ingest transaction target is invalid")
-    path = _safe_canonical_target(paths, target)
-    current = path.read_bytes() if path.exists() else b""
-    current_state = (len(current), _bytes_sha256(current))
-    before_state = (operation.get("before_size"), operation.get("before_sha256"))
-    after_state = (operation.get("after_size"), operation.get("after_sha256"))
-    if current_state == after_state:
-        return "applied"
-    if current_state == before_state and path.exists() is bool(operation.get("before_exists")):
-        return "pending"
-    raise RuntimeError(
-        f"canonical target changed outside ingest transaction: {target}"
-    )
-
-
-def _apply_transaction_operation(
-    paths: ProjectPaths, operation: dict[str, Any],
-) -> str:
-    state = _transaction_operation_state(paths, operation)
-    if state == "applied":
-        return state
-    target_value = operation.get("target")
-    append_text = operation.get("append_text")
-    if not isinstance(target_value, str) or not isinstance(append_text, str):
-        raise ValueError("ingest transaction operation is invalid")
-    append_bytes = append_text.encode("utf-8")
-    if _bytes_sha256(append_bytes) != operation.get("append_sha256"):
-        raise ValueError("ingest transaction append payload hash is invalid")
-    target = _safe_canonical_target(paths, target_value)
-    before = target.read_bytes() if target.exists() else b""
-    target.parent.mkdir(parents=True, exist_ok=True)
-    if target.parent.is_symlink():
-        raise ValueError("canonical transaction target parent is unsafe")
-    temporary = target.parent / f".{target.name}.{secrets.token_hex(8)}.tmp"
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    descriptor = os.open(temporary, flags, 0o600)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(before)
-            handle.write(append_bytes)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, target)
-        _fsync_directory(target.parent)
-    except BaseException:
-        temporary.unlink(missing_ok=True)
-        raise
-    if _transaction_operation_state(paths, operation) != "applied":
-        raise RuntimeError("canonical transaction operation verification failed")
-    return "applied"
-
-
 def _load_draft(paths: ProjectPaths, draft_id: str) -> tuple[dict[str, Any], Path]:
     pending, _consumed, _audit = _draft_roots(paths)
     path = pending / f"{_safe_draft_id(draft_id)}.json"
-    if not path.is_file() or path.is_symlink():
+    raw = ProjectFiles(paths.root).read(path, max_bytes=MAX_DRAFT_BYTES)
+    if raw is None:
         raise ValueError("pending ingest draft was not found")
-    raw = path.read_bytes()
     if len(raw) > MAX_DRAFT_BYTES:
         raise ValueError("pending ingest draft exceeds the maximum safe size")
     try:
@@ -312,7 +163,7 @@ def ingest_approval_binding(
     paths = ProjectPaths.from_root(root)
     _pending, consumed, _audit = _draft_roots(paths)
     safe_id = _safe_draft_id(draft_id)
-    if (consumed / f"{safe_id}.json").exists():
+    if ProjectFiles(paths.root).exists(consumed / f"{safe_id}.json"):
         raise ValueError("ingest draft was already consumed and cannot be approved")
     draft, _path = _load_draft(paths, safe_id)
     if not isinstance(draft_sha256, str) or draft_sha256 != draft["draft_sha256"]:
@@ -412,10 +263,11 @@ def _validate_draft_record(
 
 def _append_audit(paths: ProjectPaths, event: dict[str, Any]) -> None:
     _pending, _consumed, audit_root = _draft_roots(paths)
-    audit_root.mkdir(parents=True, exist_ok=True)
     path = audit_root / "ingest-events.jsonl"
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
+    files = ProjectFiles(paths.root)
+    before = files.read(path)
+    payload = (before or b"") + (json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    files.replace(path, payload, expected=before, check_expected=True)
 
 
 def _append_audit_safely(paths: ProjectPaths, event: dict[str, Any]) -> dict[str, str] | None:
@@ -426,30 +278,6 @@ def _append_audit_safely(paths: ProjectPaths, event: dict[str, Any]) -> dict[str
     except (OSError, RuntimeError, ValueError) as exc:
         return {"error_type": type(exc).__name__, "reason": str(exc)}
     return None
-
-
-@contextmanager
-def _commit_lock(paths: ProjectPaths):
-    """Refuse concurrent commits instead of accepting an unbound race."""
-
-    pending, _consumed, _audit = _draft_roots(paths)
-    pending.mkdir(parents=True, exist_ok=True)
-    lock = pending / ".commit.lock"
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    try:
-        descriptor = os.open(lock, flags, 0o600)
-    except FileExistsError as exc:
-        raise RuntimeError("another ingest commit is active; retry only after it ends") from exc
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(json.dumps({"pid": os.getpid(), "started_at": _now()}) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        yield
-    finally:
-        lock.unlink(missing_ok=True)
 
 
 def _refresh_derived_indexes(root: Path) -> dict[str, Any]:
@@ -502,7 +330,7 @@ def prepare_ingest(
     }
     draft["draft_sha256"] = _digest(draft)
     pending, _consumed, _audit = _draft_roots(paths)
-    _create_only_json(pending / f"{draft['draft_id']}.json", draft)
+    _create_only_json(paths, pending / f"{draft['draft_id']}.json", draft)
     return {
         "status": "prepared",
         "draft_id": draft["draft_id"],
@@ -569,7 +397,7 @@ def _prepare_transaction(
         "last_error": None,
     }
     transaction["transaction_sha256"] = _digest(transaction)
-    _create_only_json(_transaction_path(paths, draft_id), transaction)
+    _create_only_json(paths, _transaction_path(paths, draft_id), transaction)
     return transaction
 
 
@@ -577,7 +405,7 @@ def _store_transaction(paths: ProjectPaths, transaction: dict[str, Any]) -> None
     transaction["updated_at"] = _now()
     transaction.pop("transaction_sha256", None)
     transaction["transaction_sha256"] = _digest(transaction)
-    _replace_json(_transaction_path(paths, str(transaction["draft_id"])), transaction)
+    _replace_json(paths, _transaction_path(paths, str(transaction["draft_id"])), transaction)
 
 
 def _commit_ingest_locked(
@@ -591,7 +419,7 @@ def _commit_ingest_locked(
 
     _pending, consumed, _audit = _draft_roots(paths)
     safe_id = _safe_draft_id(draft_id)
-    if (consumed / f"{safe_id}.json").exists():
+    if ProjectFiles(paths.root).exists(consumed / f"{safe_id}.json"):
         raise ValueError("ingest draft was already consumed and cannot be replayed")
     draft, _pending_path = _load_draft(paths, draft_id)
     if not isinstance(draft_sha256, str) or draft_sha256 != draft["draft_sha256"]:
@@ -698,7 +526,7 @@ def _commit_ingest_locked(
             "transaction_path": _transaction_path(paths, draft_id).relative_to(paths.root).as_posix(),
             "canonical_head_after": after["sha256"],
         }
-        _create_only_json(consumed / f"{draft_id}.json", consumption)
+        _create_only_json(paths, consumed / f"{draft_id}.json", consumption)
     except Exception as exc:
         transaction["status"] = "failed_recoverable"
         transaction["last_error"] = {
@@ -788,6 +616,7 @@ def commit_ingest(
     """Consume exactly one prepared draft under a project-local commit lock."""
 
     paths = ProjectPaths.from_root(root)
+    _draft_roots(paths)
     with _commit_lock(paths):
         return _commit_ingest_locked(
             paths,
@@ -806,7 +635,7 @@ def pending_ingest_status(root: str | Path, *, draft_id: str) -> dict[str, Any]:
     consumed_path = consumed / f"{draft_id}.json"
     transaction = _load_transaction(paths, draft_id)
     transaction_status = transaction.get("status") if transaction else None
-    if consumed_path.exists():
+    if ProjectFiles(paths.root).exists(consumed_path):
         status = "consumed"
     elif transaction_status in {"applying", "canonical_committed", "failed_recoverable"}:
         status = "recovery_required"

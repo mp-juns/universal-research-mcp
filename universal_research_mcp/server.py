@@ -797,6 +797,34 @@ def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
     return sorted(str(row["source_sha256"]) for row in rows)
 
 
+def _registered_evidence_end(
+    path: str, event_id: str, expected_sha256: str,
+    start_line: int, end_line: int | None,
+) -> int:
+    """Bind a fetch to one complete canonical event-source locator.
+
+    Indexed passages retain their event source's exact range. A caller may
+    omit the end only when the event/path/hash/start tuple has one unique end;
+    subsets, overlapping ranges and display context are not new locators.
+    """
+
+    with closing(open_readonly(RESEARCH_DB)) as db:
+        rows = db.execute(
+            """
+            SELECT DISTINCT line_end FROM event_sources
+            WHERE event_id = ? AND source_path = ? AND source_sha256 = ?
+              AND line_start = ? AND (? IS NULL OR line_end = ?)
+            """,
+            (event_id, path, expected_sha256, start_line, end_line, end_line),
+        ).fetchall()
+    if len(rows) != 1:
+        raise ValueError("exact evidence range is not registered or is ambiguous for this event")
+    registered_end = rows[0]["line_end"]
+    if type(registered_end) is not int or registered_end < start_line:
+        raise ValueError("registered evidence range is invalid")
+    return registered_end
+
+
 def _recency_key(row: sqlite3.Row) -> float:
     value = row["date"]
     try:
@@ -910,8 +938,21 @@ def memory_fetch_evidence(
     expected_sha256: str | None = None,
     allow_mismatched_content: bool = False,
 ) -> dict[str, Any]:
-    """Fetch registered evidence and verify the exact candidate hash when supplied."""
+    """Fetch an exact event locator; keep display context outside its reference.
 
+    Event-less fetches are registered-file diagnostics only and cannot satisfy
+    evidence eligibility. Changed-source diagnostics retain the registered
+    reference even when the current file is shorter than that reference.
+    """
+
+    if type(start_line) is not int or start_line < 1:
+        raise ValueError("start_line must be a positive integer")
+    if end_line is not None and (type(end_line) is not int or end_line < start_line):
+        raise ValueError("end_line must be no smaller than start_line")
+    if type(context_lines) is not int:
+        raise ValueError("context_lines must be an integer")
+    if event_id is not None and (not isinstance(event_id, str) or not event_id):
+        raise ValueError("event_id must be a non-empty string")
     _require_current_lexical_index()
     hashes = indexed_source_hashes(path, event_id)
     if not hashes:
@@ -923,26 +964,42 @@ def memory_fetch_evidence(
         if len(hashes) != 1:
             raise ValueError("multiple indexed revisions exist; event_id or expected_sha256 is required")
         expected_sha256 = hashes[0]
-    resolved = resolve_safe_path(path)
-    start = max(1, int(start_line) - max(0, min(int(context_lines), 50)))
-    requested_end = int(end_line) if end_line is not None else int(start_line) + 40
-    end = requested_end + max(0, min(int(context_lines), 50))
-    if end < start or end - start + 1 > MAX_FETCH_LINES:
+    requested_end = (
+        _registered_evidence_end(path, event_id, expected_sha256, start_line, end_line)
+        if event_id is not None else end_line if end_line is not None else start_line + 40
+    )
+    context = max(0, min(context_lines, 50))
+    context_start = max(1, start_line - context)
+    context_end = requested_end + context
+    if context_end - context_start + 1 > MAX_FETCH_LINES:
         raise ValueError("invalid or excessive fetch range")
+    resolved = resolve_safe_path(path)
     # Read once so returned evidence and its hash describe the same file
     # snapshot even if an external process replaces the artifact immediately
     # afterwards.
     snapshot = resolved.read_bytes()
     lines = snapshot.decode("utf-8", errors="replace").splitlines()
-    end = min(end, len(lines))
-    content = "\n".join(f"{number}: {text}" for number, text in enumerate(lines[start - 1:end], start))
     current_sha256 = hashlib.sha256(snapshot).hexdigest()
     integrity_status = "matched" if expected_sha256 == current_sha256 else "mismatched"
+    if event_id is None and end_line is None:
+        requested_end = min(requested_end, len(lines))
+    range_valid = 1 <= start_line <= requested_end <= len(lines)
+    if not range_valid and integrity_status == "matched":
+        raise ValueError("evidence range is empty or extends beyond the source file")
+    context_end = min(context_end, len(lines))
+    content = "\n".join(
+        f"{number}: {text}"
+        for number, text in enumerate(lines[context_start - 1:context_end], context_start)
+    )
     result = {
         "event_id": event_id,
-        "path": str(resolved.relative_to(ROOT)),
-        "start_line": start,
-        "end_line": end,
+        "path": path,
+        "start_line": start_line,
+        "end_line": requested_end,
+        "context_start_line": context_start if context_start <= context_end else None,
+        "context_end_line": context_end if context_start <= context_end else None,
+        "range_valid": range_valid,
+        "canonical_locator_verified": event_id is not None,
         "sha256": current_sha256,
         "indexed_sha256": expected_sha256,
         "expected_sha256": expected_sha256,
@@ -955,9 +1012,9 @@ def memory_fetch_evidence(
         # reference after a successful evidence fetch.
         "claim_gate_reference": {
             "event_id": event_id,
-            "path": str(resolved.relative_to(ROOT)),
-            "start_line": start,
-            "end_line": end,
+            "path": path,
+            "start_line": start_line,
+            "end_line": requested_end,
             "expected_sha256": expected_sha256,
         },
     }
@@ -986,9 +1043,9 @@ def _claim_evidence_check(reference: Any) -> dict[str, Any]:
         return {"verified": False, "reason": "event_id is required"}
     if not isinstance(path, str) or not path:
         return {"verified": False, "reason": "path is required"}
-    if not isinstance(start_line, int) or start_line < 1:
+    if type(start_line) is not int or start_line < 1:
         return {"verified": False, "reason": "start_line must be a positive integer"}
-    if not isinstance(end_line, int) or end_line < start_line:
+    if type(end_line) is not int or end_line < start_line:
         return {"verified": False, "reason": "end_line must be no smaller than start_line"}
     if not isinstance(expected_sha256, str) or len(expected_sha256) != 64:
         return {"verified": False, "reason": "expected_sha256 must be a SHA-256 digest"}
@@ -1001,7 +1058,7 @@ def _claim_evidence_check(reference: Any) -> dict[str, Any]:
             event_id=event_id,
             expected_sha256=expected_sha256,
         )
-    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+    except (OSError, RuntimeError, ValueError) as exc:
         return {
             "event_id": event_id,
             "path": path,
@@ -1011,7 +1068,11 @@ def _claim_evidence_check(reference: Any) -> dict[str, Any]:
             "verified": False,
             "reason": str(exc),
         }
-    verified = fetched.get("integrity_status") == "matched"
+    verified = (
+        fetched.get("integrity_status") == "matched"
+        and fetched.get("canonical_locator_verified") is True
+        and fetched.get("range_valid") is True
+    )
     return {
         "event_id": event_id,
         "path": path,
@@ -1021,7 +1082,7 @@ def _claim_evidence_check(reference: Any) -> dict[str, Any]:
         "current_sha256": fetched.get("current_sha256"),
         "integrity_status": fetched.get("integrity_status"),
         "verified": verified,
-        "reason": "" if verified else "source content hash does not match the registered revision",
+        "reason": "" if verified else "source revision or exact evidence range is invalid",
     }
 
 

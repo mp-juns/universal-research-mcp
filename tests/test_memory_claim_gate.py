@@ -54,7 +54,7 @@ def _reference(record_id: str, path: str, digest: str) -> dict[str, object]:
 def _configured_project(root: Path) -> tuple[Path, list[dict[str, object]]]:
     initialize_project(root)
     documents = {
-        "docs/runtime.md": "Runtime contract\nGPU offload is disabled.\n",
+        "docs/runtime.md": "Runtime contract\nGPU offload is disabled.\nDisplay context only.\nUnrelated conclusion.\n",
         "docs/audit.md": "Audit contract\nJoint packing is required.\n",
     }
     for index, (path, text) in enumerate(documents.items(), start=1):
@@ -174,5 +174,91 @@ def test_evidence_eligibility_is_deterministic_and_rejects_mixed_bindings(tmp_pa
         blocked = server.memory_check_evidence_eligibility("The release is ready.", "release", "auto", mixed)
         assert blocked["status"] == "blocked"
         assert any(item["code"] == "EVIDENCE-INTEGRITY-INVALID" for item in blocked["blockers"])
+    finally:
+        server.configure_runtime(*prior)
+
+
+@pytest.mark.parametrize("start,end", [(1, 1), (2, 3), (3, 4), (100, 120)])
+def test_evidence_rejects_unregistered_ranges_with_the_same_event_path_and_hash(
+    tmp_path: Path, start: int, end: int,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _root, references = _configured_project(tmp_path / "research")
+        reference = {**references[0], "start_line": start, "end_line": end}
+        with pytest.raises(ValueError, match="exact evidence range"):
+            server.memory_fetch_evidence(**reference)
+        receipt = server.memory_check_evidence_eligibility(
+            "The registered evidence supports this result.", "result", "material", [reference],
+        )
+        assert receipt["status"] == "blocked"
+        assert receipt["evidence"][0]["verified"] is False
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_display_context_never_expands_the_canonical_claim_reference(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _root, references = _configured_project(tmp_path / "research")
+        for context in (0, 8, 50):
+            fetched = server.memory_fetch_evidence(**references[0], context_lines=context)
+            assert fetched["claim_gate_reference"] == references[0]
+            assert (fetched["start_line"], fetched["end_line"]) == (1, 2)
+            assert fetched["context_end_line"] == (2 if context == 0 else 4)
+            assert ("Display context only." in fetched["content"]) is (context > 0)
+            assert server.memory_check_evidence_eligibility(
+                "GPU offload is disabled.", "factual", "material",
+                [fetched["claim_gate_reference"]],
+            )["status"] == "eligible"
+        without_end = {key: value for key, value in references[0].items() if key != "end_line"}
+        assert server.memory_fetch_evidence(**without_end)["claim_gate_reference"] == references[0]
+    finally:
+        server.configure_runtime(*prior)
+
+
+@pytest.mark.parametrize("start,end", [(0, 2), (True, 2), (1, False), (2, 1), (1, 1.5)])
+def test_fetch_rejects_invalid_line_types_and_order(tmp_path: Path, start: object, end: object) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _root, references = _configured_project(tmp_path / "research")
+        reference = {**references[0], "start_line": start, "end_line": end}
+        with pytest.raises(ValueError):
+            server.memory_fetch_evidence(**reference)
+        assert server.memory_check_evidence_eligibility(
+            "Material result.", "result", "material", [reference],
+        )["status"] == "blocked"
+    finally:
+        server.configure_runtime(*prior)
+
+
+@pytest.mark.parametrize("start,end", [(1, 5), (100, 120)])
+def test_registered_file_diagnostics_reject_ranges_past_eof(
+    tmp_path: Path, start: int, end: int,
+) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _root, references = _configured_project(tmp_path / "research")
+        reference = {**references[0], "start_line": start, "end_line": end}
+        reference.pop("event_id")
+        with pytest.raises(ValueError, match="beyond the source file"):
+            server.memory_fetch_evidence(**reference, context_lines=0)
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_shortened_source_preserves_the_original_reference_but_cannot_pass(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root, references = _configured_project(tmp_path / "research")
+        (root / "docs/runtime.md").write_text("", encoding="utf-8")
+        fetched = server.memory_fetch_evidence(**references[0])
+        assert fetched["claim_gate_reference"] == references[0]
+        assert fetched["range_valid"] is False
+        assert fetched["content_withheld"] is True
+        assert fetched["context_start_line"] is None
+        assert server.memory_check_evidence_eligibility(
+            "Material result.", "result", "material", [fetched["claim_gate_reference"]],
+        )["status"] == "blocked"
     finally:
         server.configure_runtime(*prior)

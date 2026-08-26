@@ -75,11 +75,11 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
                 connection.execute("CREATE TABLE events (event_id TEXT, source_path TEXT, source_sha256 TEXT)")
                 connection.execute(
                     "CREATE TABLE event_sources "
-                    "(event_id TEXT, source_path TEXT, source_sha256 TEXT)"
+                    "(event_id TEXT, source_path TEXT, source_sha256 TEXT, line_start INTEGER, line_end INTEGER)"
                 )
                 connection.execute("CREATE TABLE sources (source_path TEXT, source_sha256 TEXT)")
                 connection.execute(
-                    "INSERT INTO event_sources VALUES (?, ?, ?)",
+                    "INSERT INTO event_sources VALUES (?, ?, ?, 1, 1)",
                     ("event_1", "docs/evidence.md", digest),
                 )
             server.configure_runtime(root, database)
@@ -106,11 +106,11 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
                 connection.execute("CREATE TABLE events (event_id TEXT, source_path TEXT, source_sha256 TEXT)")
                 connection.execute(
                     "CREATE TABLE event_sources "
-                    "(event_id TEXT, source_path TEXT, source_sha256 TEXT)"
+                    "(event_id TEXT, source_path TEXT, source_sha256 TEXT, line_start INTEGER, line_end INTEGER)"
                 )
                 connection.execute("CREATE TABLE sources (source_path TEXT, source_sha256 TEXT)")
                 connection.executemany(
-                    "INSERT INTO event_sources VALUES (?, ?, ?)",
+                    "INSERT INTO event_sources VALUES (?, ?, ?, 1, 1)",
                     [
                         ("event_old", "docs/evidence.md", "0" * 64),
                         ("event_current", "docs/evidence.md", current),

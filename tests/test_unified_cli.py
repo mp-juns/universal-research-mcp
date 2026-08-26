@@ -115,12 +115,12 @@ def test_host_input_cli_requires_registered_source_and_human_approval(
     configure_runtime(root)
     assert memory_search_candidates("Verified")["results"][0]["event_id"] == "observation_note"
     source.write_text("# Changed\n", encoding="utf-8")
-    withheld = memory_fetch_evidence("docs/note.md", 1, 1, 0, event_id="observation_note")
+    withheld = memory_fetch_evidence("docs/note.md", 1, 3, 0, event_id="observation_note")
     assert withheld["integrity_status"] == "mismatched"
     assert withheld["content_withheld"] is True
     assert "content" not in withheld
     assert "Changed" in memory_fetch_evidence(
-        "docs/note.md", 1, 1, 0, event_id="observation_note",
+        "docs/note.md", 1, 3, 0, event_id="observation_note",
         allow_mismatched_content=True,
     )["content"]
 

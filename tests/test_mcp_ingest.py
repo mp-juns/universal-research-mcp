@@ -3,19 +3,25 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import multiprocessing
+from multiprocessing.connection import Connection
+import os
 from pathlib import Path
 import sqlite3
+import subprocess
 
 import pytest
 
 from universal_research_mcp import server
 from universal_research_mcp.cli import main
 from universal_research_mcp.core import ingest as ingest_module
-from universal_research_mcp.core.input import all_records, append_record
+from universal_research_mcp.core.canonical_io import canonical_write_lock
+from universal_research_mcp.core.input import all_records, append_record, register_source
 from universal_research_mcp.indexing import initialize_project
 from universal_research_mcp.runtime import ProjectPaths
 from universal_research_mcp.runtime.ingest_approval import IngestApprovalStore
 from universal_research_mcp.runtime.semantic_config import configure_demo
+from universal_research_mcp.runtime import project_io
 
 
 def _sha256(path: Path) -> str:
@@ -444,10 +450,10 @@ def test_mcp_ingest_resumes_after_canonical_commit_before_consumption_marker(
         receipt = _receipt(root, prepared, state_root)
         original = ingest_module._create_only_json
 
-        def fail_consumption(path: Path, payload: dict[str, object]) -> None:
+        def fail_consumption(paths: ProjectPaths, path: Path, payload: dict[str, object]) -> None:
             if path.parent.name == "consumed":
                 raise OSError("injected consumption-marker failure")
-            original(path, payload)
+            original(paths, path, payload)
 
         monkeypatch.setattr(ingest_module, "_create_only_json", fail_consumption)
         with pytest.raises(OSError, match="injected consumption-marker failure"):
@@ -549,3 +555,318 @@ def test_mcp_ingest_reports_success_if_only_final_journal_write_fails(
             )
     finally:
         server.configure_runtime(*prior)
+
+
+def _make_directory_link(path: Path, destination: Path) -> None:
+    if path.exists():
+        path.rename(path.with_name(path.name + ".original"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        path.symlink_to(destination, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"directory symlinks are unavailable: {exc}")
+
+
+@pytest.mark.parametrize("relative", [
+    "data/ingest-drafts", "data/ingest-drafts/pending",
+    "data/ingest-drafts/consumed", "data/ingest-drafts/transactions", "data/audit",
+])
+@pytest.mark.parametrize("phase", ["prepare", "commit"])
+@pytest.mark.parametrize("outside_exists", [True, False])
+def test_ingest_rejects_parent_links_before_writing(
+    tmp_path: Path, relative: str, phase: str, outside_exists: bool,
+) -> None:
+    root = tmp_path / "research"
+    outside = tmp_path / "outside"
+    _source, record = _prepared_project(root)
+    registrations = [{"path": "docs/ingest.md", "source_id": "src_ingest", "source_type": "markdown"}]
+    prepared = ingest_module.prepare_ingest(
+        root, record=record, approval_ref="approval_ingest", source_registrations=registrations,
+    ) if phase == "commit" else None
+    if outside_exists:
+        outside.mkdir()
+    ledger = root / "data/events/daily/2026-08-13/events.jsonl"
+    before = ledger.read_bytes()
+    _make_directory_link(root / relative, outside)
+
+    with pytest.raises(ValueError, match="symlink|reparse"):
+        if prepared is None:
+            ingest_module.prepare_ingest(
+                root, record=record, approval_ref="approval_ingest", source_registrations=registrations,
+            )
+        else:
+            ingest_module.commit_ingest(
+                root, draft_id=prepared["draft_id"], draft_sha256=prepared["draft_sha256"],
+                approval_receipt_id="receipt_" + "0" * 24,
+            )
+    assert ledger.read_bytes() == before
+    assert outside.exists() is outside_exists
+    if outside_exists:
+        assert list(outside.iterdir()) == []
+
+
+@pytest.mark.parametrize("link_type", ["symlink", "hardlink"])
+@pytest.mark.parametrize("artifact", ["pending", "transactions", "consumed", "audit", "lock"])
+def test_ingest_rejects_linked_metadata_files(
+    tmp_path: Path, artifact: str, link_type: str,
+) -> None:
+    root = tmp_path / "research"
+    _prepared_project(root)
+    paths = ProjectPaths.from_root(root)
+    outside = tmp_path / "outside.jsonl"
+    original = b"external file must remain unchanged\n"
+    outside.write_bytes(original)
+    if artifact == "audit":
+        target = root / "data/audit/ingest-events.jsonl"
+    elif artifact == "lock":
+        target = root / "data/ingest-drafts/pending/.commit.lock"
+    else:
+        target = root / "data/ingest-drafts" / artifact / ("ingest_" + "a" * 24 + ".json")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        if link_type == "symlink":
+            target.symlink_to(outside)
+        else:
+            os.link(outside, target)
+    except OSError as exc:
+        pytest.skip(f"{link_type} is unavailable: {exc}")
+
+    with pytest.raises(ValueError, match="symlink|reparse|single-link"):
+        if artifact == "audit":
+            ingest_module._append_audit(paths, {"event_type": "fixture"})
+        elif artifact == "lock":
+            with canonical_write_lock(paths):
+                pytest.fail("a linked lock must not be acquired")
+        elif artifact == "transactions":
+            ingest_module._replace_json(paths, target, {"status": "fixture"})
+        else:
+            ingest_module._create_only_json(paths, target, {"status": "fixture"})
+    assert outside.read_bytes() == original
+
+
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX no-follow directory descriptors")
+def test_ingest_rejects_a_parent_swapped_after_path_validation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "research"
+    _prepared_project(root)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    pending = root / "data/ingest-drafts/pending"
+    original_open = os.open
+    swapped = False
+
+    def replace_parent(path: object, flags: int, *args: object, **kwargs: object) -> int:
+        nonlocal swapped
+        if path == "pending" and kwargs.get("dir_fd") is not None and not swapped:
+            swapped = True
+            _make_directory_link(pending, outside)
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(project_io.os, "open", replace_parent)
+    with pytest.raises((ValueError, OSError)):
+        ingest_module._create_only_json(
+            ProjectPaths.from_root(root), pending / "fixture.json", {"fixture": True},
+        )
+    assert swapped
+    assert list(outside.iterdir()) == []
+
+
+def test_portable_path_rechecks_parent_links(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "research"
+    _prepared_project(root)
+    monkeypatch.setattr(project_io, "_USE_DIRECTORY_FDS", False)
+    files = project_io.ProjectFiles(root)
+    target = root / "data/audit/fixture.json"
+    files.create(target, b"original\n")
+    files.replace(target, b"updated\n", expected=b"original\n", check_expected=True)
+    assert files.read(target) == b"updated\n"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    _make_directory_link(target.parent, outside)
+    with pytest.raises(ValueError, match="symlink|reparse"):
+        files.replace(target, b"must not escape\n")
+    assert list(outside.iterdir()) == []
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows junction creation")
+@pytest.mark.parametrize("relative", [
+    "data/ingest-drafts", "data/ingest-drafts/pending",
+    "data/ingest-drafts/consumed", "data/ingest-drafts/transactions", "data/audit",
+])
+@pytest.mark.parametrize("phase", ["prepare", "commit"])
+def test_ingest_rejects_windows_junction(tmp_path: Path, relative: str, phase: str) -> None:
+    root = tmp_path / "research"
+    _source, record = _prepared_project(root)
+    registrations = [{"path": "docs/ingest.md", "source_id": "src_ingest", "source_type": "markdown"}]
+    prepared = ingest_module.prepare_ingest(
+        root, record=record, approval_ref="approval_ingest", source_registrations=registrations,
+    ) if phase == "commit" else None
+    target = root / relative
+    if target.exists():
+        target.rename(target.with_name(target.name + ".original"))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    ledger = root / "data/events/daily/2026-08-13/events.jsonl"
+    before = ledger.read_bytes()
+    subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(target), str(outside)],
+        check=True, capture_output=True, timeout=10,
+    )
+    with pytest.raises(ValueError, match="symlink|reparse"):
+        if prepared is None:
+            ingest_module.prepare_ingest(
+                root, record=record, approval_ref="approval_ingest", source_registrations=registrations,
+            )
+        else:
+            ingest_module.commit_ingest(
+                root, draft_id=prepared["draft_id"], draft_sha256=prepared["draft_sha256"],
+                approval_receipt_id="receipt_" + "0" * 24,
+            )
+    assert ledger.read_bytes() == before
+    assert list(outside.iterdir()) == []
+
+
+def _paused_administrator_writer(root: str, connection: Connection) -> None:
+    """A real separate writer process paused between validation and append."""
+    from universal_research_mcp.core import input as input_module
+
+    original_validate = input_module.validate_candidate_records
+
+    def paused_validate(*args: object, **kwargs: object) -> object:
+        result = original_validate(*args, **kwargs)
+        connection.send("validated")
+        if not connection.poll(20) or connection.recv() != "continue":
+            raise RuntimeError("test writer was not released")
+        return result
+
+    input_module.validate_candidate_records = paused_validate
+    try:
+        input_module.append_record(
+            root, {**_approval(), "record_id": "approval_concurrent"}, approval_bootstrap=True,
+        )
+        connection.send("committed")
+    except Exception as exc:
+        connection.send(f"{type(exc).__name__}: {exc}")
+        raise
+    finally:
+        connection.close()
+
+
+def test_cli_and_mcp_writers_share_a_process_lock_across_validation(tmp_path: Path) -> None:
+    root = tmp_path / "research"
+    _prepared_project(root)
+    context = multiprocessing.get_context("spawn")
+    parent, child = context.Pipe()
+    process = context.Process(target=_paused_administrator_writer, args=(str(root), child))
+    process.start()
+    child.close()
+    try:
+        assert parent.poll(20), "writer did not reach validation"
+        assert parent.recv() == "validated"
+        with pytest.raises(RuntimeError, match="canonical write lock"):
+            append_record(root, {**_approval(), "record_id": "approval_concurrent"}, approval_bootstrap=True)
+        with pytest.raises(RuntimeError, match="canonical write lock"):
+            register_source(root, "docs/ingest.md", source_id="src_concurrent", source_type="markdown")
+        with pytest.raises(RuntimeError, match="canonical write lock"):
+            ingest_module.commit_ingest(
+                root, draft_id="ingest_" + "0" * 24, draft_sha256="0" * 64,
+                approval_receipt_id="receipt_" + "0" * 24,
+            )
+        parent.send("continue")
+        assert parent.poll(20), "writer did not complete"
+        assert parent.recv() == "committed"
+        process.join(10)
+        assert process.exitcode == 0
+        with pytest.raises(ValueError, match="record ID already exists"):
+            append_record(root, {**_approval(), "record_id": "approval_concurrent"}, approval_bootstrap=True)
+        assert len(all_records(ProjectPaths.from_root(root))) == 2
+        assert (root / "data/events/sources.jsonl").read_bytes() == b""
+    finally:
+        if process.is_alive():
+            process.terminate()
+        process.join(5)
+        parent.close()
+
+
+@pytest.mark.parametrize("writer", ["record", "source"])
+def test_admin_append_fsyncs_staging_and_preserves_original_on_replace_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, writer: str,
+) -> None:
+    root = tmp_path / "research"
+    _prepared_project(root)
+    target = root / (
+        "data/events/sources.jsonl" if writer == "source"
+        else "data/events/daily/2026-08-13/events.jsonl"
+    )
+    before = target.read_bytes()
+    flushed: set[tuple[int, int]] = set()
+    original_fsync = os.fsync
+    original_replace = os.replace
+
+    def track_fsync(descriptor: int) -> None:
+        metadata = os.fstat(descriptor)
+        flushed.add((metadata.st_dev, metadata.st_ino))
+        original_fsync(descriptor)
+
+    def fail_replace(source: object, destination: object, **kwargs: object) -> None:
+        if Path(destination).name == target.name:
+            metadata = os.stat(source, dir_fd=kwargs.get("src_dir_fd"), follow_symlinks=False)
+            assert (metadata.st_dev, metadata.st_ino) in flushed
+            raise OSError("injected atomic replacement failure")
+        original_replace(source, destination, **kwargs)
+
+    def append() -> None:
+        if writer == "source":
+            register_source(root, "docs/ingest.md", source_id="src_durable", source_type="markdown")
+        else:
+            append_record(root, {**_approval(), "record_id": "approval_durable"}, approval_bootstrap=True)
+
+    monkeypatch.setattr(project_io.os, "fsync", track_fsync)
+    monkeypatch.setattr(project_io.os, "replace", fail_replace)
+    with pytest.raises(OSError, match="injected atomic replacement failure"):
+        append()
+    assert target.read_bytes() == before
+    assert list(target.parent.glob(".*.tmp")) == []
+    assert not ProjectPaths.from_root(root).canonical_lock.exists()
+    monkeypatch.setattr(project_io.os, "replace", original_replace)
+    append()
+    assert target.read_bytes().startswith(before)
+    assert len(target.read_bytes().splitlines()) == len(before.splitlines()) + 1
+
+
+@pytest.mark.parametrize("writer", ["record", "source"])
+@pytest.mark.parametrize("link_type", ["file_symlink", "parent_symlink", "hardlink"])
+def test_admin_writes_reject_linked_canonical_paths(
+    tmp_path: Path, writer: str, link_type: str,
+) -> None:
+    root = tmp_path / "research"
+    _prepared_project(root)
+    target = root / (
+        "data/events/sources.jsonl" if writer == "source"
+        else "data/events/daily/2026-08-13/events.jsonl"
+    )
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    external = outside / target.name
+    original = target.read_bytes()
+    external.write_bytes(original)
+    if link_type == "parent_symlink":
+        _make_directory_link(target.parent, outside)
+    else:
+        target.unlink()
+        try:
+            if link_type == "file_symlink":
+                target.symlink_to(external)
+            else:
+                os.link(external, target)
+        except OSError as exc:
+            pytest.skip(f"{link_type} is unavailable: {exc}")
+    with pytest.raises(ValueError, match="symlink|reparse|single-link|escapes root"):
+        if writer == "source":
+            register_source(root, "docs/ingest.md", source_id="src_linked", source_type="markdown")
+        else:
+            append_record(root, {**_approval(), "record_id": "approval_linked"}, approval_bootstrap=True)
+    assert external.read_bytes() == original
+    assert list(outside.iterdir()) == [external]

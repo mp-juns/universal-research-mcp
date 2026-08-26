@@ -86,6 +86,8 @@ def evaluate_evidence_eligibility(
 
     evidence: list[dict[str, Any]] = []
     blockers: list[dict[str, str]] = []
+    # Count canonical event records, not independently authored sources or
+    # independent observations. Source independence is a separate host policy.
     distinct: set[str] = set()
     for index, check in enumerate(checks, start=1):
         event_id = check.get("event_id")
