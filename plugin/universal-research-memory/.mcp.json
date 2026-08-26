@@ -3,7 +3,7 @@
     "universal_research": {
       "type": "stdio",
       "command": "universal-research",
-      "args": ["serve", "--auto-index"]
+      "args": ["serve", "--no-auto-index"]
     }
   }
 }

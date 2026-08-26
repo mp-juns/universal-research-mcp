@@ -1,5 +1,14 @@
 # URAG Security Boundary
 
+New sessions must ask for and wait on the human's session scope before task
+execution. Defaults propose host-shell work, ordinary scoped file writes,
+per-operation external network/download approval and zero agents. This is
+delivered through MCP initialization instructions, plugin Skills and a
+stateless SessionStart hook. It is **instruction-level guidance, not an
+authenticated approval receipt or a global sandbox**. Hooks require separate
+host trust. A profile, hook output or prior-session approval cannot confirm the
+scope. See [session confirmation](host-integration.md#new-session-permission-confirmation).
+
 The governance surface validates packets, manifests, decisions, and gates. It
 does not approve commands, invoke models, or expose a generic filesystem tool.
 The only canonical-write exception is the host-visible two-step ingestion
@@ -10,8 +19,9 @@ pre-existing human approval scope, and one-time consumption. It prepares a
 write-ahead journal before mutation, verifies exact before/after hashes for
 each canonical file, and marks the draft consumed only after all operations
 verify. A partial failure is recoverable only with the same consumed receipt
-and exact journal. Automatic startup
-writes remain restricted to staged, verified project-local derived indexes.
+and exact journal. The plugin explicitly disables automatic index writes at
+startup with `serve --no-auto-index`. An explicitly approved `--auto-index` configuration remains limited
+to staged, verified project-local derived indexes.
 
 All ingest draft/journal/consumption/audit paths and the shared CLI/MCP canonical
 lock reject symlink and reparse-point parents before creation. File operations

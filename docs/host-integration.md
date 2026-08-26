@@ -4,6 +4,45 @@
 > local/remote model-provider routes are design work, not supported runtime
 > integrations.
 
+## New-session permission confirmation
+
+The host must ask for the current workspace and permission scope as its first
+response in every new Universal Research session, then wait for the user's
+explicit reply before task tools. The proposed defaults are **host shell,
+ordinary scoped file creation/editing allowed after confirmation, approval
+before each external network/download operation, and zero agents**. Defaults,
+prior sessions, silent acceptance and assistant-authored summaries are not
+permission grants. Resume/compaction preserves an explicit same-session scope;
+missing or changed scope requires another question.
+
+The main, public-demo and governance MCP initialization instructions carry this
+policy. The plugin also includes a stateless `SessionStart` hook and the same
+policy in both Skills. The hook reads no transcript, writes no state and
+cannot approve work. Codex must review and trust a plugin hook before running
+it; installing the plugin is not that trust decision. Do not use hook-trust
+bypass flags or create trust receipts on the user's behalf.
+
+The default plugin launcher uses `serve --no-auto-index`, so startup
+does not refresh derived indexes before the session question. After approval,
+an in-scope index operation may be explicitly requested. Existing installations
+with a separate direct MCP registration must also remove its automatic-index
+flag if they need this startup boundary.
+
+For a local Codex host, compatible defaults are `sandbox_mode="workspace-write"`,
+`approval_policy="on-request"`, `sandbox_workspace_write.network_access=false`
+and `agents.enabled=false`. Host feature/config layers may override user
+defaults; changes do not revoke tools in a running task. Scope confirmation is
+instruction-level, not a portable mechanical host-wide gate. Network-capable
+web/connectors, old command allowlists and automatic approval reviewers still
+require the explicit per-operation human confirmation in this workflow.
+Ordinary file permission never waives canonical ingest, destructive-action,
+reference-project, model/benchmark or agent-creation approval requirements.
+
+See the [Codex hook contract](https://learn.chatgpt.com/docs/hooks) and
+[host configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
+for hook trust and host-level permission controls. If a host cannot provide the
+requested restriction, disclose it and do not execute the affected operation.
+
 All hosts consume one role manifest and one task/decision contract. A host is a
 facilitator, not a twelfth governance role: it may interpret a user request,
 request role activation, render scoped instructions, and return a structured

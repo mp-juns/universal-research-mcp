@@ -106,6 +106,13 @@ enable_error_code = ["arg-type", "assignment", "attr-defined", "operator", "unio
 "share/universal-research-mcp/plugin/universal-research-memory/.codex-plugin" = [
   "plugin/universal-research-memory/.codex-plugin/plugin.json",
 ]
+"share/universal-research-mcp/plugin/universal-research-memory/hooks" = [
+  "plugin/universal-research-memory/hooks/hooks.json",
+  "plugin/universal-research-memory/hooks/session-scope.md",
+]
+"share/universal-research-mcp/plugin/universal-research-memory/scripts" = [
+  "plugin/universal-research-memory/scripts/session_start.py",
+]
 "share/universal-research-mcp/plugin/universal-research-memory/skills/research-workflow" = [
   "plugin/universal-research-memory/skills/research-workflow/SKILL.md",
 ]
