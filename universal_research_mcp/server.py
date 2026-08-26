@@ -90,7 +90,10 @@ the current canonical-projection identity gate. Adaptive uses lexical for explic
 code/file/identifier queries and semantic for ordinary research questions when
 the explicitly configured offline index is current; it reports a lexical
 fallback if semantic retrieval is unavailable. It never turns a candidate into
-evidence.
+evidence. Semantic and hybrid responses disclose the configured backend in
+routing.semantic_backend; when trained_embedding_model is false the scores come
+from a deterministic hashing demo, so never present them as model-based
+semantic similarity.
 Before making an important claim, call memory_fetch_evidence
 with the exact path and line range returned by search, then report that source
 range and its hash. Before reporting a material result, comparison, causal,
@@ -322,6 +325,28 @@ def _require_current_semantic_index():
             "build --root <project-root>` before semantic or hybrid retrieval"
         )
     return backend
+
+
+def _semantic_backend_descriptor() -> dict[str, Any] | None:
+    """Disclose the configured semantic backend identity in tool responses.
+
+    A ``deterministic_demo`` backend is a hashing demo, not a trained
+    embedding model; hosts must be able to see that in the same response that
+    carries its cosine scores instead of needing a separate status call.
+    """
+
+    from universal_research_mcp.semantic_runtime import configured_backend
+
+    backend = configured_backend(ROOT)
+    if backend is None:
+        return None
+    return {
+        "provider_id": backend.provider_id,
+        "model": backend.model,
+        "backend_class": backend.backend_class,
+        "trained_embedding_model": backend.trained_embedding_model,
+        "dimensions": backend.dimensions,
+    }
 
 
 def resolve_safe_path(relative_path: str) -> Path:
@@ -905,6 +930,8 @@ def memory_search_candidates(
 
     if configured_mode_reason is not None:
         routing["configured_mode_reason"] = configured_mode_reason
+    if selected_mode in {"semantic", "hybrid"}:
+        routing["semantic_backend"] = _semantic_backend_descriptor()
     identity_gate = _apply_candidate_identity_gate(results)
     routing["candidate_backend"] = candidate_backend
     routing["candidate_backend_applied"] = selected_mode in {"lexical", "hybrid"}

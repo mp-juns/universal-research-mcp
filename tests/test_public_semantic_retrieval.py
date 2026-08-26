@@ -112,8 +112,18 @@ def test_demo_semantic_build_and_hybrid_search_preserve_evidence_provenance(
         server.configure_runtime(root)
         semantic = server.memory_search_candidates("alpha evidence", mode="semantic")
         hybrid = server.memory_search_candidates("alpha evidence", mode="hybrid")
+        lexical = server.memory_search_candidates("alpha evidence", mode="lexical")
     finally:
         server.configure_runtime(previous_root, previous_db, previous_events)
+
+    assert "semantic_backend" not in lexical["routing"]
+
+    for response in (semantic, hybrid):
+        backend = response["routing"]["semantic_backend"]
+        assert backend["backend_class"] == "deterministic_demo"
+        assert backend["trained_embedding_model"] is False
+        assert backend["provider_id"] == "deterministic_demo"
+        assert backend["model"] == "signed_hashing_v1"
 
     candidate = semantic["results"][0]
     assert semantic["candidate_only"] is True
