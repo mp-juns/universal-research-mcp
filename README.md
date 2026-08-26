@@ -6,6 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-v0.8.5-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.5/)
 [![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.5/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22118223.svg)](https://doi.org/10.5281/zenodo.22118223)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
 
@@ -204,6 +205,13 @@ retained for provenance, not a claim that the tool verifies truth.
   production reliability, or statistically decisive superiority.
 
 [Security model](docs/security.md) · [Governance contracts](docs/multi-agent-governance.md)
+
+## Citation
+
+Use the concept DOI [`10.5281/zenodo.22118223`](https://doi.org/10.5281/zenodo.22118223)
+to cite the software across releases. For an exact, reproducible reference to
+the core `v0.8.5` archive, use the version DOI
+[`10.5281/zenodo.22118224`](https://doi.org/10.5281/zenodo.22118224).
 
 ## Development reference
 
