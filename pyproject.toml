@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.8.3"
+version = "0.8.4"
 description = "Governed MCP for provenance-first research memory, evidence re-verification, and controlled canonical ingestion."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -82,6 +82,7 @@ module = [
   "universal_research_mcp.public_demo",
   "universal_research_mcp.runtime.ingest_approval",
   "universal_research_mcp.runtime.project_io",
+  "universal_research_mcp.runtime.model_snapshot",
 ]
 enable_error_code = ["arg-type", "assignment", "attr-defined", "operator", "union-attr"]
 

@@ -15,13 +15,19 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Any, Literal
 
 from universal_research_mcp import __version__
+from universal_research_mcp.runtime.model_snapshot import (
+    SnapshotIdentity, create_snapshot_manifest, immutable_revision,
+    read_snapshot_identity, verify_snapshot,
+)
+from universal_research_mcp.runtime.project_io import ProjectFiles
 from universal_research_mcp.runtime.semantic_config import configure_local
 
 
-SETUP_SCHEMA_VERSION = "semantic-local-setup/1.0"
+SETUP_SCHEMA_VERSION = "semantic-local-setup/2.0"
 EnvironmentManager = Literal["auto", "conda", "venv"]
 
 
@@ -89,6 +95,8 @@ def catalogue() -> dict[str, Any]:
 
 
 def _select_manager(manager: EnvironmentManager) -> tuple[str, str | None]:
+    if manager not in {"auto", "conda", "venv"}:
+        raise ValueError("semantic setup environment manager is invalid")
     conda = shutil.which("conda")
     if manager == "auto":
         return ("conda", conda) if conda else ("venv", None)
@@ -115,7 +123,7 @@ def setup_plan(
     model_id: str,
     manager: EnvironmentManager = "auto",
     device: str = "auto",
-    revision: str = "main",
+    revision: str,
     auto_refresh: bool = False,
     reuse_existing: bool = False,
 ) -> dict[str, Any]:
@@ -126,12 +134,16 @@ def setup_plan(
         raise ValueError("model_id is not in the reviewed semantic model catalogue")
     if device not in {"auto", "cpu", "cuda", "mps"}:
         raise ValueError("semantic setup device is invalid")
-    if not isinstance(revision, str) or not revision or len(revision) > 128:
-        raise ValueError("semantic setup revision is invalid")
+    revision = immutable_revision(revision)
+    if not isinstance(auto_refresh, bool) or not isinstance(reuse_existing, bool):
+        raise ValueError("semantic setup flags must be boolean")
     selected_manager, conda = _select_manager(manager)
     project_root = Path(root).expanduser().resolve()
     environment_path = project_root / ".universal-research" / "semantic-env"
-    model_path = project_root / ".universal-research" / "models" / _safe_model_folder(model.model_id)
+    model_path = project_root / ".universal-research" / "models" / _safe_model_folder(model.model_id) / revision
+    files = ProjectFiles(project_root)
+    files.path(environment_path, directory=True)
+    files.path(model_path, directory=True)
     environment_exists = environment_path.exists()
     model_exists = model_path.exists()
     if environment_exists and not reuse_existing:
@@ -142,6 +154,11 @@ def setup_plan(
         model_state = "exists_reuse_requires_explicit_flag"
     else:
         model_state = "existing" if model_exists else "will_download"
+    snapshot = None
+    if model_exists and reuse_existing:
+        snapshot = read_snapshot_identity(model_path)
+        if snapshot.model_id != model_id or snapshot.revision != revision:
+            raise ValueError("model snapshot identity does not match the requested model and revision")
     plan = {
         "schema_version": SETUP_SCHEMA_VERSION,
         "status": "confirmation_required",
@@ -156,12 +173,14 @@ def setup_plan(
         "model": {
             "model_id": model.model_id,
             "requested_revision": revision,
+            "resolved_revision": revision,
             "path": str(model_path),
             "state": model_state,
             "dimensions": model.dimensions,
             "languages": model.languages,
             "size_class": model.size_class,
             "query_prefix": model.query_prefix,
+            "snapshot": snapshot.to_dict() if snapshot is not None else None,
         },
         "semantic_configuration": {
             "device": device,
@@ -175,7 +194,7 @@ def setup_plan(
         "operations": [
             "create_or_reuse_isolated_environment",
             "install_pinned_universal_research_semantic_extra",
-            "download_or_reuse_reviewed_model_snapshot",
+            "download_pinned_snapshot_or_verify_existing_manifest_and_files",
             "write_project_local_semantic_configuration",
         ],
         # Even a reused environment may need pip to resolve the package extra,
@@ -209,17 +228,57 @@ def execute_setup(plan: dict[str, Any], *, confirm_plan_sha256: str) -> dict[str
     actual = _sha256(supplied)
     if claimed != actual or confirm_plan_sha256 != actual:
         raise ValueError("--confirm-plan-sha256 must exactly match the displayed setup plan")
-    if plan["status"] != "confirmation_required":
+    if plan.get("schema_version") != SETUP_SCHEMA_VERSION:
+        raise ValueError("semantic setup plan schema changed; regenerate and approve a new plan")
+    if plan.get("status") != "confirmation_required":
         raise ValueError("semantic setup plan has an invalid status")
+    _check_current_plan(plan)
+    root = Path(plan["root"])
+    root.mkdir(parents=True, exist_ok=True)
+    files = ProjectFiles(root)
+    with files.parent(".universal-research/.semantic-setup.lock", create=True) as (parent, name):
+        try:
+            identity = parent.create(name, _canonical_json({"plan_sha256": actual, "pid": os.getpid()}))
+        except FileExistsError as exc:
+            raise RuntimeError("semantic setup lock exists; another setup may be active") from exc
+        try:
+            _check_current_plan(plan)
+            return _execute_confirmed(plan, actual)
+        finally:
+            parent.remove(name, identity=identity)
+
+
+def _check_current_plan(plan: dict[str, Any]) -> None:
+    """A confirmation hash is not permission to change the planner's contract."""
+
+    try:
+        current = setup_plan(
+            plan["root"], model_id=plan["model"]["model_id"],
+            manager=plan["environment"]["manager"],
+            device=plan["semantic_configuration"]["device"],
+            revision=plan["model"]["requested_revision"],
+            auto_refresh=plan["semantic_configuration"]["auto_refresh"],
+            reuse_existing=plan["reuse_existing"],
+        )
+    except (KeyError, TypeError) as exc:
+        raise ValueError("semantic setup plan is incomplete; regenerate the plan") from exc
+    if current != plan:
+        raise ValueError("semantic setup plan or local state changed; regenerate and approve the plan")
+    for target in ("environment", "model"):
+        if plan[target]["state"] == "exists_reuse_requires_explicit_flag":
+            raise ValueError(f"semantic {target} exists; regenerate the plan with --reuse-existing")
+
+
+def _execute_confirmed(plan: dict[str, Any], actual: str) -> dict[str, Any]:
     environment = plan["environment"]
     model = plan["model"]
     env_path = Path(environment["path"])
     model_path = Path(model["path"])
     reuse = bool(plan["reuse_existing"])
-    if environment["state"] == "exists_reuse_requires_explicit_flag":
-        raise ValueError("semantic environment exists; regenerate the plan with --reuse-existing")
-    if model["state"] == "exists_reuse_requires_explicit_flag":
-        raise ValueError("semantic model path exists; regenerate the plan with --reuse-existing")
+    snapshot = SnapshotIdentity.from_dict(model["snapshot"]) if model["snapshot"] is not None else None
+    if snapshot is not None:
+        # Check before any environment creation, package install or download.
+        verify_snapshot(model_path, snapshot)
 
     env_path.parent.mkdir(parents=True, exist_ok=True)
     if not env_path.exists():
@@ -238,16 +297,26 @@ def execute_setup(plan: dict[str, Any], *, confirm_plan_sha256: str) -> dict[str
     _run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
     _run([str(python), "-m", "pip", "install", "--upgrade", plan["package"]["requirement"]])
 
-    if not model_path.exists():
+    files = ProjectFiles(Path(plan["root"]))
+    files.path(model_path, directory=True)
+    if snapshot is None:
+        if model_path.exists():
+            raise ValueError("semantic model path appeared after approval; regenerate the plan")
         model_path.parent.mkdir(parents=True, exist_ok=True)
-        _download_model(
-            python,
-            model_id=model["model_id"],
-            revision=model["requested_revision"],
-            destination=model_path,
-        )
-    if not model_path.is_dir():
-        raise RuntimeError("semantic model download did not create the expected local directory")
+        # Failed or interrupted downloads never become a reusable final cache.
+        with tempfile.TemporaryDirectory(prefix=f".{model['resolved_revision']}.", dir=model_path.parent) as temporary:
+            staging = Path(temporary)
+            _download_model(
+                python, model_id=model["model_id"],
+                revision=model["resolved_revision"], destination=staging,
+            )
+            snapshot = create_snapshot_manifest(
+                staging, model_id=model["model_id"], revision=model["resolved_revision"],
+            )
+            files.path(model_path, directory=True)
+            if model_path.exists():
+                raise ValueError("semantic model path appeared during download; refusing to overwrite it")
+            staging.rename(model_path)
     configure_local(
         plan["root"],
         model_path=model_path,
@@ -255,6 +324,7 @@ def execute_setup(plan: dict[str, Any], *, confirm_plan_sha256: str) -> dict[str
         trust_local_model_code=False,
         dimensions=model["dimensions"],
         auto_refresh=plan["semantic_configuration"]["auto_refresh"],
+        snapshot=snapshot,
     )
     environment_cli = _environment_cli(env_path)
     return {
@@ -262,7 +332,12 @@ def execute_setup(plan: dict[str, Any], *, confirm_plan_sha256: str) -> dict[str
         "status": "configured",
         "plan_sha256": actual,
         "environment": {"manager": environment["manager"], "path": str(env_path)},
-        "model": {"model_id": model["model_id"], "requested_revision": model["requested_revision"], "path": str(model_path)},
+        "model": {
+            "model_id": model["model_id"], "requested_revision": model["requested_revision"],
+            "resolved_revision": snapshot.revision, "path": str(model_path),
+            "snapshot": snapshot.to_dict(), "snapshot_verified": True,
+        },
+        "dependency_environment_locked": False,
         "semantic_configuration_written": True,
         "index_build_executed": False,
         "next_steps": {

@@ -897,7 +897,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     semantic_setup.add_argument("--root", type=Path)
     semantic_setup.add_argument("--model", required=True, help="Exact model ID from `semantic models`.")
-    semantic_setup.add_argument("--revision", default="main", help="Model revision; use an immutable commit hash for reproducibility.")
+    semantic_setup.add_argument("--revision", required=True, help="Full immutable model commit SHA (40 hex characters); branches and tags are rejected.")
     semantic_setup.add_argument("--environment-manager", choices=("auto", "conda", "venv"), default="auto")
     semantic_setup.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
     semantic_setup.add_argument("--auto-refresh", action=argparse.BooleanOptionalAction, default=False)

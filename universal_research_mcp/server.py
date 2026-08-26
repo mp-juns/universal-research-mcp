@@ -1474,13 +1474,13 @@ def research_semantic_models() -> dict[str, Any]:
 @mcp.tool()
 def research_semantic_setup_plan(
     model_id: str,
+    revision: str,
     environment_manager: Literal["auto", "conda", "venv"] = "auto",
     device: Literal["auto", "cpu", "cuda", "mps"] = "auto",
-    revision: str = "main",
     auto_refresh: bool = False,
     reuse_existing: bool = False,
 ) -> dict[str, Any]:
-    """Prepare but never execute a hash-bound local semantic setup plan."""
+    """Plan without network or execution; revision must be a full immutable commit SHA."""
 
     from universal_research_mcp.runtime.semantic_setup import setup_plan
 

@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 from typing import Sequence
 
+from universal_research_mcp.runtime.model_snapshot import SnapshotIdentity, verify_snapshot
 
 DEFAULT_DIMENSIONS = 256
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
@@ -102,7 +103,13 @@ class LocalSentenceTransformerEmbedder:
     device: str = "auto"
     trust_local_model_code: bool = False
     provider_id: str = "local"
+    snapshot: SnapshotIdentity | None = None
     _encoder: object | None = field(init=False, default=None, repr=False)
+
+    @property
+    def model_identity(self) -> str:
+        path = str(Path(self.model_path).expanduser().resolve())
+        return f"{path}@sha256:{self.snapshot.manifest_sha256}" if self.snapshot is not None else path
 
     def preflight(self) -> Availability:
         snapshot = Path(self.model_path).expanduser().resolve()
@@ -130,7 +137,8 @@ class LocalSentenceTransformerEmbedder:
         if not readiness.available:
             raise RuntimeError(readiness.reason)
         snapshot = Path(self.model_path).expanduser().resolve()
-        if Path(model).expanduser().resolve() != snapshot:
+        matches = model == self.model_identity if self.snapshot is not None else Path(model).expanduser().resolve() == snapshot
+        if not matches:
             raise ValueError("semantic model does not match the approved local snapshot")
         encoder = self._encoder
         if encoder is None:
@@ -150,10 +158,12 @@ class LocalSentenceTransformerEmbedder:
             materialized = [vector[:dimensions] for vector in materialized]
         return EmbeddingResult(
             request_id="semantic-local", provider_id=self.provider_id,
-            model=str(snapshot), vectors=tuple(materialized),
+            model=self.model_identity, vectors=tuple(materialized),
         )
 
     def _load_encoder(self, snapshot: Path) -> object:
+        if self.snapshot is not None:
+            verify_snapshot(snapshot, self.snapshot)
         from sentence_transformers import SentenceTransformer
 
         selected_device = None if self.device == "auto" else self.device

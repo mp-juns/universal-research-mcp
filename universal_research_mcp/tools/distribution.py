@@ -44,6 +44,8 @@ REQUIRED_RUNTIME_FILES = (
     "universal_research_mcp/runtime/agent_approval.py",
     "universal_research_mcp/runtime/ingest_approval.py",
     "universal_research_mcp/runtime/project_io.py",
+    "universal_research_mcp/runtime/model_snapshot.py",
+    "universal_research_mcp/runtime/semantic_setup.py",
     "universal_research_mcp/semantic_runtime.py", "universal_research_mcp/tools/distribution.py",
     "universal_research_mcp/tools/build_research_ledger_index.py",
     "universal_research_mcp/secure_harness/approval.py",

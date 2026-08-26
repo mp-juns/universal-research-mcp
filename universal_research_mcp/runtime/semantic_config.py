@@ -13,8 +13,14 @@ from pathlib import Path
 import tempfile
 from typing import Any, Literal
 
+from universal_research_mcp.runtime.model_snapshot import (
+    MANIFEST_NAME, SnapshotIdentity, read_snapshot_identity, verify_snapshot,
+)
+from universal_research_mcp.runtime.project_io import ProjectFiles
 
-SCHEMA_VERSION = "semantic-retrieval-config/1.0"
+
+SCHEMA_VERSION = "semantic-retrieval-config/1.1"
+_LEGACY_SCHEMA_VERSION = "semantic-retrieval-config/1.0"
 CONFIG_RELATIVE_PATH = Path("config/semantic.json")
 BackendKind = Literal["signed_hashing_v1", "local_sentence_transformer"]
 
@@ -28,7 +34,7 @@ def _validate(config: Any) -> dict[str, Any]:
         "schema_version", "backend", "auto_refresh",
     }:
         raise ValueError("semantic configuration is incomplete")
-    if config.get("schema_version") != SCHEMA_VERSION:
+    if config.get("schema_version") not in {SCHEMA_VERSION, _LEGACY_SCHEMA_VERSION}:
         raise ValueError("semantic configuration schema_version is invalid")
     if not isinstance(config.get("auto_refresh"), bool):
         raise ValueError("semantic configuration auto_refresh must be boolean")
@@ -44,6 +50,9 @@ def _validate(config: Any) -> dict[str, Any]:
             raise ValueError("signed hashing dimensions must be in [8, 4096]")
     elif kind == "local_sentence_transformer":
         expected = {"kind", "model_path", "device", "trust_local_model_code", "dimensions"}
+        if config["schema_version"] == SCHEMA_VERSION and "snapshot" in backend:
+            expected.add("snapshot")
+            SnapshotIdentity.from_dict(backend["snapshot"])
         if set(backend) != expected:
             raise ValueError("local semantic configuration is invalid")
         if not isinstance(backend.get("model_path"), str) or not backend["model_path"]:
@@ -113,17 +122,25 @@ def configure_local(
     trust_local_model_code: bool = False,
     dimensions: int | None = None,
     auto_refresh: bool = False,
+    snapshot: SnapshotIdentity | None = None,
 ) -> dict[str, Any]:
     resolved = Path(model_path).expanduser().resolve()
+    if snapshot is None and ProjectFiles(resolved).exists(MANIFEST_NAME):
+        snapshot = read_snapshot_identity(resolved)
+    if snapshot is not None:
+        verify_snapshot(resolved, snapshot)
+    backend: dict[str, Any] = {
+        "kind": "local_sentence_transformer",
+        "model_path": str(resolved),
+        "device": device,
+        "trust_local_model_code": trust_local_model_code,
+        "dimensions": dimensions,
+    }
+    if snapshot is not None:
+        backend["snapshot"] = snapshot.to_dict()
     config = write_semantic_config(root, {
         "schema_version": SCHEMA_VERSION,
-        "backend": {
-            "kind": "local_sentence_transformer",
-            "model_path": str(resolved),
-            "device": device,
-            "trust_local_model_code": trust_local_model_code,
-            "dimensions": dimensions,
-        },
+        "backend": backend,
         "auto_refresh": auto_refresh,
     })
     return {
@@ -139,6 +156,8 @@ def configure_local(
         "trained_embedding_model": True,
         "auto_refresh": auto_refresh,
         "downloads_performed": False,
+        "snapshot": snapshot.to_dict() if snapshot is not None else None,
+        "snapshot_verification": "verified" if snapshot is not None else "unverified_manual_path",
     }
 
 

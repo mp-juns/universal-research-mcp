@@ -12,6 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from universal_research_mcp.runtime.model_snapshot import SnapshotIdentity, verify_snapshot
 from universal_research_mcp.semantic_backends import (
     LocalSentenceTransformerEmbedder,
     SignedHashingEmbedder,
@@ -36,18 +37,24 @@ def _local_embedder(
     model_path: str,
     device: str,
     trust_local_model_code: bool,
+    snapshot: SnapshotIdentity | None = None,
 ) -> LocalSentenceTransformerEmbedder:
     """Reuse an explicitly configured local embedder within one process.
 
     ``configured_backend`` is evaluated for every semantic or hybrid request.
     The immutable backend tuple makes reuse safe while ensuring that a changed
-    model path, device, or remote-code policy receives a separate instance.
+    model path, snapshot identity, device, or remote-code policy receives a
+    separate instance. Managed files are verified when a new instance is made;
+    the encoder verifies again immediately before loading model files.
     """
 
+    if snapshot is not None:
+        verify_snapshot(Path(model_path), snapshot)
     return LocalSentenceTransformerEmbedder(
         model_path,
         device=device,
         trust_local_model_code=trust_local_model_code,
+        snapshot=snapshot,
     )
 
 
@@ -72,14 +79,16 @@ def configured_backend(root: str | Path) -> SemanticBackend | None:
         )
     if backend["kind"] == "local_sentence_transformer":
         model_path = str(Path(backend["model_path"]).expanduser().resolve())
+        snapshot = SnapshotIdentity.from_dict(backend["snapshot"]) if "snapshot" in backend else None
+        embedder = _local_embedder(
+            model_path, device=str(backend["device"]),
+            trust_local_model_code=bool(backend["trust_local_model_code"]),
+            snapshot=snapshot,
+        )
         return SemanticBackend(
-            embedder=_local_embedder(
-                model_path,
-                device=str(backend["device"]),
-                trust_local_model_code=bool(backend["trust_local_model_code"]),
-            ),
+            embedder=embedder,
             provider_id="local",
-            model=model_path,
+            model=embedder.model_identity,
             dimensions=backend["dimensions"],
             backend_class="local_trained_model",
             trained_embedding_model=True,

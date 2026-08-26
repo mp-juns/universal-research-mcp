@@ -13,6 +13,8 @@ import tempfile
 
 BOUNDARY_TESTS = (
     "tests/test_memory_claim_gate.py",
+    "tests/test_semantic_setup.py",
+    "tests/test_semantic_runtime.py",
     *(f"tests/test_mcp_ingest.py::{name}" for name in (
         "test_ingest_rejects_parent_links_before_writing",
         "test_ingest_rejects_linked_metadata_files",
@@ -37,7 +39,7 @@ def main() -> int:
     parser.add_argument("wheel", type=Path)
     parser.add_argument(
         "--boundary-tests", action="store_true",
-        help="Exercise evidence and canonical-write regressions against the installed wheel.",
+        help="Exercise evidence, canonical-write and model-snapshot regressions against the installed wheel.",
     )
     args = parser.parse_args()
     wheel = args.wheel
