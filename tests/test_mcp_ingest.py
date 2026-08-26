@@ -477,6 +477,31 @@ def test_mcp_ingest_resumes_after_canonical_commit_before_consumption_marker(
         server.configure_runtime(*prior)
 
 
+def test_registration_refuses_reserved_secret_names_at_word_boundaries(tmp_path: Path) -> None:
+    """A registered source must stay fetchable: deny reserved names up front."""
+
+    root = tmp_path / "research"
+    _source, record = _prepared_project(root)
+    (root / "docs/tokenizer-notes.md").write_text("Vocabulary size was 32000.\n", encoding="utf-8")
+    (root / "docs/auth_token.json").write_text("{}\n", encoding="utf-8")
+
+    registered = register_source(
+        root, "docs/tokenizer-notes.md", source_id="src_tokenizer", source_type="markdown",
+    )
+    assert registered["source_path"] == "docs/tokenizer-notes.md"
+
+    with pytest.raises(ValueError, match="cannot be registered"):
+        register_source(root, "docs/auth_token.json", source_id="src_auth", source_type="json")
+
+    with pytest.raises(ValueError, match="cannot be registered"):
+        ingest_module.prepare_ingest(
+            root, record=record, approval_ref="approval_ingest",
+            source_registrations=[
+                {"path": "docs/auth_token.json", "source_id": "src_auth", "source_type": "json"},
+            ],
+        )
+
+
 def test_mcp_ingest_groups_multiple_source_registrations_in_one_atomic_target(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:

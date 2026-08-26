@@ -80,6 +80,25 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "escapes"):
                 server.resolve_safe_path("docs/outside.md")
 
+    def test_safe_path_sensitive_name_policy_matches_word_boundaries_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "docs").mkdir()
+            for allowed in ("tokenizer-notes.md", "credentialing-study.md", "secretariat-meeting.md"):
+                (root / "docs" / allowed).write_text("research text\n", encoding="utf-8")
+            server.configure_runtime(root)
+
+            for allowed in ("tokenizer-notes.md", "credentialing-study.md", "secretariat-meeting.md"):
+                self.assertEqual(
+                    server.resolve_safe_path(f"docs/{allowed}"), root / "docs" / allowed,
+                )
+            for denied in (
+                "docs/auth_token.json", "config/secrets.yaml", "keys/api-key.txt",
+                "keys/private_key.pem", "docs/token_counts.csv",
+            ):
+                with self.assertRaisesRegex(ValueError, "denied by the sensitive-name policy"):
+                    server.resolve_safe_path(denied)
+
     def test_fetch_is_limited_to_registered_source_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

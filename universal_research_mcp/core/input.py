@@ -23,6 +23,45 @@ from universal_research_mcp.runtime.project_io import ProjectFiles
 
 SOURCE_ID = re.compile(r"^src_[A-Za-z0-9._-]+$")
 
+# Sensitive-name policy shared by source registration and evidence fetch.
+# Matching is word-boundary based so research artifacts such as
+# ``tokenizer-notes.md`` or ``credentialing-study.md`` stay usable while
+# ``auth_token.json``, ``secrets.yaml`` and ``api-key.txt`` remain refused.
+# Registration applies the same predicate as fetch, so a registered source
+# path can never become unfetchable through this policy alone.
+DENIED_BASENAMES = frozenset({
+    ".env", ".env.local", ".env.production", "id_rsa", "id_ed25519",
+    "authorized_keys", "credentials.json",
+})
+DENIED_NAME_WORDS = frozenset({
+    "secret", "secrets", "token", "tokens", "credential", "credentials",
+    "apikey", "apikeys",
+})
+DENIED_NAME_WORD_PAIRS = frozenset({("private", "key"), ("api", "key")})
+_NAME_WORD = re.compile(r"[a-z]+")
+
+
+def denied_source_name_reason(path: str | Path) -> str | None:
+    """Return why a project-relative source name is reserved, or ``None``.
+
+    A component is split into lowercase alphabetic words; a reserved word must
+    match a whole word (``token``, ``tokens``) or an adjacent word pair
+    (``api``/``key``), never an inner substring (``tokenizer`` is allowed).
+    """
+
+    supplied = Path(path)
+    if supplied.name.lower() in DENIED_BASENAMES:
+        return f"reserved basename {supplied.name!r}"
+    for part in supplied.parts:
+        words = _NAME_WORD.findall(part.lower())
+        for word in words:
+            if word in DENIED_NAME_WORDS:
+                return f"reserved name {word!r} in path component {part!r}"
+        for first, second in zip(words, words[1:]):
+            if (first, second) in DENIED_NAME_WORD_PAIRS:
+                return f"reserved name {first!r}/{second!r} in path component {part!r}"
+    return None
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -86,6 +125,12 @@ def register_source(
     if not source_type.strip():
         raise ValueError("source_type must be a non-empty string")
     relative = source.relative_to(paths.root).as_posix()
+    denial = denied_source_name_reason(relative)
+    if denial is not None:
+        raise ValueError(
+            f"source path cannot be registered ({denial}); evidence fetch "
+            "refuses this name, so rename the artifact before registering it"
+        )
     with canonical_write_lock(paths):
         existing = _registered_sources(paths)
         if any(item.get("source_path") == relative for item in existing):

@@ -22,6 +22,7 @@ from mcp.types import ToolAnnotations
 from universal_research_mcp.core.audit import audit_report
 from universal_research_mcp.core.claim_gate import evaluate_evidence_eligibility
 from universal_research_mcp.core.ingest import commit_ingest, pending_ingest_status, prepare_ingest
+from universal_research_mcp.core.input import denied_source_name_reason
 from universal_research_mcp.core.ledger import read_jsonl
 from universal_research_mcp.core.search import safe_fts_query
 from universal_research_mcp.governance.escalation import evaluate_gate
@@ -63,8 +64,9 @@ PUBLIC_DEMO_TOOL_NAMES = frozenset({
     "public_demo_status",
 })
 
-DENIED_BASENAMES = {".env", ".env.local", ".env.production", "id_rsa", "id_ed25519", "authorized_keys", "credentials.json"}
-DENIED_FRAGMENTS = {"secret", "token", "credential", "private_key", "api_key", "apikey"}
+# The canonical sensitive-name policy (denied basenames plus the word-boundary
+# reserved-name matcher) lives in core.input so registration and evidence
+# fetch can never disagree; it is imported with the other core helpers above.
 _STRUCTURAL_QUERY = re.compile(
     r"(?:"
     r"--[A-Za-z][A-Za-z0-9-]*"
@@ -326,9 +328,11 @@ def resolve_safe_path(relative_path: str) -> Path:
     supplied = Path(relative_path)
     if supplied.is_absolute() or ".." in supplied.parts:
         raise ValueError("unsafe path")
-    lowered = [part.lower() for part in supplied.parts]
-    if supplied.name.lower() in DENIED_BASENAMES or any(fragment in part for part in lowered for fragment in DENIED_FRAGMENTS):
-        raise ValueError("access to this path is denied")
+    denial = denied_source_name_reason(supplied)
+    if denial is not None:
+        # Name-policy refusal, not a source-integrity failure: the file may be
+        # intact; its name matches the reserved secret-material pattern.
+        raise ValueError(f"access to this path is denied by the sensitive-name policy: {denial}")
     resolved = (ROOT / supplied).resolve()
     try:
         resolved.relative_to(ROOT)
