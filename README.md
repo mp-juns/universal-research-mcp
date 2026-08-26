@@ -1,174 +1,210 @@
+<div align="center">
+
 # Universal Research MCP
 
-[![PyPI](https://img.shields.io/pypi/v/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/)
+**Research memory with traceable sources and explicit write approval.**
+
+[![Version](https://img.shields.io/badge/portfolio-v0.8.4-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.4/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.4/)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
 
-Universal Research MCP turns research retrieval into a verifiable evidence
-workflow. Search results remain candidates until the server re-reads the exact
-registered source range and confirms its current SHA-256 revision.
+[60-second demo](docs/demo.md) · [Architecture](#architecture) · [Design decisions](#three-design-decisions) · [Evidence & limits](#experiments-and-limits) · [면접 설명](docs/portfolio.md)
 
-```text
-candidate retrieval
-  -> exact source fetch
-  -> revision integrity check
-  -> evidence eligibility check
-  -> relevance/conflict review by the host
-  -> supported claim or explicit abstention
-```
+</div>
 
-It is a **read-mostly MCP**. Canonical writes exist only behind a two-step,
-hash-bound ingest transaction with an external one-time human approval receipt.
+Universal Research MCP connects a Codex host to research records, original
+sources, and rebuildable search indexes. Before a material claim can receive
+an evidence-eligibility receipt, the server re-reads the **exact registered
+source range** and checks its **current SHA-256 revision**.
 
-## Five-minute local demo
+**The contract:** search returns candidates; verification establishes source
+integrity; the host still reviews relevance, conflicts, and the final claim.
+
+> **Portfolio baseline — v0.8.4.** Feature development is frozen. Further code
+> changes are limited to clearly reproducible bugs; documentation and demos
+> may improve. This is a maintained portfolio baseline, not a production
+> maturity or benchmark-completion claim.
+
+## The problem it addresses
+
+A retrieved passage can come from an old index, the wrong line range, or a file
+that changed after registration. A plausible answer can hide that broken
+connection. This project makes the connection inspectable.
+
+| Question | Implemented boundary |
+| --- | --- |
+| Which evidence did the answer use? | An event ID, source path, exact line range, and registered SHA-256. |
+| Is that still the same source? | Fresh source reads, exact locator checks, and explicit mismatch handling. |
+| Can the agent rewrite research history? | MCP ingestion needs an immutable draft and an external one-time approval receipt. |
+| Does passing the check mean the claim is true? | No. Semantic support, conflict resolution, and source truth remain outside this check. |
+
+## Architecture
+
+<img src="docs/assets/architecture-overview.svg" width="1400" alt="Architecture: Codex calls the MCP search, source verification, and evidence eligibility stages; host review is separate. Original sources and append-only JSONL are distinct from rebuildable indexes. MCP writes require an external approval and recoverable transaction.">
+
+**Read path:** candidate search → exact source fetch → integrity and eligibility
+checks → host review → supported answer or explicit abstention.
+
+**Write path:** prepare immutable draft → external human approval → commit the
+bound transaction. A shared writer lock and journal protect canonical writes;
+interrupted multi-file work remains recoverable rather than silently successful.
+
+[Open the full-size diagram](docs/assets/architecture-overview.svg) ·
+[Module map and authority boundaries](docs/architecture.md)
+
+## One minute through the workflow
+
+**[Open the demo guide →](docs/demo.md)**
+
+<a href="docs/demo.md"><img src="docs/assets/demo-preview.png" width="1200" alt="Preview of the offline illustrated demo, not a live MCP recording: an eligible example still shows claim_verified and semantic checks as false."></a>
+
+The [offline interactive walkthrough](docs/demo.html) has five scenes and a
+60-second playback. Download the HTML file and open it in a browser; GitHub's
+file view shows its source. It uses **illustrative data**, makes no model calls,
+and is **not a recording of a live MCP run**.
+
+| Time | What the viewer sees |
+| --- | --- |
+| 00–12 s | A search hit is labelled `candidate_only`. |
+| 12–24 s | The registered event, file, lines, and current revision are checked. |
+| 24–36 s | An eligible receipt still says `claim_verified: false`. |
+| 36–48 s | A changed source withholds content by default and blocks eligibility. |
+| 48–60 s | The host reviews meaning and conflicts, then answers or abstains. |
+
+The guide includes Korean narration and links to the implementation behind
+each scene. It does not create a source registration, approval, or benchmark.
+
+## Three design decisions
+
+| Decision | Why this choice | Tradeoff |
+| --- | --- | --- |
+| **1. Canonical JSONL; rebuildable indexes** | Preserve research history while repairing or replacing SQLite, FTS, and dense projections. | More explicit provenance and freshness checks; an index cannot be the authority. |
+| **2. Journaled ingest with external approval** | Bind multiple file writes to exact before/after hashes and recover the same approved transaction after interruption. | More state and recovery logic; this is not a cross-file atomic filesystem transaction. |
+| **3. A narrow supported distribution** | Ship memory, governance, retrieval, and Codex integration without promising prototype provider-runtime compatibility. | A smaller integration surface; other generation providers remain repository experiments. |
+
+Read the decisions and alternatives:
+[ADR-0001](docs/decisions/0001-canonical-authority.md) ·
+[ADR-0002](docs/decisions/0002-recoverable-ingest.md) ·
+[ADR-0003](docs/decisions/0003-supported-wheel-surface.md).
+
+## Try the released package
 
 ```bash
-python -m pip install universal-research-mcp
+python -m pip install "universal-research-mcp==0.8.4"
+universal-research --version
 universal-research init ./my-research
-universal-research serve --root ./my-research
 ```
 
-Register the server in Codex:
+Expected version: `0.8.4`. Initialization creates an **empty** project; it does
+not crawl your files. Use the [input tutorial](docs/input-cli-tutorial.md) to
+register sources and create an approved record before expecting search results.
+
+Then register the local server in Codex:
 
 ```toml
 [mcp_servers.universal_research]
 command = "universal-research"
-args = ["serve", "--auto-index"]
+args = ["serve", "--no-auto-index"]
 cwd = "/absolute/path/to/my-research"
 ```
 
-The empty project is intentional: the MCP does not crawl arbitrary files.
-Follow the [input tutorial](docs/input-cli-tutorial.md) to register immutable
-sources, create an approved record, and make it searchable.
+`--no-auto-index` explicitly disables index writes at startup. Refresh derived
+indexes separately when that operation is approved; omitting the flag enables
+automatic indexing in the CLI. Do not use a read-only reference project as the
+writable research root. See the [host integration guide](docs/host-integration.md)
+for the full setup.
 
-## Why this is not ordinary RAG
+### What ships in v0.8.4
 
-| Ordinary retrieval | Universal Research |
-|---|---|
-| Search result may be quoted directly | Search result is `candidate_only` |
-| Index content may silently become stale | Current source hash is compared with the registered revision |
-| Similarity is treated as support | Similarity cannot establish truth or causality |
-| Corrections may overwrite history | Canonical JSONL is append-only |
-| Writes depend on agent intent | Ingest requires immutable draft + external receipt + recoverable transaction |
+- Lexical, local semantic, hybrid, and adaptive **candidate** retrieval.
+- Exact registered-range fetch and deterministic evidence-eligibility receipts.
+- Append-only records, shared CLI/MCP writer locking, and recoverable ingestion.
+- Codex governance contracts and a secure harness for separately approved runs.
+- An optional, explicitly published read-only demo corpus.
+- Managed local semantic snapshots bound to an immutable model revision and
+  verified file inventory; setup requires its own approved plan.
 
-The evidence eligibility check proves only that submitted evidence is current,
-registered, range-valid, and sufficient in count for the declared claim type.
-It does **not** prove that the evidence supports the claim, reconcile conflicts,
-or establish that a source is true. Those are separate host review stages.
+The supported host is **Codex**. The wheel excludes experimental generation
+providers, plugin-owned agent runtime, and provider execution harness modules.
+Local embeddings do not imply generation-provider support.
 
-## Supported surface
+[Semantic retrieval](docs/semantic-retrieval.md) ·
+[Secure harness](docs/secure-harness.md) ·
+[Public demo deployment](docs/public-demo.md)
 
-- lexical, local semantic, hybrid, and adaptive candidate retrieval
-- exact source-range fetch with fail-closed revision checks
-- deterministic evidence eligibility receipts
-- append-only canonical records and recoverable, journaled ingest
-- fixed-role Codex governance contracts
-- a default-deny agent-creation disclosure and one-time approval binding for
-  governed provider/secure-harness execution
-- a Docker secure harness for sealed benchmark/final-review execution
-- a reviewed, unauthenticated public-demo transport for static corpora
+## Experiments and limits
 
-The PyPI wheel intentionally excludes the repository's experimental OpenAI,
-Anthropic, agent-runtime, and provider-harness packages. Codex remains the only
-supported host integration. Optional local SentenceTransformer embeddings use
-an already-present pinned snapshot and never imply generation-provider support.
+**Completed development evidence exists. A full confirmatory product-effect
+benchmark does not.** These are separate studies; their sample sizes and scores
+must not be pooled.
 
-See [semantic retrieval](docs/semantic-retrieval.md),
-[secure harness](docs/secure-harness.md), and
-[host integration](docs/host-integration.md).
+### A completed 96-run development study
 
-## Public read-only demo
+24 public synthetic tasks × four conditions, one run per task and condition.
+The separate condition-blinded evaluator was an LLM, not a human reviewer.
 
-Publishing a corpus is a separate explicit action. The manifest binds every
-canonical JSONL file, registered source, and derived index used by the server.
+| Condition | Unsafe assertions / 18 fault tasks | Clean claim coverage | Mean tokens | Mean latency |
+| --- | ---: | ---: | ---: | ---: |
+| Filesystem | 4 / 18 | 66.7% | 73,596 | 23.05 s |
+| Filesystem + manifest | 4 / 18 | 16.7% | 67,962 | 23.18 s |
+| MCP evidence-only | 6 / 18 | 100.0% | 90,047 | 29.70 s |
+| MCP + evidence eligibility | 2 / 18 | 100.0% | 113,951 | 37.21 s |
 
-```bash
-universal-research public-demo prepare \
-  --root ./my-research \
-  --corpus-id reviewed-demo \
-  --display-name "Reviewed Demo" \
-  --confirm-public-data I_UNDERSTAND_THIS_DATA_WILL_BE_PUBLIC
+For filesystem → MCP + eligibility, the paired unsafe-assertion difference was
+−11.1 percentage points, with a task-bootstrap 95% interval of **−33.3 to +11.1
+points**. It includes zero. The gated condition used **1.55× tokens and 1.61×
+time**, and still failed on conflicting and semantically irrelevant current
+evidence. Evidence-only retrieval had more unsafe assertions than filesystem.
+These are narrow development observations, **not proof of general
+hallucination reduction or improved research quality**.
 
-universal-research public-demo verify --root ./my-research
+Methods, evaluation cost, and all caveats remain in the
+[full four-condition report](benchmarks/results/integrity-claim-gate-v1-development-20260813.md).
+Historical reports call the eligibility check “Claim Gate”; those names are
+retained for provenance, not a claim that the tool verifies truth.
 
-universal-research serve \
-  --root ./my-research \
-  --transport streamable-http \
-  --public-demo \
-  --host 127.0.0.1 \
-  --port 8765
-```
+### Other evidence, kept separate
 
-The bundled server is not a multi-tenant service. Internet deployment still
-needs TLS termination, authentication where applicable, rate limits, tenant
-isolation, monitoring, and a separately reviewed deployment boundary. See the
-[public demo guide](docs/public-demo.md) and [security model](docs/security.md).
+| Evidence | Status | What it can establish |
+| --- | --- | --- |
+| Earlier retrieval and safety pilots | Completed, exploratory | Narrow source-mutation observations and overhead, including negative findings. |
+| A/B/C integration diagnostic, 2026-08-26 | Completed; one task, three responses plus seven startup diagnostics | Tool integration with retained failures. Unequal input budgets and no repetitions prevent an efficacy comparison. |
+| Full 432-trial comparison | **Not a completed result** | A planned count is not evidence. No finished 432-trial result is claimed for v0.8.4. |
+| Software tests and release checks | Engineering verification | Contract and packaging behavior; not participant-model benchmark results. |
 
-## Measured development evidence
+[All five completed reports](benchmarks/results/README.md) ·
+[Integration diagnostic](benchmarks/results/abc-integration-diagnostic-20260826.md) ·
+[Benchmark disclosure](docs/benchmark-disclosure.md)
 
-The public synthetic development run contains 24 tasks × 4 conditions. The
-MCP + historical “Claim Gate” condition made 2/18 unsafe material assertions
-on fault tasks versus 4/18 for direct filesystem retrieval, while using 1.55×
-mean execution tokens and 1.61× mean latency. The paired 95% interval includes
-zero. This is a development signal and measured cost, **not proof of general
-hallucination reduction or research-quality improvement**.
+### Boundaries that remain
 
-![Development evidence-eligibility results](docs/assets/integrity-claim-gate-v1-development-20260813.png)
+- Hashes establish revision identity, not the truth of source prose.
+- Evidence count is based on distinct event records, not independent authors
+  or independent scientific observations.
+- The MCP cannot globally control native agents or other processes started by
+  an unrestricted host. Approval enforcement has a defined execution boundary.
+- This is not an authenticated private remote service or a multi-tenant SaaS.
+  Public deployment needs a separately reviewed operational boundary.
+- Historical synthetic results do not establish released-v0.8.4 efficacy,
+  production reliability, or statistically decisive superiority.
 
-See the [complete development result](benchmarks/results/integrity-claim-gate-v1-development-20260813.md)
-and [benchmark disclosure](docs/benchmark-disclosure.md). Historical artifact
-names retain “claim gate” for provenance; the current product contract is
-“evidence eligibility.”
+[Security model](docs/security.md) · [Governance contracts](docs/multi-agent-governance.md)
 
-The [completed-results index](benchmarks/results/README.md) also collects the
-earlier directional and safety pilots, including their negative findings and
-measured overhead. The latest completed
-[A/B/C integration diagnostic (2026-08-26)](benchmarks/results/abc-integration-diagnostic-20260826.md)
-retains one public synthetic task per condition, all seven preceding startup
-diagnostics, an input-budget stop, and unknown usage. Its strict automatic
-scores were 0/1, 0/1, and 1/1, with **unequal input budgets and no repetitions**.
-This is source-checkout integration evidence, not a released-package efficacy
-measurement or proof that one condition is better. No in-progress experiment
-results are included in these completed-result summaries.
+## Portfolio and interview
 
-## Authority model
+The [Korean interview notes](docs/portfolio.md) provide a one-sentence summary,
+a 60-second explanation, the three decisions with tradeoffs, and answers to
+questions about evidence, recovery, scope, and experimental limitations.
 
-1. `data/events/` is the canonical append-only ledger.
-2. `data/index/` contains rebuildable derived views.
-3. Registered original sources are stronger than either index.
-4. Candidate retrieval never grants claim eligibility.
-5. Evidence eligibility never proves semantic support or truth.
-6. Host approval remains separate from MCP validation.
-7. Governed agent creation requires the user-visible reason, tasks, count,
-   direct alternative, token/time ranges, and scope to be hash-bound before a
-   one-time approval is consumed.
+**Feature freeze:** use v0.8.4 as the portfolio baseline. New features and
+provider integrations are outside the current scope. A code change needs a
+concrete reproducible bug; presentation improvements must not rewrite results.
 
-Canonical ingest uses a write-ahead transaction journal. Each target file is
-bound to exact before/after hashes; a failure after a partial append leaves the
-draft in `recovery_required` and the same one-time receipt can resume only that
-exact transaction. The draft is marked consumed after all canonical operations
-are verified.
+## Development reference
 
-Architecture decisions:
-
-- [ADR-0001: canonical authority and derived views](docs/decisions/0001-canonical-authority.md)
-- [ADR-0002: recoverable multi-file ingest](docs/decisions/0002-recoverable-ingest.md)
-- [ADR-0003: supported wheel versus experimental source](docs/decisions/0003-supported-wheel-surface.md)
-
-## Non-goals
-
-Universal Research is not:
-
-- a truth oracle or automated scientific peer reviewer
-- an authenticated private remote MCP or multi-tenant SaaS
-- a replacement for Codex, Claude Code, or another agent host
-- a hidden provider router or credential store
-- evidence that a model, method, or research result is correct
-
-For medical, legal, regulated, or safety-critical decisions, use it only as an
-audit and evidence-handling aid with qualified human review.
-
-## Development
+<details>
+<summary>Existing checks and release process</summary>
 
 ```bash
 python -m pip install ".[test]"
@@ -181,7 +217,10 @@ python scripts/ci_smoke.py dist/*.whl
 ```
 
 Release workflows pin third-party actions to exact commits. A release wheel is
-built once, validated on Linux/macOS/Windows, and the same artifact is published
-through PyPI Trusted Publishing only after every release gate succeeds.
+built once, checked on Linux/macOS/Windows, and that artifact is published
+through PyPI Trusted Publishing after its release gates succeed. These are
+engineering checks, separate from model experiments.
+
+</details>
 
 License: [MIT](LICENSE)

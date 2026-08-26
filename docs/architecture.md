@@ -1,5 +1,14 @@
 # Universal Research Framework Architecture
 
+<img src="assets/architecture-overview.svg" width="1400" alt="v0.8.4 architecture showing the read path, separate source and canonical storage, rebuildable indexes, host review and externally approved MCP writes.">
+
+[Full-size diagram](assets/architecture-overview.svg) ·
+[60-second walkthrough](demo.md) · [Three design decisions](../README.md#three-design-decisions)
+
+The figure describes the supported v0.8.4 portfolio baseline. It is a system
+map, not a live execution trace or proof of benchmark efficacy. Feature work is
+frozen; code changes require a clearly reproducible bug.
+
 > Public integration scope for 0.8.4 is Codex only. Provider-backed runtime
 > modules below are retained as repository prototypes, excluded from the PyPI
 > wheel, and not covered by a public compatibility promise.
