@@ -12,8 +12,6 @@ import os
 from pathlib import Path
 from typing import Any, Sequence
 
-from mcp.server.fastmcp import FastMCP
-
 from universal_research_mcp import __version__
 from universal_research_mcp.agent_execution import (
     GenerationExecutorBundle,
@@ -26,6 +24,9 @@ from universal_research_mcp.agent_runtime import (
     SessionStore,
 )
 from universal_research_mcp.runtime.agent_approval import AgentApprovalStore
+from universal_research_mcp.secure_harness.posix_stdio import (
+    DescriptorBackedStdioFastMCP,
+)
 
 
 EXECUTION_ENABLE_ENV = "UNIVERSAL_RESEARCH_ENABLE_AGENT_EXECUTION"
@@ -48,7 +49,9 @@ arguments. Responses are summaries; prompt and raw-output artifacts stay in
 the project-local runtime record.
 """.strip()
 
-mcp = FastMCP("Universal Research Agent Runtime", instructions=INSTRUCTIONS)
+mcp = DescriptorBackedStdioFastMCP(
+    "Universal Research Agent Runtime", instructions=INSTRUCTIONS,
+)
 
 
 def configure_runtime(root: str | Path | None = None) -> None:

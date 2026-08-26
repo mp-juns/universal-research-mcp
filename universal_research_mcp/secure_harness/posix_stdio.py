@@ -8,12 +8,28 @@ import os
 import anyio
 import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
+from mcp.server.fastmcp import FastMCP
 import mcp.types as types
 from mcp.shared.message import SessionMessage
 
 
 _MAX_MESSAGE_BYTES = 16 * 1024 * 1024
 _READ_CHUNK_BYTES = 64 * 1024
+
+
+class DescriptorBackedStdioFastMCP(FastMCP):
+    """Use event-loop descriptor I/O where executor-thread stdin can stall."""
+
+    async def run_stdio_async(self) -> None:
+        if os.name != "posix":  # pragma: no cover - exercised by fallback unit test
+            await super().run_stdio_async()
+            return
+        async with posix_stdio_server() as (read_stream, write_stream):
+            await self._mcp_server.run(
+                read_stream,
+                write_stream,
+                self._mcp_server.create_initialization_options(),
+            )
 
 
 async def _write_all(descriptor: int, payload: bytes) -> None:
