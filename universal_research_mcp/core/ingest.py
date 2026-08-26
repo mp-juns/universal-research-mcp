@@ -28,6 +28,7 @@ from universal_research_mcp.core.input import (
     SOURCE_ID,
     _registered_sources,
     _sha256,
+    denied_source_name_reason,
     issues_json,
     ledger_path_for_record,
     validate_candidate_records_with_sources,
@@ -215,6 +216,12 @@ def _normalize_source_registrations(
         if not resolved.is_file():
             raise FileNotFoundError(f"source artifact not found: {raw_path}")
         relative = resolved.relative_to(paths.root).as_posix()
+        denial = denied_source_name_reason(relative)
+        if denial is not None:
+            raise ValueError(
+                f"source_registrations[{index}] cannot be registered ({denial}); "
+                "evidence fetch refuses this name, so rename the artifact first"
+            )
         if relative in existing_paths or relative in pending_paths:
             raise ValueError("source path is already registered or staged; use a new immutable revision path")
         if source_id in existing_ids or source_id in pending_ids:
