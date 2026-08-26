@@ -5,6 +5,23 @@ description: Govern fixed-role, evidence-bound research workflows using the Univ
 
 # Governed Research Workflow
 
+## Mandatory session scope confirmation
+
+At the beginning of EVERY NEW session with Universal Research MCP loaded, ask
+the user to confirm permissions and WAIT for their explicit reply before any
+task tool call. Use the exact policy in
+[session-scope.md](../../hooks/session-scope.md). Proposed defaults: Codex host
+shell; scoped workspace file creation/editing allowed after confirmation;
+external network and downloads require approval BEFORE EACH operation;
+ZERO agents. The default is a proposal, never an approval.
+
+Ask even if the initial task sounds actionable. Do not reuse a prior session's
+approval. On same-session resume/compaction preserve an explicit user-confirmed
+scope, or ask again if missing or changed. Only after confirmation inspect the
+research profile or start the workflow below. Preserve stronger host policy,
+reference-project read-only boundaries and the separate canonical-write gates.
+The hook and these instructions are not proof of OS-level enforcement.
+
 The current supported host integration is Codex only. Model selection, native
 agent sessions, tool execution, and approvals remain host-owned. Do not
 configure or call Ollama, OpenAI API, Anthropic API, Moonshot/Kimi, or another

@@ -6,6 +6,8 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from universal_research_mcp.session_scope import SESSION_SCOPE_INSTRUCTIONS
+
 from universal_research_mcp.governance.escalation import evaluate_gate
 from universal_research_mcp.governance.failure_policy import build_failure_record, resolve_failure_policy
 from universal_research_mcp.governance.prompts import load_prompt_pack, prompt_registry_report
@@ -20,7 +22,7 @@ from universal_research_mcp.integrations.codex.adapter import (
 )
 
 
-mcp = FastMCP("Universal Research Governance", instructions=(
+mcp = FastMCP("Universal Research Governance", instructions=SESSION_SCOPE_INSTRUCTIONS + "\n\n" + (
     "Validate local research-governance contracts. This server is read-only: it does not "
     "dispatch agents, call models, write research records, run commands, or rebuild indexes."
 ))

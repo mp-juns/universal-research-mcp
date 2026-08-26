@@ -1,5 +1,7 @@
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import tomllib
 import unittest
@@ -7,6 +9,7 @@ import zipfile
 
 from universal_research_mcp.governance.registry import FIXED_ROSTER
 from universal_research_mcp import __version__
+from universal_research_mcp.session_scope import SESSION_SCOPE_INSTRUCTIONS
 from universal_research_mcp.tools.distribution import (
     BUNDLE_PREFIX,
     GOVERNANCE_ROLE_IDS,
@@ -155,7 +158,7 @@ class PublicDistributionTests(unittest.TestCase):
         )
         server = config["mcpServers"]["universal_research"]
         self.assertEqual(server["command"], "universal-research")
-        self.assertEqual(server["args"], ["serve", "--auto-index"])
+        self.assertEqual(server["args"], ["serve", "--no-auto-index"])
         self.assertNotIn("env", server)
         manifest = json.loads(
             (
@@ -170,6 +173,55 @@ class PublicDistributionTests(unittest.TestCase):
         self.assertIn("external model APIs", manifest["interface"]["longDescription"])
         self.assertIn("Codex host-owned", manifest["interface"]["defaultPrompt"])
         self.assertIn("visualization off", manifest["interface"]["defaultPrompt"])
+
+    def test_session_hook_emits_scope_without_reading_transcripts_or_writing_state(self) -> None:
+        plugin = ROOT / "plugin/universal-research-memory"
+        policy = (plugin / "hooks/session-scope.md").read_text(encoding="utf-8").strip()
+        self.assertEqual(policy, SESSION_SCOPE_INSTRUCTIONS)
+        hook = plugin / "scripts/session_start.py"
+        for source in ("startup", "clear", "resume", "compact", {"untrusted": True}):
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                payload = {
+                    "hook_event_name": "SessionStart", "source": source,
+                    "session_id": "private-marker", "transcript_path": "/not-readable/private-marker",
+                    "cwd": "/not-readable/private-marker",
+                }
+                result = subprocess.run(
+                    [sys.executable, "-I", str(hook)], input=json.dumps(payload),
+                    text=True, capture_output=True, check=True, cwd=root, timeout=10,
+                )
+                output = json.loads(result.stdout)
+                context = output["hookSpecificOutput"]["additionalContext"]
+                self.assertEqual(output["hookSpecificOutput"]["hookEventName"], "SessionStart")
+                self.assertIn(policy, context)
+                self.assertNotIn("private-marker", result.stdout + result.stderr)
+                self.assertEqual(list(root.iterdir()), [])
+                if isinstance(source, str) and source in {"resume", "compact"}:
+                    self.assertTrue(context.startswith("Same-session continuation:"))
+                else:
+                    self.assertTrue(context.startswith("Fresh or unverified session boundary:"))
+
+    def test_session_hook_never_turns_invalid_event_metadata_into_approval(self) -> None:
+        hook = ROOT / "plugin/universal-research-memory/scripts/session_start.py"
+        for payload in ("not-json", "null", "[]", "x" * 65_537):
+            with self.subTest(payload=payload[:20]):
+                result = subprocess.run(
+                    [sys.executable, "-I", str(hook)], input=payload, text=True,
+                    capture_output=True, check=True, timeout=10,
+                )
+                output = json.loads(result.stdout)
+                self.assertEqual(set(output), {"hookSpecificOutput"})
+                self.assertTrue(output["hookSpecificOutput"]["additionalContext"].startswith(
+                    "Fresh or unverified session boundary:",
+                ))
+
+        unrelated = subprocess.run(
+            [sys.executable, "-I", str(hook)],
+            input=json.dumps({"hook_event_name": "PreToolUse"}), text=True,
+            capture_output=True, check=True, timeout=10,
+        )
+        self.assertEqual(json.loads(unrelated.stdout), {})
 
 
 if __name__ == "__main__":

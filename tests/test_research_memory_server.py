@@ -1,5 +1,6 @@
 import asyncio
 import io
+import json
 import os
 from pathlib import Path
 import hashlib
@@ -8,7 +9,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from universal_research_mcp import server
+from universal_research_mcp import cli, server
+from universal_research_mcp import governance_server
+from universal_research_mcp.session_scope import SESSION_SCOPE_INSTRUCTIONS
 
 
 class ResearchMemoryServerSafetyTests(unittest.TestCase):
@@ -45,6 +48,23 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
         self.assertFalse(any(name.startswith("agent_runtime_") for name in tools))
         mode_schema = tools["memory_search_candidates"].inputSchema["properties"]["mode"]
         self.assertEqual(mode_schema["enum"], ["configured", "lexical", "semantic", "hybrid", "adaptive"])
+
+    def test_all_mcp_entry_surfaces_deliver_the_session_scope_question_first(self) -> None:
+        for instructions in (
+            server.mcp._mcp_server.instructions,
+            governance_server.mcp._mcp_server.instructions,
+            server.PUBLIC_DEMO_INSTRUCTIONS,
+        ):
+            self.assertTrue(instructions.startswith(SESSION_SCOPE_INSTRUCTIONS))
+        self.assertIn("This process cannot ingest records", server.PUBLIC_DEMO_INSTRUCTIONS)
+
+    def test_plugin_cli_startup_does_not_create_an_index_before_session_confirmation(self) -> None:
+        plugin = Path(__file__).resolve().parents[1] / "plugin/universal-research-memory/.mcp.json"
+        launcher = json.loads(plugin.read_text())["mcpServers"]["universal_research"]
+        with tempfile.TemporaryDirectory() as temporary, patch.object(server.mcp, "run"):
+            root = Path(temporary)
+            self.assertEqual(cli.main([*launcher["args"], "--root", str(root)]), 0)
+            self.assertEqual(list(root.iterdir()), [])
 
     def test_safe_path_rejects_sensitive_and_symlink_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

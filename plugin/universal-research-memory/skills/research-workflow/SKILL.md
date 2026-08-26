@@ -5,6 +5,17 @@ description: Use the Universal Research Memory MCP to retrieve research history 
 
 # Universal Research Workflow
 
+## Mandatory session scope confirmation
+
+Before research tools or any task execution in EVERY NEW session, ask the user
+to confirm the current workspace and permission scope, then WAIT for their
+explicit reply. Apply [session-scope.md](../../hooks/session-scope.md): host
+shell; ordinary scoped file creation/editing allowed after confirmation;
+external network/download approval BEFORE EACH operation; ZERO agents.
+Ask even if the initial task sounds actionable. Defaults and a previous
+session's approval never authorize this session. Preserve an explicit
+same-session confirmation after resume/compaction; ask again if uncertain.
+
 Use this skill for questions about previous research work, plans, protocols,
 decisions, results, failures, or artifacts managed by this project.
 
@@ -52,10 +63,15 @@ approve a session, alter a record, or settle a scientific conclusion.
 
 ## Operating boundaries
 
-- The configured automatic lexical bootstrap may create or replace only the
-  project-local derived index after staging verification. Do not otherwise
-  create, modify, delete, copy, index, test, install, network, call a model, or
-  run background work without explicit user approval and scope validation.
+- The bundled launcher does not auto-refresh indexes before session approval.
+  After confirmation, ordinary host-shell work and file creation/editing may
+  proceed only within the confirmed task/workspace scope. Index setup must be
+  an explicit in-scope operation and may update only project-local derived
+  state. Destructive actions, canonical writes, model runs and background work
+  retain their separate approval gates.
+- Ask for explicit approval before EACH external network or download/install
+  operation, even if a command prefix or automatic host reviewer would allow
+  it. Disclose destination/source, purpose, local write scope and material cost.
 - Do not treat semantic similarity or search rank as research evidence.
 - Do not make unsupported faster, better, optimal, causal, or performance
   claims.

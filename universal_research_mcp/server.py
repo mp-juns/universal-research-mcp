@@ -38,6 +38,7 @@ from universal_research_mcp.integrations.codex.adapter import (
     capture_decision,
 )
 from universal_research_mcp import __version__
+from universal_research_mcp.session_scope import SESSION_SCOPE_INSTRUCTIONS
 
 
 def _default_root() -> Path:
@@ -74,7 +75,7 @@ _STRUCTURAL_QUERY = re.compile(
     r")"
 )
 
-INSTRUCTIONS = """
+INSTRUCTIONS = SESSION_SCOPE_INSTRUCTIONS + "\n\n" + """
 Use memory_search_candidates to find candidate research records. A search score
 is not evidence. Its lexical, semantic, hybrid, configured, and adaptive modes
 are candidate-only. Configured resolves the explicit project profile and falls
@@ -126,7 +127,7 @@ interrupt a turn. Do not claim current-session capability revocation from a
 profile or feature-file change.
 """.strip()
 
-PUBLIC_DEMO_INSTRUCTIONS = """
+PUBLIC_DEMO_INSTRUCTIONS = SESSION_SCOPE_INSTRUCTIONS + "\n\n" + """
 This is an unauthenticated, read-only Universal Research public demo. Call
 public_demo_status to inspect its path-free publication receipt. Use
 memory_search_candidates only for candidate discovery; a score is never

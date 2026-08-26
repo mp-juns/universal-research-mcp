@@ -4,12 +4,12 @@
 
 **Research memory with traceable sources and explicit write approval.**
 
-[![Version](https://img.shields.io/badge/portfolio-v0.8.4-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.4/)
+[![Version](https://img.shields.io/badge/version-v0.8.4-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.4/)
 [![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.4/)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
 
-[60-second demo](docs/demo.md) · [Architecture](#architecture) · [Design decisions](#three-design-decisions) · [Evidence & limits](#experiments-and-limits) · [면접 설명](docs/portfolio.md)
+[60-second workflow](docs/demo.md) · [Architecture](#architecture) · [Design decisions](#three-design-decisions) · [Evidence & limits](#experiments-and-limits)
 
 </div>
 
@@ -21,10 +21,9 @@ source range** and checks its **current SHA-256 revision**.
 **The contract:** search returns candidates; verification establishes source
 integrity; the host still reviews relevance, conflicts, and the final claim.
 
-> **Portfolio baseline — v0.8.4.** Feature development is frozen. Further code
-> changes are limited to clearly reproducible bugs; documentation and demos
-> may improve. This is a maintained portfolio baseline, not a production
-> maturity or benchmark-completion claim.
+> **Main branch update.** Session-scope confirmation is an unreleased
+> post-v0.8.4 workflow hardening change. It is not part of the tagged PyPI
+> 0.8.4 artifact and does not grant operating-system or host permissions.
 
 ## The problem it addresses
 
@@ -41,39 +40,44 @@ connection. This project makes the connection inspectable.
 
 ## Architecture
 
-<img src="docs/assets/architecture-overview.svg" width="1400" alt="Architecture: Codex calls the MCP search, source verification, and evidence eligibility stages; host review is separate. Original sources and append-only JSONL are distinct from rebuildable indexes. MCP writes require an external approval and recoverable transaction.">
+```mermaid
+flowchart LR
+    A[Candidate search] --> B[Re-read registered source]
+    B --> C{Range and SHA-256 match?}
+    C -- No --> D[Block evidence]
+    C -- Yes --> E[Evidence eligibility]
+    E --> F[Host reviews meaning and conflicts]
+    F --> G[Answer or abstain]
+```
 
-**Read path:** candidate search → exact source fetch → integrity and eligibility
-checks → host review → supported answer or explicit abstention.
+The workflow verifies source identity and location. It does not decide whether
+the source is relevant, resolve conflicts, or prove that the source is true.
 
 **Write path:** prepare immutable draft → external human approval → commit the
 bound transaction. A shared writer lock and journal protect canonical writes;
 interrupted multi-file work remains recoverable rather than silently successful.
 
-[Open the full-size diagram](docs/assets/architecture-overview.svg) ·
 [Module map and authority boundaries](docs/architecture.md)
 
 ## One minute through the workflow
 
 **[Open the demo guide →](docs/demo.md)**
 
-<a href="docs/demo.md"><img src="docs/assets/demo-preview.png" width="1200" alt="Preview of the offline illustrated demo, not a live MCP recording: an eligible example still shows claim_verified and semantic checks as false."></a>
-
-The [offline interactive walkthrough](docs/demo.html) has five scenes and a
-60-second playback. Download the HTML file and open it in a browser; GitHub's
-file view shows its source. It uses **illustrative data**, makes no model calls,
-and is **not a recording of a live MCP run**.
+The [offline interactive workflow](docs/demo.html) highlights five steps over
+60 seconds. Download the HTML file and open it in a browser; GitHub's file view
+shows its source. It uses only explanatory text, makes no model calls, and is
+**not a recording of a live MCP run**.
 
 | Time | What the viewer sees |
 | --- | --- |
 | 00–12 s | A search hit is labelled `candidate_only`. |
-| 12–24 s | The registered event, file, lines, and current revision are checked. |
-| 24–36 s | An eligible receipt still says `claim_verified: false`. |
-| 36–48 s | A changed source withholds content by default and blocks eligibility. |
-| 48–60 s | The host reviews meaning and conflicts, then answers or abstains. |
+| 12–24 s | The registered file, exact range, and current SHA-256 are checked. |
+| 24–36 s | Eligibility checks integrity, range, and count; a mismatch blocks evidence. |
+| 36–48 s | The host reviews meaning, conflicts, and source quality. |
+| 48–60 s | The host answers with support or explicitly abstains. |
 
-The guide includes Korean narration and links to the implementation behind
-each scene. It does not create a source registration, approval, or benchmark.
+The guide links each step to the implementation. It does not create a source
+registration, approval, or benchmark.
 
 ## Three design decisions
 
@@ -144,6 +148,11 @@ must not be pooled.
 24 public synthetic tasks × four conditions, one run per task and condition.
 The separate condition-blinded evaluator was an LLM, not a human reviewer.
 
+<a href="benchmarks/results/integrity-claim-gate-v1-development-20260813.md"><img src="docs/assets/integrity-claim-gate-v1-development-20260813.png" width="1400" alt="Development study graph showing unsafe material assertion rate, clean supported-claim coverage, and token and latency burden across filesystem, manifest, MCP evidence-only, and MCP plus evidence-eligibility conditions. The paired confidence interval includes zero, so the result is not confirmatory evidence."></a>
+
+*Public synthetic development corpus: 24 tasks × 4 conditions × 1 run. The
+paired 95% interval includes zero; this is not confirmatory product evidence.*
+
 | Condition | Unsafe assertions / 18 fault tasks | Clean claim coverage | Mean tokens | Mean latency |
 | --- | ---: | ---: | ---: | ---: |
 | Filesystem | 4 / 18 | 66.7% | 73,596 | 23.05 s |
@@ -190,16 +199,6 @@ retained for provenance, not a claim that the tool verifies truth.
   production reliability, or statistically decisive superiority.
 
 [Security model](docs/security.md) · [Governance contracts](docs/multi-agent-governance.md)
-
-## Portfolio and interview
-
-The [Korean interview notes](docs/portfolio.md) provide a one-sentence summary,
-a 60-second explanation, the three decisions with tradeoffs, and answers to
-questions about evidence, recovery, scope, and experimental limitations.
-
-**Feature freeze:** use v0.8.4 as the portfolio baseline. New features and
-provider integrations are outside the current scope. A code change needs a
-concrete reproducible bug; presentation improvements must not rewrite results.
 
 ## Development reference
 
