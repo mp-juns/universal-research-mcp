@@ -120,6 +120,17 @@ and [benchmark disclosure](docs/benchmark-disclosure.md). Historical artifact
 names retain “claim gate” for provenance; the current product contract is
 “evidence eligibility.”
 
+The [completed-results index](benchmarks/results/README.md) also collects the
+earlier directional and safety pilots, including their negative findings and
+measured overhead. The latest completed
+[A/B/C integration diagnostic (2026-08-26)](benchmarks/results/abc-integration-diagnostic-20260826.md)
+retains one public synthetic task per condition, all seven preceding startup
+diagnostics, an input-budget stop, and unknown usage. Its strict automatic
+scores were 0/1, 0/1, and 1/1, with **unequal input budgets and no repetitions**.
+This is source-checkout integration evidence, not a released-package efficacy
+measurement or proof that one condition is better. No in-progress experiment
+results are included in these completed-result summaries.
+
 ## Authority model
 
 1. `data/events/` is the canonical append-only ledger.
