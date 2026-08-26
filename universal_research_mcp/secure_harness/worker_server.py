@@ -3,16 +3,33 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 from typing import Any, Sequence
 
 from mcp.server.fastmcp import FastMCP
 
 from .approval import HarnessApprovalStore
+from .posix_stdio import posix_stdio_server
 from .worker import WorkerSession
 
 
-mcp = FastMCP(
+class SecureWorkerFastMCP(FastMCP):
+    """Use event-loop descriptor I/O where executor-thread stdin can stall."""
+
+    async def run_stdio_async(self) -> None:
+        if os.name != "posix":  # pragma: no cover - exercised on supported host families
+            await super().run_stdio_async()
+            return
+        async with posix_stdio_server() as (read_stream, write_stream):
+            await self._mcp_server.run(
+                read_stream,
+                write_stream,
+                self._mcp_server.create_initialization_options(),
+            )
+
+
+mcp = SecureWorkerFastMCP(
     "Universal Research Secure Worker",
     instructions=(
         "Only call operations already sealed in the current run plan. This server "

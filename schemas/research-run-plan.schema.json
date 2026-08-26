@@ -3,7 +3,7 @@
   "$id": "https://github.com/mp-juns/universal-research-mcp/schemas/research-run-plan.schema.json",
   "title": "Sealed research run plan",
   "type": "object",
-  "required": ["schema_version", "run_id", "workflow_id", "project_root_hash", "snapshot_hash", "model", "reasoning_effort", "verification_mode", "approval_mode", "agent_creation_disclosure", "image", "resources", "operations", "created_at", "expires_at", "run_plan_hash"],
+  "required": ["schema_version", "run_id", "workflow_id", "project_root_hash", "snapshot_hash", "model", "reasoning_effort", "verification_mode", "approval_mode", "agent_creation_disclosure", "image", "resources", "operations", "test_contracts", "created_at", "expires_at", "run_plan_hash"],
   "properties": {
     "schema_version": {"const": "research-run-plan/2.0"},
     "run_id": {"type": "string", "minLength": 1},
@@ -19,11 +19,58 @@
     "image": {"type": "string", "pattern": "@sha256:[0-9a-f]{64}$"},
     "resources": {"type": "object"},
     "operations": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "test_contracts": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/test_contract"}
+    },
     "created_at": {"type": "string", "format": "date-time"},
     "expires_at": {"type": "string", "format": "date-time"},
     "run_plan_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
   },
   "$defs": {
+    "test_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "contract_id", "operation_id", "checks", "sources", "contract_hash"],
+      "properties": {
+        "schema_version": {"const": "harness-test-contract/1.0"},
+        "contract_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+        "operation_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["check_id", "path", "kind", "selector", "expected"],
+            "properties": {
+              "check_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+              "path": {"type": "string", "minLength": 1},
+              "kind": {"enum": ["python_symbol", "python_literal", "python_assignment", "jsonl_key"]},
+              "selector": {"type": "string", "minLength": 1},
+              "expected": {}
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256", "size"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+              "size": {"type": "integer", "minimum": 0, "maximum": 4194304}
+            }
+          }
+        },
+        "contract_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
     "agent_creation_disclosure": {
       "type": "object",
       "additionalProperties": false,
