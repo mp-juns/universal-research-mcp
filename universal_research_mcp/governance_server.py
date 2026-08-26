@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
-
 from universal_research_mcp.session_scope import SESSION_SCOPE_INSTRUCTIONS
 
 from universal_research_mcp.governance.escalation import evaluate_gate
@@ -20,9 +18,12 @@ from universal_research_mcp.integrations.codex.adapter import (
     build_scope_governor_receipt,
     capture_decision,
 )
+from universal_research_mcp.secure_harness.posix_stdio import (
+    DescriptorBackedStdioFastMCP,
+)
 
 
-mcp = FastMCP("Universal Research Governance", instructions=SESSION_SCOPE_INSTRUCTIONS + "\n\n" + (
+mcp = DescriptorBackedStdioFastMCP("Universal Research Governance", instructions=SESSION_SCOPE_INSTRUCTIONS + "\n\n" + (
     "Validate local research-governance contracts. This server is read-only: it does not "
     "dispatch agents, call models, write research records, run commands, or rebuild indexes."
 ))

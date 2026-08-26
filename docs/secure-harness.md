@@ -33,11 +33,13 @@ revalidated with those receipts before review or attestation. Raw read content,
 patch content, command output, and MCP arguments are represented by hashes and
 bounded metadata rather than copied into the result record.
 
-On POSIX hosts the worker MCP uses descriptor-backed asynchronous stdio with a
-16 MiB inbound message ceiling, avoiding executor-thread stdin stalls. Other
-hosts retain FastMCP's standard stdio implementation. A nonzero Codex process
-returns bounded, redacted diagnostics without exposing stdout; a token-ceiling
-failure is persisted as an ineligible, plan-bound failure record.
+On POSIX hosts every bundled stdio MCP, including the isolated worker, uses
+descriptor-backed asynchronous I/O with a 16 MiB inbound message ceiling,
+avoiding executor-thread stdin stalls. Other hosts retain FastMCP's standard
+stdio implementation, and non-stdio transports retain their SDK behavior. A
+nonzero Codex process returns bounded, redacted diagnostics without exposing
+stdout; a token-ceiling failure is persisted as an ineligible, plan-bound
+failure record.
 
 Start with `universal-research harness doctor`, then create a JSON plan with
 `harness plan`, run `harness preflight`, and issue a one-time exact approval with
