@@ -16,6 +16,29 @@ bounded CPU, memory, PIDs and time, and no Docker socket. Project files are neve
 mounted directly. Proposed edits remain in quarantine until the user approves the
 reported diff hash.
 
+## Evidence hardening
+
+Every `test` operation must declare exactly one `test_contracts` entry. Plan
+creation checks the declared Python symbol, literal, assignment, or JSONL
+key/value assumption against a bounded, symlink-free source file and seals the
+source size and SHA-256 into the plan. Preflight and execution verify the same
+contract again. Execution performs this check before consuming the one-time
+approval, so source drift cannot spend the approval or start Codex.
+
+Completed worker MCP calls are reduced to bounded, plan-bound tool receipts.
+The runner rejects an unknown MCP server or tool, an operation/path outside the
+sealed plan, ambiguous structured-result carriers, failed calls, malformed
+result shapes, and missing receipts. Persisted run results are hash-checked and
+revalidated with those receipts before review or attestation. Raw read content,
+patch content, command output, and MCP arguments are represented by hashes and
+bounded metadata rather than copied into the result record.
+
+On POSIX hosts the worker MCP uses descriptor-backed asynchronous stdio with a
+16 MiB inbound message ceiling, avoiding executor-thread stdin stalls. Other
+hosts retain FastMCP's standard stdio implementation. A nonzero Codex process
+returns bounded, redacted diagnostics without exposing stdout; a token-ceiling
+failure is persisted as an ineligible, plan-bound failure record.
+
 Start with `universal-research harness doctor`, then create a JSON plan with
 `harness plan`, run `harness preflight`, and issue a one-time exact approval with
 `harness approve`. `harness run` additionally requires `--execute-approved`.
@@ -53,3 +76,13 @@ The initial executable approval mode is `plan_once`. Network acquisition and GPU
 execution fail closed unless separately represented in a future host-owned stage;
 GPU requests already require exact UUIDs and experiment operations. Visualization
 is disabled by default and is not exposed by this preview.
+
+## Limits
+
+Tool receipts establish mechanical integrity and plan binding; they do not prove
+that model-generated claims are semantically correct, that citations faithfully
+support them, or that the harness reduces hallucinations across domains. Those
+claims require separate, large-scale task and domain benchmarks. The preview also
+does not yet specify or verify a complete production recovery state machine:
+`plan_once` is the only executable approval mode, and only selected failure
+classes have persisted recovery artifacts.

@@ -188,7 +188,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         "schema_version", "run_id", "workflow_id", "project_root_hash", "model",
         "reasoning_effort", "workflow_mode", "verification_mode", "approval_mode", "image",
         "snapshot_hash", "resources", "operations", "created_at", "expires_at",
-        "agent_creation_disclosure", "run_plan_hash",
+        "agent_creation_disclosure", "test_contracts", "run_plan_hash",
     }
     unknown = sorted(set(value) - allowed)
     if unknown:
@@ -228,6 +228,11 @@ def validate_run_plan(value: object) -> dict[str, Any]:
     identities = [item["operation_id"] for item in normalized_operations]
     if len(identities) != len(set(identities)):
         raise HarnessContractError("operation IDs must be unique")
+    from .test_contracts import validate_test_contracts
+    test_contracts = validate_test_contracts(
+        value.get("test_contracts", []),
+        normalized_operations,
+    )
     try:
         disclosure = normalize_agent_creation_disclosure(
             value.get("agent_creation_disclosure"),
@@ -264,6 +269,7 @@ def validate_run_plan(value: object) -> dict[str, Any]:
         "snapshot_hash": snapshot_hash,
         "resources": _resources(value.get("resources")),
         "operations": normalized_operations,
+        "test_contracts": test_contracts,
         "created_at": _timestamp(value.get("created_at"), "created_at"),
         "expires_at": _timestamp(value.get("expires_at"), "expires_at"),
     }

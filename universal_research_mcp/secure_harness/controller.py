@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 from typing import Any, Mapping
 
@@ -14,15 +15,28 @@ from universal_research_mcp.governance.hashing import artifact_hash
 
 from .approval import HarnessApprovalStore, project_root_hash
 from .claims import evaluate_segments
-from .codex_runner import CodexRunner, write_output_schema
+from .codex_runner import (
+    CodexRunner,
+    CodexTokenCeilingError,
+    validate_worker_tool_receipts,
+    write_output_schema,
+)
 from .contracts import HarnessContractError, build_run_plan, validate_run_plan
 from .docker_backend import doctor as docker_doctor, inspect_plan
 from .snapshot import build_manifest
+from .test_contracts import seal_test_contracts, verify_test_contracts
 
 
 BUNDLE_VERSION = "research-run-plan-bundle/2.0"
 ATTESTATION_VERSION = "secure-harness-attestation/1.0"
+CODEX_RESULT_VERSION = "secure-harness-codex-result/2.0"
 _MAX_JSON_BYTES = 16 * 1024 * 1024
+_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
+_CODEX_RESULT_KEYS = {
+    "schema_version", "run_id", "run_plan_hash", "model", "workflow_mode", "usage",
+    "events_hash", "tool_receipts", "structured_output",
+    "agent_creation_approval_consumption_hash", "executed", "result_hash",
+}
 
 
 def _load_json(path: str | Path, label: str) -> Any:
@@ -35,12 +49,61 @@ def _load_json(path: str | Path, label: str) -> Any:
         raise HarnessContractError(f"{label} is unreadable JSON") from exc
 
 
+def validate_codex_result_record(value: object, plan: Mapping[str, Any]) -> dict[str, Any]:
+    """Fail closed when a persisted model result lacks bounded MCP evidence."""
+    normalized = validate_run_plan(plan)
+    if not isinstance(value, Mapping) or set(value) != _CODEX_RESULT_KEYS:
+        raise HarnessContractError("run result has an unsupported shape")
+    result = dict(value)
+    if result.get("schema_version") != CODEX_RESULT_VERSION:
+        raise HarnessContractError("run result schema is unsupported")
+    if result.get("result_hash") != artifact_hash({
+        key: item for key, item in result.items() if key != "result_hash"
+    }):
+        raise HarnessContractError("run result integrity check failed")
+    if (
+        result.get("run_id") != normalized["run_id"]
+        or result.get("run_plan_hash") != normalized["run_plan_hash"]
+        or result.get("model") != normalized["model"]
+        or result.get("workflow_mode") != normalized["workflow_mode"]
+        or result.get("executed") is not True
+    ):
+        raise HarnessContractError("run result is not bound to the sealed plan")
+    usage = result.get("usage")
+    usage_keys = {
+        "input_tokens", "cached_input_tokens", "output_tokens",
+        "reasoning_output_tokens", "total_tokens",
+    }
+    if not isinstance(usage, Mapping) or set(usage) != usage_keys or any(
+        not isinstance(item, int) or isinstance(item, bool) or item < 0
+        for item in usage.values()
+    ):
+        raise HarnessContractError("run result usage is malformed")
+    if usage["total_tokens"] != usage["input_tokens"] + usage["output_tokens"]:
+        raise HarnessContractError("run result token total is inconsistent")
+    for name in ("events_hash", "agent_creation_approval_consumption_hash"):
+        item = result.get(name)
+        if not isinstance(item, str) or not _SHA256.fullmatch(item):
+            raise HarnessContractError("run result contains an invalid binding hash")
+    output = result.get("structured_output")
+    if not isinstance(output, Mapping) or not isinstance(output.get("segments"), list):
+        raise HarnessContractError("run result structured output is malformed")
+    result["tool_receipts"] = validate_worker_tool_receipts(
+        result.get("tool_receipts"), normalized,
+    )
+    return result
+
+
+def _load_codex_result(run: Path, plan: Mapping[str, Any]) -> dict[str, Any]:
+    return validate_codex_result_record(_load_json(run / "result.json", "run result"), plan)
+
+
 def build_plan_bundle(root: str | Path, specification: Mapping[str, Any]) -> dict[str, Any]:
     project = Path(root).resolve(strict=True)
     allowed = {
         "run_id", "workflow_id", "model", "reasoning_effort", "workflow_mode", "verification_mode",
         "approval_mode", "agent_creation_disclosure", "image", "resources", "operations",
-        "created_at", "expires_at",
+        "test_contracts", "created_at", "expires_at",
     }
     unknown = sorted(set(specification) - allowed)
     if unknown:
@@ -54,10 +117,25 @@ def build_plan_bundle(root: str | Path, specification: Mapping[str, Any]) -> dic
             raise HarnessContractError("every operation requires paths")
         snapshot_paths.extend(operation["paths"])
     manifest = build_manifest(project, snapshot_paths)
+    test_contracts = seal_test_contracts(
+        project,
+        specification.get("test_contracts", []),
+        operations,
+    )
+    manifest_paths = {
+        entry["path"] for entry in manifest["files"] if entry.get("absent") is not True
+    }
+    if any(
+        source["path"] not in manifest_paths
+        for contract in test_contracts
+        for source in contract["sources"]
+    ):
+        raise HarnessContractError("test contract source is missing from the worker snapshot")
+    plan_specification = {**dict(specification), "test_contracts": test_contracts}
     plan = build_run_plan({
         "schema_version": "research-run-plan/2.0",
         "workflow_mode": "lightweight",
-        **dict(specification),
+        **plan_specification,
         "project_root_hash": project_root_hash(project),
         "snapshot_hash": manifest["snapshot_hash"],
     })
@@ -100,6 +178,15 @@ def preflight(root: str | Path, bundle: Mapping[str, Any], *, docker_runner=None
             issues.append({"code": "SNAPSHOT_DRIFT", "message": "project content changed after planning"})
     except HarnessContractError as exc:
         issues.append({"code": "SNAPSHOT_INVALID", "message": str(exc)})
+    try:
+        verified_contracts = verify_test_contracts(
+            project,
+            plan["test_contracts"],
+            plan["operations"],
+        )
+    except HarnessContractError as exc:
+        verified_contracts = []
+        issues.append({"code": "TEST_CONTRACT_INVALID", "message": str(exc)})
     docker = docker_doctor(runner=docker_runner)
     if docker["status"] != "ready":
         issues.append({"code": "DOCKER_UNAVAILABLE", "message": "Docker CLI or daemon is unavailable"})
@@ -116,6 +203,7 @@ def preflight(root: str | Path, bundle: Mapping[str, Any], *, docker_runner=None
         "model": plan["model"],
         "reasoning_effort": plan["reasoning_effort"],
         "approval_mode": plan["approval_mode"],
+        "test_contract_hashes": [item["contract_hash"] for item in verified_contracts],
         "resources": plan["resources"],
         "docker": docker,
         "worker_runtime": plan_checks,
@@ -185,6 +273,9 @@ class HarnessRunStore:
     def write_result(self, run: Path, value: Mapping[str, Any]) -> None:
         self._create_json(run / "result.json", value)
 
+    def write_failure(self, run: Path, value: Mapping[str, Any]) -> None:
+        self._create_json(run / "failure.json", value)
+
     def write_attestation(self, run: Path, value: Mapping[str, Any]) -> None:
         self._create_json(run / "attestation.json", value)
 
@@ -207,39 +298,60 @@ def execute_codex(
 ) -> dict[str, Any]:
     project = Path(root).resolve(strict=True)
     plan = validate_run_plan(bundle.get("plan"))
+    verify_test_contracts(project, plan["test_contracts"], plan["operations"])
     approval_store = HarnessApprovalStore(project, state_root=state_root)
     consumption = approval_store.consume(plan)
     store = HarnessRunStore(project, state_root=state_root)
     run = store.create(bundle, prompt)
     workspace = run / "workspace"
-    result = (runner or CodexRunner()).run(
-        plan,
-        prompt=prompt,
-        control_root=run,
-        project_root=project,
-        plan_path=run / "plan.json",
-        manifest_path=run / "manifest.json",
-        workspace_path=workspace,
-        schema_path=run / "output-schema.json",
-        approval_state_root=approval_store.state_root,
-    )
+    try:
+        result = (runner or CodexRunner()).run(
+            plan,
+            prompt=prompt,
+            control_root=run,
+            project_root=project,
+            plan_path=run / "plan.json",
+            manifest_path=run / "manifest.json",
+            workspace_path=workspace,
+            schema_path=run / "output-schema.json",
+            approval_state_root=approval_store.state_root,
+        )
+    except CodexTokenCeilingError as exc:
+        failure = {
+            "schema_version": "secure-harness-codex-failure/1.0",
+            "run_id": plan["run_id"],
+            "run_plan_hash": plan["run_plan_hash"],
+            "model": plan["model"],
+            "workflow_mode": plan["workflow_mode"],
+            "failure_class": "token_ceiling_exceeded",
+            "diagnostic": exc.diagnostic,
+            "agent_creation_approval_consumption_hash": consumption["consumption_hash"],
+            "executed": True,
+            "eligible": False,
+        }
+        failure["failure_hash"] = artifact_hash(failure)
+        store.write_failure(run, failure)
+        raise
+    tool_receipts = validate_worker_tool_receipts(result.tool_receipts, plan)
     record = {
-        "schema_version": "secure-harness-codex-result/1.0",
+        "schema_version": CODEX_RESULT_VERSION,
         "run_id": plan["run_id"],
         "run_plan_hash": plan["run_plan_hash"],
         "model": result.model,
         "workflow_mode": plan["workflow_mode"],
         "usage": result.usage,
         "events_hash": result.events_hash,
+        "tool_receipts": tool_receipts,
         "structured_output": result.final_output,
         "agent_creation_approval_consumption_hash": consumption["consumption_hash"],
         "executed": True,
     }
     record["result_hash"] = artifact_hash(record)
+    record = validate_codex_result_record(record, plan)
     store.write_result(run, record)
     return {key: record[key] for key in (
         "schema_version", "run_id", "run_plan_hash", "model", "usage", "events_hash",
-        "result_hash", "agent_creation_approval_consumption_hash", "executed",
+        "tool_receipts", "result_hash", "agent_creation_approval_consumption_hash", "executed",
     )}
 
 
@@ -251,8 +363,8 @@ def review_run(
     state_root: str | Path | None = None,
 ) -> dict[str, Any]:
     run = HarnessRunStore(root, state_root=state_root).run_dir(run_id)
-    result = _load_json(run / "result.json", "run result")
     plan = validate_run_plan(_load_json(run / "plan.json", "run plan"))
+    result = _load_codex_result(run, plan)
     receipts = [] if receipts_path is None else _load_json(receipts_path, "verification receipts")
     if not isinstance(receipts, list):
         raise HarnessContractError("verification receipts must be an array")
@@ -302,7 +414,7 @@ def attest_run(
         raise HarnessContractError("expected review hash does not match the reviewed run")
     if review.get("status") != "passed" or review.get("claim_eligibility") != "eligible":
         raise HarnessContractError("blocked review cannot be attested for canonical promotion")
-    result = _load_json(run / "result.json", "run result")
+    result = _load_codex_result(run, plan)
     result_hash = result.get("result_hash")
     if not isinstance(result_hash, str) or result_hash != artifact_hash({
         key: item for key, item in result.items() if key != "result_hash"
@@ -353,7 +465,7 @@ def promotion_attestation_binding(
     }):
         raise HarnessContractError("harness attestation integrity check failed")
     plan = validate_run_plan(_load_json(run / "plan.json", "run plan"))
-    result = _load_json(run / "result.json", "run result")
+    result = _load_codex_result(run, plan)
     if plan["workflow_mode"] not in {"benchmark", "final_review"}:
         raise HarnessContractError("harness attestation is not a promotion mode")
     if (
@@ -362,9 +474,6 @@ def promotion_attestation_binding(
         or attestation.get("run_plan_hash") != plan["run_plan_hash"]
         or result.get("run_id") != plan["run_id"]
         or result.get("run_plan_hash") != plan["run_plan_hash"]
-        or result.get("result_hash") != artifact_hash({
-            key: item for key, item in result.items() if key != "result_hash"
-        })
         or result.get("result_hash") != attestation.get("result_hash")
         or attestation.get("claim_eligibility") != "eligible"
     ):
