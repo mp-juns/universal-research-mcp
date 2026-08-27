@@ -1,0 +1,46 @@
+{
+ "population_links": 686,
+ "status_counts": {
+  "hash_match": 457,
+  "hash_mismatch": 61,
+  "hash_unrecoverable": 9,
+  "no_ref": 20,
+  "range_invalid": 6,
+  "ref_without_hash": 133
+ },
+ "gate_visibility_D1": 0.1257,
+ "chain_broken_share": 0.2362,
+ "stage_b": {
+  "n": 80,
+  "blind_spot": 5,
+  "rate": 0.0625,
+  "wilson_95": [
+   0.027,
+   0.1381
+  ],
+  "codes": {
+   "B1": 75,
+   "B2": 5,
+   "B3": 0,
+   "B4": 0,
+   "B5": 0,
+   "B6": 0
+  }
+ },
+ "stage_c": {
+  "n": 61,
+  "codes": {
+   "C1": 32,
+   "C2m": 27,
+   "C3": 2
+  },
+  "substantive_rate": 0.0328
+ },
+ "addressable_D1": 0.0654,
+ "addressable_D1_range_over_blindspot_CI": [
+  0.0307,
+  0.1395
+ ],
+ "baseline": 0.3,
+ "decision": "hash_gate_alone_insufficient"
+}
