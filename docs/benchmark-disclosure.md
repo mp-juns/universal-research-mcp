@@ -4,8 +4,12 @@
 
 The repository contains a paired A/B protocol, fixtures, schemas, and scoring
 contracts. Its [completed-results index](../benchmarks/results/README.md)
-collects five separate development or integration reports. None is a
-confirmatory product-effect result. Do not pool their observations: task sets,
+collects six separate reports. The five earlier ones are development or
+integration artifacts; the paired 2026-08-27 execution (24 parameterized
+hidden tasks x 2 conditions x 3 repetitions, blinded evaluation plus an
+independent deterministic scorer) is the first with a primary safety
+contrast that excludes zero, and its deviations from the preregistered
+confirmatory plan are listed inside the report. Do not pool their observations: task sets,
 interfaces, budgets, repetitions and evaluation methods differ.
 
 The earlier reports include both negative overhead findings and narrow
