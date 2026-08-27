@@ -61,17 +61,10 @@ revision and a line, page, row, or structured-data locator.
   lexical/semantic rebuilds only after staging, provenance, vector, retrieval,
   and integrity checks. Failed builds preserve the previous good database and
   emit derived health state.
-- `universal_research_mcp/providers/` is an internal prototype that separates embedding from generation,
-  keeps credentials behind env/keyring references, routes local-first, and
-  requires explicit remote budgets without automatic retry.
-- `universal_research_mcp/harness/` is an internal prototype for validated independent packets in
-  bounded parallel batches through an injected host/provider executor. It runs
-  the scope/cost governor first, records a receipt bound to exact worker/scope
-  hashes, requires explicit per-agent costs, and never force-kills an accepted
-  remote call.
-- `universal_research_mcp/agent_runtime/` is an internal prototype for project-local, hash-bound
-  plugin-owned sessions after governor review. These are separate provider
-  requests and records, not native host GUI tasks or operating-system sandboxes.
+- The retired provider/parallel-harness/agent-runtime prototypes were removed
+  from the working tree and are preserved unchanged on the
+  `archive/legacy-prototypes` branch. They were never packaged, registered by
+  the Codex plugin, or reachable from the supported CLI surface.
 - `universal_research_mcp/` publicly provides the default research-memory MCP
   and one management CLI. The MCP's two mutating ingestion tools are marked
   non-read-only/non-idempotent for the host and cannot create approvals or

@@ -1,12 +1,10 @@
 # MCP Layer
 
-`project_search/` is the initial migrated compatibility implementation. It is
-preserved for reference while `research_memory/` is the local, generic,
-read-only MCP adapter used by the plugin.
-
-The compatibility tree contains historical daemon/provider experiments,
-including Ollama-oriented code. It is not packaged or registered as a supported
-agent backend by the Codex-only preview.
+`research_memory/` is the local, generic, read-only MCP adapter used by the
+plugin. The initial migrated compatibility implementation (`project_search/`,
+with its historical daemon/provider/Ollama experiments) was removed from the
+working tree and is preserved unchanged on the `archive/legacy-prototypes`
+branch; it was never packaged or registered as a supported agent backend.
 
 The generic MCP exposes this canonical-read-only contract:
 
