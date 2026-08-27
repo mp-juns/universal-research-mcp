@@ -38,11 +38,6 @@ def _root(value: Path | None, positional: Path | None = None) -> Path:
     return (selected or Path(os.environ.get("UNIVERSAL_RESEARCH_ROOT", Path.cwd()))).resolve()
 
 
-class _NoCallEmbedder:
-    def embed(self, texts: tuple[str, ...], *, model: str, dimensions: int | None):
-        raise RuntimeError("no embedding backend is configured")
-
-
 def _cost_micros(value: str | None, *, required: bool) -> int:
     if value is None:
         if required:
@@ -296,33 +291,6 @@ def _agent_command(root: Path, args: argparse.Namespace) -> int:
     safe["artifact_contents_included"] = False
     _emit(safe)
     return 0 if report.get("status") == "completed" else 2
-
-
-def _harness_command(root: Path, args: argparse.Namespace) -> int:
-    if args.harness_action != "preflight":
-        _emit({
-            "schema_version": "parallel-harness-cli/2.0",
-            "status": "blocked",
-            "reason": (
-                "direct harness execution is disabled; use agent preflight, "
-                "agent approve, then agent run with one-time exact approval"
-            ),
-            "executed": False,
-        })
-        return 2
-
-    from universal_research_mcp.harness import ParallelResearchHarness
-
-    packets = _read_packets(args.packets)
-    ceiling_micros = _cost_micros(args.max_cost_usd, required=False)
-    ceiling_usd = ceiling_micros / 1_000_000
-    report = ParallelResearchHarness(lambda _dispatch: {}).preflight(
-        packets,
-        max_workers=args.max_workers,
-        aggregate_cost_ceiling_usd=ceiling_usd,
-    )
-    _emit(report)
-    return 0 if report["valid"] else 2
 
 
 def _usage_command(root: Path, args: argparse.Namespace) -> int:
@@ -684,118 +652,6 @@ def _profile_command(root: Path, args: argparse.Namespace) -> int:
         "provider_execution": "not_supported_by_public_mcp",
     })
     return 0
-
-
-def _ensure_semantic(root: Path, args: argparse.Namespace) -> tuple[dict[str, Any], int]:
-    from universal_research_mcp.indexing import ensure_lexical_index, ensure_semantic_index
-    from universal_research_mcp.providers import (
-        CredentialResolver,
-        LocalSentenceTransformerEmbedder,
-        OpenAIProvider,
-        ProviderRouter,
-        RemoteBudget,
-        RemotePolicy,
-        RoutedSemanticEmbedder,
-        UrllibTransport,
-    )
-    from universal_research_mcp.runtime.provider_config import load_provider_config
-
-    lexical = ensure_lexical_index(root)
-    config = load_provider_config(root)
-    local_config = config["embedding"].get("local")
-    local_preflight = {"available": False, "reason": "local embedding is not configured"}
-    if local_config:
-        local = LocalSentenceTransformerEmbedder(
-            local_config["model_path"],
-            device=local_config["device"],
-            trust_local_model_code=local_config["trust_local_model_code"],
-        )
-        readiness = local.preflight()
-        local_preflight = {"available": readiness.available, "reason": readiness.reason}
-        if readiness.available:
-            # A failure after local execution starts is terminal. It is never
-            # converted into an automatic billable remote fallback.
-            report = ensure_semantic_index(
-                root,
-                local,
-                provider_id="local",
-                model=str(Path(local_config["model_path"]).expanduser().resolve()),
-                dimensions=args.dimensions,
-                batch_size=args.batch_size,
-            )
-            return {"lexical": lexical, "local_preflight": local_preflight, "semantic": report}, 0
-
-    remote_config = config["embedding"].get("remote")
-    if not args.remote_approved:
-        current = _semantic_status(root)
-        # Fresh projects still receive a valid empty semantic DB without model
-        # or API use. A populated project remains explicitly lexical-only.
-        if int((lexical.get("verification") or {}).get("event_count", 0)) == 0:
-            empty = ensure_semantic_index(
-                root, _NoCallEmbedder(), provider_id="none", model="unconfigured",
-                dimensions=None, batch_size=1,
-            )
-            return {"lexical": lexical, "local_preflight": local_preflight, "semantic": empty, "remote_used": False}, 0
-        return {
-            "lexical": lexical,
-            "local_preflight": local_preflight,
-            "semantic": current,
-            "status": "setup_required",
-            "reason": "local embedding unavailable; remote use needs explicit approval and budget",
-            "remote_used": False,
-        }, 2
-    if not remote_config:
-        raise ValueError("remote embedding is approved for this run but no remote embedding provider is configured")
-    if remote_config["provider_id"] != "openai":
-        raise ValueError("Anthropic is generation-only; configure OpenAI for embeddings")
-    if args.max_calls is None or args.max_calls < 1:
-        raise ValueError("remote semantic refresh requires positive --max-calls")
-    if args.max_input_tokens is None or args.max_input_tokens < 1:
-        raise ValueError("remote semantic refresh requires positive --max-input-tokens")
-    if args.cost_per_million_tokens_usd is None:
-        raise ValueError("remote semantic refresh requires --cost-per-million-tokens-usd")
-    maximum_cost = _cost_micros(args.max_cost_usd, required=True)
-    budget = RemoteBudget(
-        max_calls=args.max_calls,
-        max_input_tokens=args.max_input_tokens,
-        max_output_tokens=0,
-        max_estimated_cost_micros=maximum_cost,
-    )
-    policy = RemotePolicy(
-        approved=True,
-        allowed_provider_ids=frozenset({"openai"}),
-        budget=budget,
-    )
-    provider = OpenAIProvider(
-        transport=UrllibTransport(),
-        credential_ref=remote_config["credential_ref"],
-    )
-    router = ProviderRouter(
-        local=None,
-        remotes=(provider,),
-        credentials=CredentialResolver(),
-    )
-    embedder = RoutedSemanticEmbedder(
-        router=router,
-        remote_policy=policy,
-        provider_id="openai",
-        cost_per_million_tokens_usd=args.cost_per_million_tokens_usd,
-    )
-    report = ensure_semantic_index(
-        root,
-        embedder,
-        provider_id="openai",
-        model=remote_config["model"],
-        dimensions=args.dimensions,
-        batch_size=args.batch_size,
-    )
-    return {
-        "lexical": lexical,
-        "local_preflight": local_preflight,
-        "semantic": report,
-        "remote_used": True,
-        "remote_usage_estimate": embedder.usage_snapshot(),
-    }, 0
 
 
 def build_parser() -> argparse.ArgumentParser:

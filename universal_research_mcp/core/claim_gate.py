@@ -68,21 +68,6 @@ def evaluate_evidence_eligibility(
 
     plan = evidence_eligibility_plan(claim_type, materiality)
     checks = [dict(item) for item in evidence_checks]
-    if not plan["active"]:
-        return {
-            "schema_version": "research-evidence-eligibility/1.0",
-            **plan,
-            "status": "not_required",
-            "evidence_eligibility": "not_required",
-            "claim_eligibility": "not_required",
-            "claim_verified": False,
-            "semantic_support_checked": False,
-            "conflict_checked": False,
-            "source_truth_checked": False,
-            "evidence": [],
-            "blockers": [],
-            "requires_user_decision": False,
-        }
 
     evidence: list[dict[str, Any]] = []
     blockers: list[dict[str, str]] = []
@@ -112,6 +97,25 @@ def evaluate_evidence_eligibility(
                 "reason": str(check.get("reason") or "evidence could not be verified"),
                 "evidence_index": str(index),
             })
+    if not plan["active"]:
+        # The gate is not active for this claim, but supplied evidence was
+        # still resolved by the host resolver: report those results instead of
+        # silently discarding completed verification work.
+        return {
+            "schema_version": "research-evidence-eligibility/1.0",
+            **plan,
+            "status": "not_required",
+            "evidence_eligibility": "not_required",
+            "claim_eligibility": "not_required",
+            "claim_verified": False,
+            "semantic_support_checked": False,
+            "conflict_checked": False,
+            "source_truth_checked": False,
+            "evidence": evidence,
+            "blockers": [],
+            "requires_user_decision": False,
+        }
+
     if len(distinct) < plan["minimum_distinct_evidence"]:
         blockers.append({
             "code": "EVIDENCE-ELIGIBILITY-INSUFFICIENT",
