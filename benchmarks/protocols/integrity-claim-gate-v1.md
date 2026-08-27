@@ -28,7 +28,7 @@ research retrieval is a conventional file-system race vulnerability.
    agent performs any checking itself; no MCP is exposed.
 3. **mcp_evidence_only** — candidate search plus exact evidence fetch and
    current-hash checks; no material-claim gate instruction.
-4. **mcp_claim_gate** — the evidence-only workflow plus `memory_gate_claim`
+4. **mcp_claim_gate** — the evidence-only workflow plus `memory_check_evidence_eligibility` (formerly the `memory_gate_claim` alias)
    for every material claim. A blocked receipt requires non-assertion.
 
 All four conditions retain identical bounded filesystem visibility, prompt

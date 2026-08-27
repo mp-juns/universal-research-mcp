@@ -152,7 +152,7 @@ def _gate_receipt(execution_root: Path, run: Mapping[str, Any], task: Mapping[st
         except json.JSONDecodeError:
             continue
         item = event.get("item") if isinstance(event, dict) else None
-        if not isinstance(item, dict) or item.get("type") != "mcp_tool_call" or item.get("tool") != "memory_gate_claim":
+        if not isinstance(item, dict) or item.get("type") != "mcp_tool_call" or item.get("tool") not in {"memory_check_evidence_eligibility", "memory_gate_claim"}:
             continue
         structured = ((item.get("result") or {}).get("structured_content")) if isinstance(item.get("result"), dict) else None
         if isinstance(structured, dict) and structured.get("status") in {"eligible", "blocked"}:
