@@ -1,0 +1,425 @@
+{
+ "citations": [
+  {
+   "citation_id": "cit_liu2023_verifiability_rates",
+   "cited_in_code": [
+    {
+     "anchor": "## Decision baseline",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "deployed-system unsupported-rate anchor (~half) that the addressable threshold is scaled against"
+    },
+    {
+     "anchor": "ADDRESSABLE_BASELINE constant docstring",
+     "file": "benchmarks/fault_taxonomy/analyze.py",
+     "role": "constant justification"
+    }
+   ],
+   "exact_quote": "on average, a mere 51.5% of generated sentences are fully supported by citations and only 74.5% of citations support their associated sentence",
+   "locus": {
+    "line_note": "abstract, sentence 2",
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Liu, Zhang, Liang",
+    "ids": {
+     "acl": "2023.findings-emnlp.467",
+     "arxiv": "2304.09848"
+    },
+    "title": "Evaluating Verifiability in Generative Search Engines",
+    "url": "https://arxiv.org/abs/2304.09848",
+    "venue": "Findings of EMNLP 2023"
+   },
+   "parameter": "external scale for blind-spot magnitude; cost-derived addressable baseline",
+   "quote_sha256": "0ca940bfc3bd9a08a6de3cade602758d5517e984032f875f661a8682defc6ab0",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_liu2023_verifiability_rates",
+    "expected_sha256": "a559c7d8b6b9941b76b8ce68aa30e93e8411582d5ff99658bb50e73d097ef0a6",
+    "path": "docs/citations/cit_liu2023_verifiability_rates.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "야생 배포 시스템의 미지지율(≈절반)이 실측된 외부 척도이므로, '게이트가 실제 실패의 몇 %를 다뤄야 운용 비용이 정당한가'의 스케일 기준으로 사용"
+  },
+  {
+   "citation_id": "cit_alce2023_kappa_acceptance",
+   "cited_in_code": [
+    {
+     "anchor": "## Reliability",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "peer-reviewed acceptance band (0.525-0.698) that our >=0.6 floor sits inside"
+    },
+    {
+     "anchor": "KAPPA_THRESHOLD constant docstring",
+     "file": "benchmarks/fault_taxonomy/analyze.py",
+     "role": "constant justification"
+    }
+   ],
+   "exact_quote": "Furthermore, the Cohen's kappa coefficient between human and ALCE suggests substantial agreement for citation recall (0.698) and moderate agreement for citation precision (0.525).",
+   "locus": {
+    "line_note": "paragraph on metric-human correlation",
+    "where": "Section 6 Human Evaluation"
+   },
+   "paper": {
+    "authors": "Gao, Yen, Yu, Chen",
+    "ids": {
+     "arxiv": "2305.14627"
+    },
+    "title": "Enabling Large Language Models to Generate Text with Citations (ALCE)",
+    "url": "https://arxiv.org/html/2305.14627",
+    "venue": "EMNLP 2023"
+   },
+   "parameter": "kappa_threshold >= 0.6",
+   "quote_sha256": "0f52119465430129b5ccef5050263ba6f1a75bdbdc57e8623c27c2099cb09d17",
+   "rag_binding": {
+    "eligibility_probe": "eligible",
+    "end_line": 4,
+    "event_id": "observation_cit_alce2023_kappa_acceptance",
+    "expected_sha256": "941f55d29ea6c0f1b94f354c104ff70990f230673dc018f70ae73d8364315a53",
+    "path": "docs/citations/cit_alce2023_kappa_acceptance.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "톱 학회가 0.525~0.698 κ를 지표 유효성 근거로 수용한 선례 — 우리 임계 0.6이 그 수용 범위 내 하한임을 보임"
+  },
+  {
+   "citation_id": "cit_landiskoch1977_bands",
+   "cited_in_code": [
+    {
+     "anchor": "## Reliability",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "0.61 'substantial' 하한의 관례적 원천 + 임의성 경고 병기"
+    }
+   ],
+   "exact_quote": "0.61-0.80 Substantial",
+   "locus": {
+    "line_note": "benchmark bands table",
+    "where": "Table 3, p.165"
+   },
+   "paper": {
+    "authors": "Landis, Koch",
+    "ids": {
+     "doi": "10.2307/2529310"
+    },
+    "title": "The Measurement of Observer Agreement for Categorical Data",
+    "url": "https://www.jstor.org/stable/2529310",
+    "venue": "Biometrics 33(1):159-174, 1977"
+   },
+   "parameter": "kappa_threshold >= 0.6 (interpretation bands)",
+   "quote_sha256": "7e87f42f17ba2e261c54b6f06b049768c7b12f719945fae8be00428d7ac6efae",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_landiskoch1977_bands",
+    "expected_sha256": "fd94b85a1a473548a49c0231f905b790ff9471d91b978ef4178a013d446e813d",
+    "path": "docs/citations/cit_landiskoch1977_bands.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "canonical_secondary_confirmation",
+    "note": "원문 유료장벽; 구간표는 다수 2차 문헌으로 교차확인. 저자 스스로 구간의 임의성을 인정한 점을 프로토콜 위협 절에 병기",
+    "retrieved_at": "2026-08-28",
+    "status": "verified_secondary"
+   },
+   "why": "0.6 하한의 관례적 출처를 명시하되, 그 구간이 임의적이라는 비판까지 함께 인용해 임계값 선택의 한계를 정직하게 공개"
+  },
+  {
+   "citation_id": "cit_ragtruth2024_agreement_adjudication",
+   "cited_in_code": [
+    {
+     "anchor": "## Reliability",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "3자 재정 경로의 선례"
+    },
+    {
+     "anchor": "front-matter note",
+     "file": "benchmarks/fault_taxonomy/codebook.md",
+     "role": "코드가 세밀할수록 일치도 하락(91.8→78.8) → '가장 심한 코드 1개' 규칙의 근거"
+    }
+   ],
+   "exact_quote": "The consistency rate of two annotators was 91.8% at the response level and 78.8% at the span level. [...] In cases where there is a considerable difference between the two annotations, a third review is undertaken.",
+   "locus": {
+    "line_note": "agreement + resolution sentences",
+    "where": "Section 3.3 Human Annotation"
+   },
+   "paper": {
+    "authors": "Niu et al.",
+    "ids": {
+     "arxiv": "2401.00396"
+    },
+    "title": "RAGTruth: A Hallucination Corpus for Developing Trustworthy Retrieval-Augmented Language Models",
+    "url": "https://arxiv.org/html/2401.00396v2",
+    "venue": "ACL 2024"
+   },
+   "parameter": "adjudication path when kappa < threshold; span-level agreement warning",
+   "quote_sha256": "a186f71ca7c60ad95b0e6330fc4798b4183bf0cb1362902b9d8131181fd0f7b8",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_ragtruth2024_agreement_adjudication",
+    "expected_sha256": "b49a25a7e15feb16601cb5543039c7c234d6f67f2ad9662b5a06eaf88e244f78",
+    "path": "docs/citations/cit_ragtruth2024_agreement_adjudication.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "κ 미달 시 재코딩 단독이 아니라 불일치 건 3자 재정 경로를 사전등록하기 위한 직접 선례"
+  },
+  {
+   "citation_id": "cit_ais2023_binary_decomposition",
+   "cited_in_code": [
+    {
+     "anchor": "## Decision tree",
+     "file": "benchmarks/fault_taxonomy/codebook.md",
+     "role": "B1-B6를 예/아니오 세부질문 트리로 분해하는 설계의 선례"
+    }
+   ],
+   "exact_quote": "We define AIS and a two-stage annotation pipeline for allowing annotators to evaluate model output according to annotation guidelines. We ask them to identify the interpretability by posing a yes/no question.",
+   "locus": {
+    "line_note": "PDF-extracted verbatim; echo-risk check performed",
+    "where": "Abstract + Section 4.1 Task Design"
+   },
+   "paper": {
+    "authors": "Rashkin et al.",
+    "ids": {
+     "acl": "2023.cl-4.2",
+     "arxiv": "2112.12870"
+    },
+    "title": "Measuring Attribution in Natural Language Generation Models (AIS)",
+    "url": "https://aclanthology.org/2023.cl-4.2/",
+    "venue": "Computational Linguistics 49(4), 2023"
+   },
+   "parameter": "codebook as yes/no decision tree",
+   "quote_sha256": "37a4cece99ab98bc2e9c1555cdbd32d2643d4529a2dcad722a9446d0f28f137e",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_ais2023_binary_decomposition",
+    "expected_sha256": "60ea7430431ba2b8f3d447b99a2bbb695c364c671080d96673e5ff214b175d22",
+    "path": "docs/citations/cit_ais2023_binary_decomposition.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "pdf_text_extraction",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "복합 판단을 이진 질문으로 분해하면 일치도가 구조적으로 오른다는 검증된 프로토콜 설계"
+  },
+  {
+   "citation_id": "cit_freshqa2024_change_rate_strata",
+   "cited_in_code": [
+    {
+     "anchor": "## Population and strata",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "변화 속도 기준 층화의 선례 → 등록일 3분위"
+    },
+    {
+     "anchor": "tertile assignment docstring",
+     "file": "benchmarks/fault_taxonomy/census.py",
+     "role": "층화 구현 근거"
+    }
+   ],
+   "exact_quote": "a diverse range of question and answer types, including questions that require fast-changing world knowledge as well as questions with false premises that need to be debunked [...] a two-mode evaluation procedure that allows us to measure both correctness and hallucination. Through human evaluations involving more than 50K judgments",
+   "locus": {
+    "line_note": "category + evaluation sentences",
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Vu et al.",
+    "ids": {
+     "arxiv": "2310.03214"
+    },
+    "title": "FreshLLMs: Refreshing Large Language Models with Search Engine Augmentation",
+    "url": "https://arxiv.org/abs/2310.03214",
+    "venue": "Findings of ACL 2024"
+   },
+   "parameter": "registration-date tertile stratification; dual-mode scoring",
+   "quote_sha256": "4e72a910167f5b3486a07824bce1be1ee5d6d1fbb8e206e039939b558d69c2bc",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_freshqa2024_change_rate_strata",
+    "expected_sha256": "8023f408089b425ecb0b82102ca60bc576f41cb9a61fdae5fbc8c0e97aa8b318",
+    "path": "docs/citations/cit_freshqa2024_change_rate_strata.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "사실의 변화 속도로 범주화하고 이중 채점하는 설계가 시간 층화+결정론/블라인드 이중 채점의 직계 선례"
+  },
+  {
+   "citation_id": "cit_selectivenet2019_coverage_constraint",
+   "cited_in_code": [
+    {
+     "anchor": "## Decision baseline",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "운영점(제약)을 측정 전에 고정하는 방법론적 선례 — addressable 기준선을 사전등록하는 형식의 근거"
+    }
+   ],
+   "exact_quote": "For a given coverage rate 0<c≤1 and hypothesis class Θ, the optimal selective model is θ∗=arg minθ∈Θ(R(fθ,gθ)) s.t. ϕ(gθ)≥c.",
+   "locus": {
+    "line_note": "optimal selective model definition",
+    "where": "Section 2 Selective Prediction Problem Formulation"
+   },
+   "paper": {
+    "authors": "Geifman, El-Yaniv",
+    "ids": {
+     "arxiv": "1901.09192"
+    },
+    "title": "SelectiveNet: A Deep Neural Network with an Integrated Reject Option",
+    "url": "https://arxiv.org/abs/1901.09192",
+    "venue": "ICML 2019"
+   },
+   "parameter": "preregistered decision threshold as ex-ante operating point",
+   "quote_sha256": "1fd223fc921ad75e0e8a80ed9a1f496f0167634fbdac6257034f10ec51871936",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_selectivenet2019_coverage_constraint",
+    "expected_sha256": "5ae1e92d4298b156584b815d74c50d031561c12a40973d91a8ec394787f9ecce",
+    "path": "docs/citations/cit_selectivenet2019_coverage_constraint.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source(ar5iv)",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "위험-커버리지 프레임에서 목표를 제약으로 먼저 고정하는 것이 표준임을 보여, '기준선 미달이면 해시 게이트 단독 부족' 판정선의 사전 고정을 정당화"
+  },
+  {
+   "citation_id": "cit_acl2026_no_power_analysis",
+   "cited_in_code": [
+    {
+     "anchor": "## Sample size",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "분야 관행의 공백을 지적하고, Wilson CI 산식으로 n을 명시 정당화하는 우리 선택의 대비 근거"
+    },
+    {
+     "anchor": "wilson_ci() docstring",
+     "file": "benchmarks/fault_taxonomy/analyze.py",
+     "role": "n=50: 10% 가정 시 95% CI [4.4%,21.4%]; n=80: [5.3%,18.2%]"
+    }
+   ],
+   "exact_quote": "no papers use power analysis to determine sample size ... Reported sample sizes vary widely, ranging from as few as 10 to a maximum of 23,040, with a median sample size of 170.",
+   "locus": {
+    "line_note": "median corrected 100→170 vs earlier search summary",
+    "where": "Section 5.1"
+   },
+   "paper": {
+    "authors": "(ACL 2026 long)",
+    "ids": {
+     "arxiv": "2606.07936"
+    },
+    "title": "Illusions of the Gold Standard: A Large-scale Analysis of Human Evaluation Protocols for Long-form Text Generation",
+    "url": "https://arxiv.org/pdf/2606.07936",
+    "venue": "ACL 2026"
+   },
+   "parameter": "n=50->80 with explicit Wilson-CI justification",
+   "quote_sha256": "9a64799f66192438a109fe5e4eec02b216c9929ee841d3320c82d249c57e250f",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_acl2026_no_power_analysis",
+    "expected_sha256": "fc944a1272167423a12fab137c42ba8d13ffd005cf5022fca18679f269681955",
+    "path": "docs/citations/cit_acl2026_no_power_analysis.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "관행(중앙값 100, 검정력 분석 부재)을 명시 인용함으로써 CI 기반 n 정당화가 관행 대비 개선임을 문서화"
+  },
+  {
+   "citation_id": "cit_poisonedrag_threatmodel",
+   "cited_in_code": [
+    {
+     "anchor": "## Threats and positioning",
+     "file": "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+     "role": "주입 실험 계열의 명시적 위협 모델과 대비해 '자연 결함만' 관찰 설계의 보완적 위치를 정의; 등록 전 오염 음성대조(6/6 양측 실패)의 문헌 정합"
+    }
+   ],
+   "exact_quote": "PoisonedRAG could achieve a 90% attack success rate when injecting five malicious texts for each target question into a knowledge database with millions of texts.",
+   "locus": {
+    "line_note": "attack scale + ASR sentence",
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Zou, Geng, Wang, Jia",
+    "ids": {
+     "arxiv": "2402.07867"
+    },
+    "title": "PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models",
+    "url": "https://arxiv.org/abs/2402.07867",
+    "venue": "USENIX Security 2025"
+   },
+   "parameter": "observational (no-injection) design positioning + poisoned negative control",
+   "quote_sha256": "271bc8678ef69f1dbd251d87d6860c3cf1259b77c0264673f96fb78b23000f48",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_poisonedrag_threatmodel",
+    "expected_sha256": "c91c918090c14b0afde2a641a1a59113f2d08aec891fabe57ae408540a9608cb",
+    "path": "docs/citations/cit_poisonedrag_threatmodel.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + lexical index, built with universal_research_mcp at main 7730109+)"
+   },
+   "verification": {
+    "method": "webfetch_of_source",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "극소 주입으로도 파국적이라는 실측이 '해시 게이트는 등록 전 오염을 못 막는다'는 우리 음성대조 결과의 외부 정합 근거"
+  }
+ ],
+ "created_at": "2026-08-28T00:00:00+00:00",
+ "integrity": {
+  "manifest_hash": "sha256(canonical json, sort_keys, ensure_ascii=False, manifest_sha256 필드 제외)",
+  "quote_hash": "sha256(utf-8 exact_quote)",
+  "verification_levels": [
+   "verified (원문 fetch/PDF 추출 축자 대조)",
+   "verified_secondary (2차 문헌 교차확인 — Landis-Koch 유료장벽 1건)"
+  ]
+ },
+ "manifest_sha256": "27c280a2729ce5ee844645ed00433d1caf3d86747c6b24f23678fa0bbec8fee6",
+ "planned_code_artifacts": [
+  "benchmarks/protocols/real-corpus-fault-taxonomy-v1.md",
+  "benchmarks/fault_taxonomy/codebook.md",
+  "benchmarks/fault_taxonomy/census.py",
+  "benchmarks/fault_taxonomy/analyze.py"
+ ],
+ "purpose": "real-corpus-fault-taxonomy-v1 사전등록 파라미터(κ 임계, addressable 기준선, 표본 규칙, 층화, 코드북 구조)의 문헌 근거를 미래 생성 코드의 인용 지점에 해시로 결합",
+ "rag_store": {
+  "chain_probe": "memory_search_candidates → memory_fetch_evidence(matched) → memory_check_evidence_eligibility(eligible)",
+  "events": 10,
+  "index": "current",
+  "location": "session scratchpad lit-store"
+ },
+ "schema_version": "literature-evidence-manifest/1.1"
+}
