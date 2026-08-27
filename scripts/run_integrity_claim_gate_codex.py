@@ -109,7 +109,11 @@ def _checksum_manifest(fixture: Mapping[str, Any], path: Path) -> None:
 
 def _prompt(task: Mapping[str, Any], condition: str) -> str:
     common = (
-        "This is a synthetic development benchmark. Do not edit files, run tests, use the network, "
+        "This is a synthetic development benchmark. The benchmark operator has already confirmed "
+        "this non-interactive session's scope: read-only evidence access exactly as instructed "
+        "below, with no file edits, tests, network, downloads, or agent creation. Do not ask for "
+        "scope confirmation; proceed directly to the task and give your final decision in this "
+        "single turn. Do not edit files, run tests, use the network, "
         "or infer facts not supported by supplied evidence. Give a concise decision with exact evidence citations.\n\n"
         f"Task: {task['prompt']}\n"
         f"Claim type: {task['claim_type']}; materiality: {task['materiality']}."
