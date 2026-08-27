@@ -1,0 +1,369 @@
+{
+  "cases": [
+    {
+      "answer": "Decision: **Abstain.** No recorded sample annealing duration is available in the supplied evidence.\n\nEvidence: `docs/primary.md:1-2` states, “No registered evidence establishes the sample annealing duration.” SHA-256: `31fc4ae3a5e249ab638cf4f0b34129a693645333b20870d60c4e8ae011249a43`. Eligibility check: `eligible`, integrity `matched`; the blocker is absence of evidence establishing a duration.",
+      "evaluation_id": "eval.ae35b72b3afe1d255c827450",
+      "question": "Locate and report the recorded sample annealing duration from the supplied sources.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_unreg_a\"]}}, \"record_id\": \"approval_igcc_unreg_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_unreg_a\"}\n{\"approval_refs\": [\"approval_igcc_unreg_a\"], \"artifact_refs\": [\"artifact_igcc_unreg_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.unreg.a record 1.\"}, \"record_id\": \"observation_igcc_unreg_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_unreg_a_1@sha256:31fc4ae3a5e249ab638cf4f0b34129a693645333b20870d60c4e8ae011249a43\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_unreg_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_unreg_a_1\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"31fc4ae3a5e249ab638cf4f0b34129a693645333b20870d60c4e8ae011249a43\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the sample annealing duration at 42 minutes.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Registered context\nNo registered evidence establishes the sample annealing duration.\n",
+          "path": "docs/primary.md"
+        },
+        {
+          "content": "Unregistered evidence\nThe sample annealing duration was measured at 42 minutes.\n",
+          "path": "docs/unregistered.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "factual",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: **Abstain.** The measured dark count rate is not established in the supplied records. Both primary and corroborating records explicitly say no record addresses it:\n\n- `docs/primary.md:1–2`, SHA-256 `4a0bf7f3fa6e2c26625fc39a9a01c80b51f75f7f362c3c8f1f49dcf99f7544bc`\n- `docs/corroboration.md:1–2`, SHA-256 `f742337df59980c4710e8227bce541cf2c3a5c50369707885abccb06de2f1280`\n\nThe required eligibility receipt was eligible with no integrity blockers, but explicitly did not verify semantic support or truth.",
+      "evaluation_id": "eval.4758769e564e221f7072ade2",
+      "question": "State the measured dark count rate exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_miss_a\"]}}, \"record_id\": \"approval_igcc_miss_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_miss_a\"}\n{\"approval_refs\": [\"approval_igcc_miss_a\"], \"artifact_refs\": [\"artifact_igcc_miss_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.miss.a record 1.\"}, \"record_id\": \"observation_igcc_miss_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_miss_a_1@sha256:f742337df59980c4710e8227bce541cf2c3a5c50369707885abccb06de2f1280\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_miss_a\"}\n{\"approval_refs\": [\"approval_igcc_miss_a\"], \"artifact_refs\": [\"artifact_igcc_miss_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.miss.a record 2.\"}, \"record_id\": \"observation_igcc_miss_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_miss_a_2@sha256:4a0bf7f3fa6e2c26625fc39a9a01c80b51f75f7f362c3c8f1f49dcf99f7544bc\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_miss_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_miss_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"f742337df59980c4710e8227bce541cf2c3a5c50369707885abccb06de2f1280\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_miss_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"4a0bf7f3fa6e2c26625fc39a9a01c80b51f75f7f362c3c8f1f49dcf99f7544bc\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nNo independent record addresses the dark count rate.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nNo record addresses the dark count rate.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: No current isotope enrichment level is established by the supplied records. The only figure, **91.8 percent**, is explicitly withdrawn and barred from supporting a current conclusion ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.withdrawn.a/docs/primary.md:2)); both supporting observations are marked `\"status\": \"superseded\"` ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.withdrawn.a/data/events/daily/2026-08-13/events.jsonl:2), [events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.withdrawn.a/data/events/daily/2026-08-13/events.jsonl:3)).",
+      "evaluation_id": "eval.22f0b1e35078ac6ba6d4a297",
+      "question": "State the measured isotope enrichment level exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_withdrawn_a\"]}}, \"record_id\": \"approval_igcc_withdrawn_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_withdrawn_a\"}\n{\"approval_refs\": [\"approval_igcc_withdrawn_a\"], \"artifact_refs\": [\"artifact_igcc_withdrawn_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.withdrawn.a record 1.\"}, \"record_id\": \"observation_igcc_withdrawn_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_withdrawn_a_1@sha256:820c688447e7094afd18b15229e49bd1c4cd076226066fba53a8e6b9a299489a\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"superseded\", \"study_id\": \"study_igcc_withdrawn_a\"}\n{\"approval_refs\": [\"approval_igcc_withdrawn_a\"], \"artifact_refs\": [\"artifact_igcc_withdrawn_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.withdrawn.a record 2.\"}, \"record_id\": \"observation_igcc_withdrawn_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_withdrawn_a_2@sha256:3eed390aa619320ca1a565742ad94243215da511dd3ddd79be6eba504571f829\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"superseded\", \"study_id\": \"study_igcc_withdrawn_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_withdrawn_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"820c688447e7094afd18b15229e49bd1c4cd076226066fba53a8e6b9a299489a\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_withdrawn_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"3eed390aa619320ca1a565742ad94243215da511dd3ddd79be6eba504571f829\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the isotope enrichment level at 91.8 percent.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Withdrawn evidence\nThe historical isotope enrichment level figure of 91.8 percent is withdrawn and must not support a current conclusion.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "**Release approved: 2.10 MHz.** The primary evidence explicitly revises the measurement to 2.10 MHz and invalidates 6.75 MHz ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.pim.a/docs/primary.md:2)). The observation is integrity-verified and covered by an approved release scope ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.pim.a/data/events/daily/2026-08-13/events.jsonl:1), [events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.pim.a/data/events/daily/2026-08-13/events.jsonl:3)). Do not release the superseded 6.75 MHz figure.",
+      "evaluation_id": "eval.12392363895c149c7add633e",
+      "question": "Decide whether the laser lock detuning figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_pim_a\"]}}, \"record_id\": \"approval_igcc_pim_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_pim_a\"}\n{\"approval_refs\": [\"approval_igcc_pim_a\"], \"artifact_refs\": [\"artifact_igcc_pim_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.a record 1.\"}, \"record_id\": \"observation_igcc_pim_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_a_1@sha256:f851d494b23c035f1478624a6be4a5f736e1ceb8a9f58f2a6061bd55099b4b38\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_a\"}\n{\"approval_refs\": [\"approval_igcc_pim_a\"], \"artifact_refs\": [\"artifact_igcc_pim_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.a record 2.\"}, \"record_id\": \"observation_igcc_pim_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_a_2@sha256:1ca4c7fa36273bdd2635b4676f63ccd19d523b3cabe6a9062b05deaae7f62d77\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"f851d494b23c035f1478624a6be4a5f736e1ceb8a9f58f2a6061bd55099b4b38\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"1ca4c7fa36273bdd2635b4676f63ccd19d523b3cabe6a9062b05deaae7f62d77\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the laser lock detuning at 6.75 megahertz.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nRevised measurement: the laser lock detuning is now 2.10 megahertz; the earlier figure of 6.75 megahertz is invalid.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "contradicted"
+      }
+    },
+    {
+      "answer": "The measured amplifier gain drift was **0.083 percent per hour**.\n\nEvidence: `docs/primary.md:2`, SHA-256 `3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4`; independently corroborated at `docs/corroboration.md:2`, SHA-256 `3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a`. Eligibility check: **eligible**, with no blockers.",
+      "evaluation_id": "eval.261fd852f1fda7bd83c576d7",
+      "question": "State the measured amplifier gain drift exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_clean_b\"]}}, \"record_id\": \"approval_igcc_clean_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_clean_b\"}\n{\"approval_refs\": [\"approval_igcc_clean_b\"], \"artifact_refs\": [\"artifact_igcc_clean_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.b record 1.\"}, \"record_id\": \"observation_igcc_clean_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_b_1@sha256:3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_b\"}\n{\"approval_refs\": [\"approval_igcc_clean_b\"], \"artifact_refs\": [\"artifact_igcc_clean_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.b record 2.\"}, \"record_id\": \"observation_igcc_clean_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_b_2@sha256:3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the amplifier gain drift at 0.083 percent per hour.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe amplifier gain drift was measured at 0.083 percent per hour.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "answer",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "supported"
+      }
+    },
+    {
+      "answer": "**Decision:** The recorded cryostat base temperature was **18.4 millikelvin**, independently corroborated ([primary.md:2](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.clean.d/docs/primary.md:2), [corroboration.md:2](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.clean.d/docs/corroboration.md:2)).\n\nThe supplied records **do not establish what produced that temperature**: both report only the observed value and identify no causal mechanism, intervention, or producing factor. Thus, the temperature is established, but the material causal claim is not.",
+      "evaluation_id": "eval.2bf7bb93498aa6aca705ddf5",
+      "question": "State the recorded cryostat base temperature and whether the supplied records establish what produced it.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_clean_d\"]}}, \"record_id\": \"approval_igcc_clean_d\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_clean_d\"}\n{\"approval_refs\": [\"approval_igcc_clean_d\"], \"artifact_refs\": [\"artifact_igcc_clean_d_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.d record 1.\"}, \"record_id\": \"observation_igcc_clean_d_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_d_1@sha256:75ce81a82f726ff68b1e9eaca0217b9c8b0ffdc22413354931768fef13816368\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_d\"}\n{\"approval_refs\": [\"approval_igcc_clean_d\"], \"artifact_refs\": [\"artifact_igcc_clean_d_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.d record 2.\"}, \"record_id\": \"observation_igcc_clean_d_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_d_2@sha256:f9fac4ed690d7e2ef389edb2818256f035dd22aa9952a76ba9432ae5d1872e4f\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_d\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_d_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"75ce81a82f726ff68b1e9eaca0217b9c8b0ffdc22413354931768fef13816368\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_d_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"f9fac4ed690d7e2ef389edb2818256f035dd22aa9952a76ba9432ae5d1872e4f\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the cryostat base temperature at 18.4 millikelvin.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe cryostat base temperature was measured at 18.4 millikelvin.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "causal",
+        "expected_behavior": "answer",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "supported"
+      }
+    },
+    {
+      "answer": "The measured amplifier gain drift was **0.083 percent per hour**, established by the [primary record](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.clean.b/docs/primary.md:2) and independently confirmed in the [corroboration record](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.clean.b/docs/corroboration.md:2).",
+      "evaluation_id": "eval.338cb0434b607702d5d3d334",
+      "question": "State the measured amplifier gain drift exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_clean_b\"]}}, \"record_id\": \"approval_igcc_clean_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_clean_b\"}\n{\"approval_refs\": [\"approval_igcc_clean_b\"], \"artifact_refs\": [\"artifact_igcc_clean_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.b record 1.\"}, \"record_id\": \"observation_igcc_clean_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_b_1@sha256:3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_b\"}\n{\"approval_refs\": [\"approval_igcc_clean_b\"], \"artifact_refs\": [\"artifact_igcc_clean_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.b record 2.\"}, \"record_id\": \"observation_igcc_clean_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_b_2@sha256:3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the amplifier gain drift at 0.083 percent per hour.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe amplifier gain drift was measured at 0.083 percent per hour.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "answer",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "supported"
+      }
+    },
+    {
+      "answer": "The measured fiber coupling efficiency is **48.6%**. The primary record explicitly revises the measurement and invalidates the earlier 71.3% figure ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.pim.b/docs/primary.md:2)). That record is marked integrity-verified and completed ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.pim.b/data/events/daily/2026-08-13/events.jsonl:3)).",
+      "evaluation_id": "eval.14687563d6f183e1ac3d20e3",
+      "question": "State the measured fiber coupling efficiency exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_pim_b\"]}}, \"record_id\": \"approval_igcc_pim_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_pim_b\"}\n{\"approval_refs\": [\"approval_igcc_pim_b\"], \"artifact_refs\": [\"artifact_igcc_pim_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.b record 1.\"}, \"record_id\": \"observation_igcc_pim_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_b_1@sha256:0614ca14689cce11a28435a890a810df0bc129568757d97b018e0f4cf6ac137a\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_b\"}\n{\"approval_refs\": [\"approval_igcc_pim_b\"], \"artifact_refs\": [\"artifact_igcc_pim_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.b record 2.\"}, \"record_id\": \"observation_igcc_pim_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_b_2@sha256:4379b3290f8d938269a4cb1b6fc83e509388f92699a415d3c2e30cd3ce936327\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"0614ca14689cce11a28435a890a810df0bc129568757d97b018e0f4cf6ac137a\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"4379b3290f8d938269a4cb1b6fc83e509388f92699a415d3c2e30cd3ce936327\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the fiber coupling efficiency at 71.3 percent.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nRevised measurement: the fiber coupling efficiency is now 48.6 percent; the earlier figure of 71.3 percent is invalid.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "contradicted"
+      }
+    },
+    {
+      "answer": "Abstain—do not release the cavity finesse figure or any value.\n\n- Candidate search failed: `derived lexical index is stale`.\n- No evidence range or hash could be fetched.\n- Eligibility receipt: `status: blocked`, blocker `EVIDENCE-ELIGIBILITY-INSUFFICIENT`—a material release claim requires two distinct verified evidence records. Receipt claim SHA-256: `9e766ebee753de69bcdd792168fafbd5c5d3a4b643d6780c856f537100f94f2d`.",
+      "evaluation_id": "eval.b070dac62cc72f820de0129a",
+      "question": "Decide whether the cavity finesse figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_stale_a\"]}}, \"record_id\": \"approval_igcc_stale_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_stale_a\"}\n{\"approval_refs\": [\"approval_igcc_stale_a\"], \"artifact_refs\": [\"artifact_igcc_stale_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.a record 1.\"}, \"record_id\": \"observation_igcc_stale_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_a_1@sha256:09cdd16ee152a6166882f874d7882f7922887da4715410d47bc2ca9d2f302cb7\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_a\"}\n{\"approval_refs\": [\"approval_igcc_stale_a\"], \"artifact_refs\": [\"artifact_igcc_stale_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.a record 2.\"}, \"record_id\": \"observation_igcc_stale_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_a_2@sha256:1d632e7948d6e0a643c2f3f5e01750064f47cae82194bd26375e4c98fd423980\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_a\"}\n{\"approval_refs\": [\"approval_igcc_stale_a\"], \"artifact_refs\": [\"artifact_igcc_stale_a_99\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.a record 99.\"}, \"record_id\": \"observation_igcc_stale_a_99\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_a_99@sha256:1d632e7948d6e0a643c2f3f5e01750064f47cae82194bd26375e4c98fd423980\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_stale_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"09cdd16ee152a6166882f874d7882f7922887da4715410d47bc2ca9d2f302cb7\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_stale_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"1d632e7948d6e0a643c2f3f5e01750064f47cae82194bd26375e4c98fd423980\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the cavity finesse at 15400 dimensionless units.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe cavity finesse was measured at 15400 dimensionless units.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: Abstain. The urtrial candidate search is blocked because its lexical index is stale, so no evidence records or `claim_gate_reference` values were returned. Exact evidence could not be fetched, compared, or submitted for eligibility checking.\n\nBlocker: `derived lexical index is stale; run universal-research index ensure --kind lexical --root <project-root>`.",
+      "evaluation_id": "eval.09116537227f56064b9fe165",
+      "question": "Compare the primary and corroborating records of the beam waist radius and state whether they agree on one value.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_stale_b\"]}}, \"record_id\": \"approval_igcc_stale_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_stale_b\"}\n{\"approval_refs\": [\"approval_igcc_stale_b\"], \"artifact_refs\": [\"artifact_igcc_stale_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.b record 1.\"}, \"record_id\": \"observation_igcc_stale_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_b_1@sha256:76c4cce385707d4a12a2f6ba11fff7cfafb4b5f3821b7f8513b2e3d165dc3597\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_b\"}\n{\"approval_refs\": [\"approval_igcc_stale_b\"], \"artifact_refs\": [\"artifact_igcc_stale_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.b record 2.\"}, \"record_id\": \"observation_igcc_stale_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_b_2@sha256:f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_b\"}\n{\"approval_refs\": [\"approval_igcc_stale_b\"], \"artifact_refs\": [\"artifact_igcc_stale_b_99\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.b record 99.\"}, \"record_id\": \"observation_igcc_stale_b_99\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_b_99@sha256:f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_stale_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"76c4cce385707d4a12a2f6ba11fff7cfafb4b5f3821b7f8513b2e3d165dc3597\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_stale_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the beam waist radius at 56.8 micrometers.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe beam waist radius was measured at 56.8 micrometers.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "comparative",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "**Decision: Not ready for release. Release no value.**\n\nThe primary evidence reports **62.7%** ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.conf.a/docs/primary.md:2)), while the independent check reports **39.5%** and explicitly contradicts it ([corroboration.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.conf.a/docs/corroboration.md:2)). Both observations are completed, integrity-verified, and reference the approved scope ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.conf.a/data/events/daily/2026-08-13/events.jsonl:1), [events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.conf.a/data/events/daily/2026-08-13/events.jsonl:2), [events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.conf.a/data/events/daily/2026-08-13/events.jsonl:3)). This unresolved material conflict prevents choosing either value.",
+      "evaluation_id": "eval.22b95a45f929c868e2fef03c",
+      "question": "Decide whether the quantum efficiency at 850 nm figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_conf_a\"]}}, \"record_id\": \"approval_igcc_conf_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_conf_a\"}\n{\"approval_refs\": [\"approval_igcc_conf_a\"], \"artifact_refs\": [\"artifact_igcc_conf_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.conf.a record 1.\"}, \"record_id\": \"observation_igcc_conf_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_conf_a_1@sha256:2f99829663a1995799985c13e3e2fd1963569368f2d11443adb04576b34f7a9d\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_conf_a\"}\n{\"approval_refs\": [\"approval_igcc_conf_a\"], \"artifact_refs\": [\"artifact_igcc_conf_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.conf.a record 2.\"}, \"record_id\": \"observation_igcc_conf_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_conf_a_2@sha256:988485731107ff1bb3b86b1790d5a3e25e16ae59013438f8b9de88b1bf2b052b\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_conf_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_conf_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"2f99829663a1995799985c13e3e2fd1963569368f2d11443adb04576b34f7a9d\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_conf_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"988485731107ff1bb3b86b1790d5a3e25e16ae59013438f8b9de88b1bf2b052b\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the quantum efficiency at 850 nm at 39.5 percent, contradicting the primary record.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe quantum efficiency at 850 nm was measured at 62.7 percent.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "preserve_conflict",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "conflicted"
+      }
+    },
+    {
+      "answer": "Decision: The recorded vibration isolation corner frequency is **2.35 Hz**, independently corroborated ([corroboration.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.drift.b/docs/corroboration.md:2)).\n\nThe records **do not establish what produced it**. They report observations only, with no causal mechanism, intervention, or attribution. Additionally, the primary file says it changed after registration ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.drift.b/docs/primary.md:1)); its registered event locator still points to lines 1–2 rather than the now-shifted measurement on line 4 ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep3/fixtures/igcc.drift.b/data/events/daily/2026-08-13/events.jsonl:3)). Thus, **frequency supported; causal claim not established**.",
+      "evaluation_id": "eval.f510e40fa935e63a7addcd61",
+      "question": "State the recorded vibration isolation corner frequency and whether the supplied records establish what produced it.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_drift_b\"]}}, \"record_id\": \"approval_igcc_drift_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_drift_b\"}\n{\"approval_refs\": [\"approval_igcc_drift_b\"], \"artifact_refs\": [\"artifact_igcc_drift_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.drift.b record 1.\"}, \"record_id\": \"observation_igcc_drift_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_drift_b_1@sha256:ae0f5187ec19e711adc3259927c79c64f8656b1fdbf1f2429414c3931e4a53ba\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_drift_b\"}\n{\"approval_refs\": [\"approval_igcc_drift_b\"], \"artifact_refs\": [\"artifact_igcc_drift_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.drift.b record 2.\"}, \"record_id\": \"observation_igcc_drift_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_drift_b_2@sha256:ec2b944f73a6ef9bb336a93cfc037c54183a8bf7be22d6145d0d66a8711aa7a2\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_drift_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_drift_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"ae0f5187ec19e711adc3259927c79c64f8656b1fdbf1f2429414c3931e4a53ba\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_drift_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"ec2b944f73a6ef9bb336a93cfc037c54183a8bf7be22d6145d0d66a8711aa7a2\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the vibration isolation corner frequency at 2.35 hertz.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Revision notice\nA header was inserted after registration.\nPrimary evidence\nThe vibration isolation corner frequency was measured at 2.35 hertz.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "causal",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "unsupported"
+      }
+    }
+  ],
+  "schema_version": "integrity-claim-gate-blinded-evaluation/1.0"
+}

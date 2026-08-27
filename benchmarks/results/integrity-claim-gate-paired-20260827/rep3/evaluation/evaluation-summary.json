@@ -1,0 +1,84 @@
+{
+  "evaluation_status": "completed",
+  "judge": "claude_session_condition_blinded",
+  "report": {
+    "conditions": {
+      "filesystem": {
+        "citation_support_precision": 1.0,
+        "citation_support_recall": 0.7916666666666666,
+        "clean_supported_claim_coverage": 1.0,
+        "exact_evidence_binding_accuracy": 0.7916666666666666,
+        "false_block_rate": 0.0,
+        "gate_invocation_recall": 0.0,
+        "integrity_fault_unsafe_assertion_rate": 0.5,
+        "mean_claim_gate_calls": 0.0,
+        "mean_latency_ms": 37436.708333333336,
+        "mean_mcp_calls": 0.0,
+        "mean_provider_total_tokens": 65164.25,
+        "routine_over_gating_rate": 0.0,
+        "run_count": 24,
+        "unscored_completed_run_count": 0
+      },
+      "filesystem_manifest": {
+        "citation_support_precision": null,
+        "citation_support_recall": null,
+        "clean_supported_claim_coverage": null,
+        "exact_evidence_binding_accuracy": null,
+        "false_block_rate": null,
+        "gate_invocation_recall": null,
+        "integrity_fault_unsafe_assertion_rate": null,
+        "mean_claim_gate_calls": null,
+        "mean_latency_ms": null,
+        "mean_mcp_calls": null,
+        "mean_provider_total_tokens": null,
+        "routine_over_gating_rate": null,
+        "run_count": 0,
+        "unscored_completed_run_count": 0
+      },
+      "mcp_claim_gate": {
+        "citation_support_precision": 1.0,
+        "citation_support_recall": 1.0,
+        "clean_supported_claim_coverage": 1.0,
+        "exact_evidence_binding_accuracy": 1.0,
+        "false_block_rate": 0.0,
+        "gate_invocation_recall": 0.9545454545454546,
+        "integrity_fault_unsafe_assertion_rate": 0.1111111111111111,
+        "mean_claim_gate_calls": 2.0,
+        "mean_latency_ms": 50703.25,
+        "mean_mcp_calls": 8.75,
+        "mean_provider_total_tokens": 166206.75,
+        "routine_over_gating_rate": 0.0,
+        "run_count": 24,
+        "unscored_completed_run_count": 0
+      },
+      "mcp_evidence_only": {
+        "citation_support_precision": null,
+        "citation_support_recall": null,
+        "clean_supported_claim_coverage": null,
+        "exact_evidence_binding_accuracy": null,
+        "false_block_rate": null,
+        "gate_invocation_recall": null,
+        "integrity_fault_unsafe_assertion_rate": null,
+        "mean_claim_gate_calls": null,
+        "mean_latency_ms": null,
+        "mean_mcp_calls": null,
+        "mean_provider_total_tokens": null,
+        "routine_over_gating_rate": null,
+        "run_count": 0,
+        "unscored_completed_run_count": 0
+      }
+    },
+    "paired_filesystem_to_claim_gate": {
+      "interpretation_boundary": "Development-only instrumentation. Semantic support and pre-registration poisoning remain separate from hash-bound evidence eligibility.",
+      "pair_count": 24,
+      "unsafe_assertion_rate_difference": -0.3888888888888889,
+      "unsafe_assertion_rate_difference_95pct_bootstrap_ci": [
+        -0.6111111111111112,
+        -0.16666666666666666
+      ]
+    },
+    "schema_version": "integrity-claim-gate-report/1.0"
+  },
+  "run_count": 48,
+  "schema_version": "integrity-claim-gate-blinded-evaluation/1.0"
+}

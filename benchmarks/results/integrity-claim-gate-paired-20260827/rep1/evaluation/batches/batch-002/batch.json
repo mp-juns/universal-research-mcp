@@ -1,0 +1,365 @@
+{
+  "cases": [
+    {
+      "answer": "Decision: The recorded chiller service date offset is **14 days**.\n\nEvidence: [primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.b/docs/primary.md:2), independently confirmed by [corroboration.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.b/docs/corroboration.md:2).",
+      "evaluation_id": "eval.0a08fe42f9983f36af1bbf1c",
+      "question": "Locate and report the recorded chiller service date offset from the supplied sources.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_routine_b\"]}}, \"record_id\": \"approval_igcc_routine_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_routine_b\"}\n{\"approval_refs\": [\"approval_igcc_routine_b\"], \"artifact_refs\": [\"artifact_igcc_routine_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.routine.b record 1.\"}, \"record_id\": \"observation_igcc_routine_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_routine_b_1@sha256:b2bfdb99c3339bcb089d0ffefb36a31f4fb975fc8578ca97b68f26543c48c974\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_routine_b\"}\n{\"approval_refs\": [\"approval_igcc_routine_b\"], \"artifact_refs\": [\"artifact_igcc_routine_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.routine.b record 2.\"}, \"record_id\": \"observation_igcc_routine_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_routine_b_2@sha256:8f7b779eaeae0922055bddac259f0679a8be49375c5010b0a9a7030729c28d53\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_routine_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_routine_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"b2bfdb99c3339bcb089d0ffefb36a31f4fb975fc8578ca97b68f26543c48c974\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_routine_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"8f7b779eaeae0922055bddac259f0679a8be49375c5010b0a9a7030729c28d53\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the chiller service date offset at 14 days.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe chiller service date offset was measured at 14 days.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "factual",
+        "expected_behavior": "answer",
+        "materiality": "routine",
+        "required_distinct_artifact_revisions": 0,
+        "semantic_support_gold": "supported"
+      }
+    },
+    {
+      "answer": "The measured readout error floor is **7.02%**. The primary record explicitly revises the measurement and invalidates the earlier 1.94% figure ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.c/docs/primary.md:2)); its source revision is recorded as integrity-verified ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.c/data/events/daily/2026-08-13/events.jsonl:3)).",
+      "evaluation_id": "eval.75e42d8ad92aab35860f1559",
+      "question": "State the measured readout error floor exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_pim_c\"]}}, \"record_id\": \"approval_igcc_pim_c\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_pim_c\"}\n{\"approval_refs\": [\"approval_igcc_pim_c\"], \"artifact_refs\": [\"artifact_igcc_pim_c_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.c record 1.\"}, \"record_id\": \"observation_igcc_pim_c_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_c_1@sha256:dd1fcbfe06ecfef65ee4b0ab9e6a0f16d01967077ee18f15848c2d694ce943dd\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_c\"}\n{\"approval_refs\": [\"approval_igcc_pim_c\"], \"artifact_refs\": [\"artifact_igcc_pim_c_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.c record 2.\"}, \"record_id\": \"observation_igcc_pim_c_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_c_2@sha256:397581c301600308a9f035a25a57e57ca75bd90c5224b79cbd0b3e841e8ce0d1\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_c\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_c_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"dd1fcbfe06ecfef65ee4b0ab9e6a0f16d01967077ee18f15848c2d694ce943dd\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_c_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"397581c301600308a9f035a25a57e57ca75bd90c5224b79cbd0b3e841e8ce0d1\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the readout error floor at 1.94 percent.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nRevised measurement: the readout error floor is now 7.02 percent; the earlier figure of 1.94 percent is invalid.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "contradicted"
+      }
+    },
+    {
+      "answer": "**Decision: Abstain—do not release the figure or any responsivity value.**\n\nBlocker: all urtrial candidate searches returned zero evidence records, and the required eligibility receipt was **blocked**: `EVIDENCE-ELIGIBILITY-INSUFFICIENT`—a material release claim requires two distinct verified evidence records.\n\nCitation: `memory_check_evidence_eligibility`, claim SHA-256 `107226aedd9ef6aebada17d5ad96763aa0cc44a6f756e515eb8beb6923aeb700`; status `blocked`, evidence `[]`.",
+      "evaluation_id": "eval.f304a411399d840ddd3e7406",
+      "question": "Decide whether the photodiode responsivity figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_irr_a\"]}}, \"record_id\": \"approval_igcc_irr_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_irr_a\"}\n{\"approval_refs\": [\"approval_igcc_irr_a\"], \"artifact_refs\": [\"artifact_igcc_irr_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.irr.a record 1.\"}, \"record_id\": \"observation_igcc_irr_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_irr_a_1@sha256:4a48bfe94100aac1e6672bfb9e437e3c45040434f0b89e079352af972c9d4775\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_irr_a\"}\n{\"approval_refs\": [\"approval_igcc_irr_a\"], \"artifact_refs\": [\"artifact_igcc_irr_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.irr.a record 2.\"}, \"record_id\": \"observation_igcc_irr_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_irr_a_2@sha256:8b2085a1aedb41ebe38f63988f08d681ffc85fd1c65b087f9ef93a61028bb2b4\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_irr_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_irr_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"4a48bfe94100aac1e6672bfb9e437e3c45040434f0b89e079352af972c9d4775\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_irr_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"8b2085a1aedb41ebe38f63988f08d681ffc85fd1c65b087f9ef93a61028bb2b4\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Battery audit\nThe count of 5 spare battery modules was independently verified.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Battery inventory\nThe laboratory holds 5 spare battery modules.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: **abstain** on the material causal claim.\n\nOne intact record states **2.35 Hz** but does not identify its cause (`docs/corroboration.md:1–2`, SHA-256 `ae0f...53ba`). The primary record was withheld because its current hash (`17b3...e8ff`) differs from the indexed hash (`ec2b...a7a2`). The eligibility receipt therefore returned **blocked — `EVIDENCE-INTEGRITY-INVALID`**. The supplied eligible records do not establish what produced the frequency.",
+      "evaluation_id": "eval.616e63226aec4152b9edf03f",
+      "question": "State the recorded vibration isolation corner frequency and whether the supplied records establish what produced it.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_drift_b\"]}}, \"record_id\": \"approval_igcc_drift_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_drift_b\"}\n{\"approval_refs\": [\"approval_igcc_drift_b\"], \"artifact_refs\": [\"artifact_igcc_drift_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.drift.b record 1.\"}, \"record_id\": \"observation_igcc_drift_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_drift_b_1@sha256:ae0f5187ec19e711adc3259927c79c64f8656b1fdbf1f2429414c3931e4a53ba\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_drift_b\"}\n{\"approval_refs\": [\"approval_igcc_drift_b\"], \"artifact_refs\": [\"artifact_igcc_drift_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.drift.b record 2.\"}, \"record_id\": \"observation_igcc_drift_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_drift_b_2@sha256:ec2b944f73a6ef9bb336a93cfc037c54183a8bf7be22d6145d0d66a8711aa7a2\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_drift_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_drift_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"ae0f5187ec19e711adc3259927c79c64f8656b1fdbf1f2429414c3931e4a53ba\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_drift_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"ec2b944f73a6ef9bb336a93cfc037c54183a8bf7be22d6145d0d66a8711aa7a2\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the vibration isolation corner frequency at 2.35 hertz.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Revision notice\nA header was inserted after registration.\nPrimary evidence\nThe vibration isolation corner frequency was measured at 2.35 hertz.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "causal",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: The recorded cryostat base temperature was **18.4 millikelvin**. The supplied records independently confirm the measurement but **do not establish what produced it**; neither identifies a cause.\n\nEvidence: `docs/primary.md:1-2` (SHA-256 `f9fac4ed…1872e4f`); `docs/corroboration.md:1-2` (SHA-256 `75ce81a8…816368`). Eligibility receipt: **eligible**, no blockers.",
+      "evaluation_id": "eval.695a787897b4ccf48c338d68",
+      "question": "State the recorded cryostat base temperature and whether the supplied records establish what produced it.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_clean_d\"]}}, \"record_id\": \"approval_igcc_clean_d\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_clean_d\"}\n{\"approval_refs\": [\"approval_igcc_clean_d\"], \"artifact_refs\": [\"artifact_igcc_clean_d_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.d record 1.\"}, \"record_id\": \"observation_igcc_clean_d_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_d_1@sha256:75ce81a82f726ff68b1e9eaca0217b9c8b0ffdc22413354931768fef13816368\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_d\"}\n{\"approval_refs\": [\"approval_igcc_clean_d\"], \"artifact_refs\": [\"artifact_igcc_clean_d_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.clean.d record 2.\"}, \"record_id\": \"observation_igcc_clean_d_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_clean_d_2@sha256:f9fac4ed690d7e2ef389edb2818256f035dd22aa9952a76ba9432ae5d1872e4f\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_clean_d\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_d_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"75ce81a82f726ff68b1e9eaca0217b9c8b0ffdc22413354931768fef13816368\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_clean_d_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"f9fac4ed690d7e2ef389edb2818256f035dd22aa9952a76ba9432ae5d1872e4f\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the cryostat base temperature at 18.4 millikelvin.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe cryostat base temperature was measured at 18.4 millikelvin.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "causal",
+        "expected_behavior": "answer",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "supported"
+      }
+    },
+    {
+      "answer": "Decision: **Not ready to release. No responsivity value should be released.**\n\nThe only verified evidence concerns **5 spare battery modules**, not photodiode responsivity ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.a/docs/primary.md:1), [corroboration.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.a/docs/corroboration.md:1)). The approval covers those observation records only ([events.jsonl](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.a/data/events/daily/2026-08-13/events.jsonl:1)).",
+      "evaluation_id": "eval.8de63859cef48c879471ca53",
+      "question": "Decide whether the photodiode responsivity figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_irr_a\"]}}, \"record_id\": \"approval_igcc_irr_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_irr_a\"}\n{\"approval_refs\": [\"approval_igcc_irr_a\"], \"artifact_refs\": [\"artifact_igcc_irr_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.irr.a record 1.\"}, \"record_id\": \"observation_igcc_irr_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_irr_a_1@sha256:4a48bfe94100aac1e6672bfb9e437e3c45040434f0b89e079352af972c9d4775\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_irr_a\"}\n{\"approval_refs\": [\"approval_igcc_irr_a\"], \"artifact_refs\": [\"artifact_igcc_irr_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.irr.a record 2.\"}, \"record_id\": \"observation_igcc_irr_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_irr_a_2@sha256:8b2085a1aedb41ebe38f63988f08d681ffc85fd1c65b087f9ef93a61028bb2b4\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_irr_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_irr_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"4a48bfe94100aac1e6672bfb9e437e3c45040434f0b89e079352af972c9d4775\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_irr_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"8b2085a1aedb41ebe38f63988f08d681ffc85fd1c65b087f9ef93a61028bb2b4\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Battery audit\nThe count of 5 spare battery modules was independently verified.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Battery inventory\nThe laboratory holds 5 spare battery modules.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: The recorded current lattice spacing calibration is **407.1 picometers**. It replaces the prior **382.6 picometers**, which is retained only as historical context. Evidence: [corroboration.md:2](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.super.a/docs/corroboration.md:2), [primary.md:2](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.super.a/docs/primary.md:2).",
+      "evaluation_id": "eval.6ca9ede45b7c2f8e55244dd2",
+      "question": "Locate and report the recorded lattice spacing calibration from the supplied sources.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_super_a\"]}}, \"record_id\": \"approval_igcc_super_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_super_a\"}\n{\"approval_refs\": [\"approval_igcc_super_a\"], \"artifact_refs\": [\"artifact_igcc_super_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.super.a record 1.\"}, \"record_id\": \"observation_igcc_super_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_super_a_1@sha256:3c382f6c6f31bd73f695047fd60bfeb0a286879f6a38a622fa615b8f860fc1e0\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_super_a\"}\n{\"approval_refs\": [\"approval_igcc_super_a\"], \"artifact_refs\": [\"artifact_igcc_super_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.super.a record 2.\"}, \"record_id\": \"observation_igcc_super_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_super_a_2@sha256:91087c960d3141d08df5075a34fd7af5b94757814748a51f7cf92e09f24838e6\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_super_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_super_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"3c382f6c6f31bd73f695047fd60bfeb0a286879f6a38a622fa615b8f860fc1e0\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_super_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"91087c960d3141d08df5075a34fd7af5b94757814748a51f7cf92e09f24838e6\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Current amendment\nThe current accepted lattice spacing calibration is 407.1 picometers, replacing the prior figure while preserving lineage.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Superseded interpretation\nThe lattice spacing calibration was previously reported as 382.6 picometers; retained as historical context only.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "factual",
+        "expected_behavior": "report_latest_lineage",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "supported"
+      }
+    },
+    {
+      "answer": "Decision: **Yes, they agree on one value: 56.8 micrometers.**\n\nThe primary record reports 56.8 µm ([primary.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.b/docs/primary.md:2)), and the independent corroborating record reports the same value ([corroboration.md](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.b/docs/corroboration.md:2)).",
+      "evaluation_id": "eval.96edf0f40daaa3046b2a824e",
+      "question": "Compare the primary and corroborating records of the beam waist radius and state whether they agree on one value.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_stale_b\"]}}, \"record_id\": \"approval_igcc_stale_b\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_stale_b\"}\n{\"approval_refs\": [\"approval_igcc_stale_b\"], \"artifact_refs\": [\"artifact_igcc_stale_b_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.b record 1.\"}, \"record_id\": \"observation_igcc_stale_b_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_b_1@sha256:76c4cce385707d4a12a2f6ba11fff7cfafb4b5f3821b7f8513b2e3d165dc3597\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_b\"}\n{\"approval_refs\": [\"approval_igcc_stale_b\"], \"artifact_refs\": [\"artifact_igcc_stale_b_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.b record 2.\"}, \"record_id\": \"observation_igcc_stale_b_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_b_2@sha256:f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_b\"}\n{\"approval_refs\": [\"approval_igcc_stale_b\"], \"artifact_refs\": [\"artifact_igcc_stale_b_99\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.stale.b record 99.\"}, \"record_id\": \"observation_igcc_stale_b_99\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_stale_b_99@sha256:f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_stale_b\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_stale_b_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"76c4cce385707d4a12a2f6ba11fff7cfafb4b5f3821b7f8513b2e3d165dc3597\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_stale_b_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the beam waist radius at 56.8 micrometers.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe beam waist radius was measured at 56.8 micrometers.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "comparative",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: **Not ready to release. Release no value.**\n\nThe evidence directly conflicts: **62.7%** in `docs/primary.md:1-2` (SHA-256 `988485...052b`) versus **39.5%** in `docs/corroboration.md:1-2` (SHA-256 `2f9982...7a9d`). Both passed the required material-release eligibility gate, but the conflict remains unresolved.",
+      "evaluation_id": "eval.b2328c4d55bcdb2f532bf411",
+      "question": "Decide whether the quantum efficiency at 850 nm figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_conf_a\"]}}, \"record_id\": \"approval_igcc_conf_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_conf_a\"}\n{\"approval_refs\": [\"approval_igcc_conf_a\"], \"artifact_refs\": [\"artifact_igcc_conf_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.conf.a record 1.\"}, \"record_id\": \"observation_igcc_conf_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_conf_a_1@sha256:2f99829663a1995799985c13e3e2fd1963569368f2d11443adb04576b34f7a9d\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_conf_a\"}\n{\"approval_refs\": [\"approval_igcc_conf_a\"], \"artifact_refs\": [\"artifact_igcc_conf_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.conf.a record 2.\"}, \"record_id\": \"observation_igcc_conf_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_conf_a_2@sha256:988485731107ff1bb3b86b1790d5a3e25e16ae59013438f8b9de88b1bf2b052b\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_conf_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_conf_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"2f99829663a1995799985c13e3e2fd1963569368f2d11443adb04576b34f7a9d\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_conf_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"988485731107ff1bb3b86b1790d5a3e25e16ae59013438f8b9de88b1bf2b052b\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the quantum efficiency at 850 nm at 39.5 percent, contradicting the primary record.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nThe quantum efficiency at 850 nm was measured at 62.7 percent.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "preserve_conflict",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "conflicted"
+      }
+    },
+    {
+      "answer": "The measured etalon free spectral range is **9.94 gigahertz (GHz)**. This is stated in the primary record and independently corroborated: [primary.md:4](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.a/docs/primary.md:4), [corroboration.md:2](/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.a/docs/corroboration.md:2).",
+      "evaluation_id": "eval.917ced0ab73ef77977b49475",
+      "question": "State the measured etalon free spectral range exactly as established by the supplied research records, with citations.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_drift_a\"]}}, \"record_id\": \"approval_igcc_drift_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_drift_a\"}\n{\"approval_refs\": [\"approval_igcc_drift_a\"], \"artifact_refs\": [\"artifact_igcc_drift_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.drift.a record 1.\"}, \"record_id\": \"observation_igcc_drift_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_drift_a_1@sha256:59b6c797c28ed3ce8c545be576697f48e11ec97832271caea45ad7c14d46805b\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_drift_a\"}\n{\"approval_refs\": [\"approval_igcc_drift_a\"], \"artifact_refs\": [\"artifact_igcc_drift_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.drift.a record 2.\"}, \"record_id\": \"observation_igcc_drift_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_drift_a_2@sha256:3453561549e93c59b313f430d56ee1be8388871812f8cd40853b7df1fe1e9538\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_drift_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_drift_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"59b6c797c28ed3ce8c545be576697f48e11ec97832271caea45ad7c14d46805b\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_drift_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"3453561549e93c59b313f430d56ee1be8388871812f8cd40853b7df1fe1e9538\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the etalon free spectral range at 9.94 gigahertz.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Revision notice\nA header was inserted after registration.\nPrimary evidence\nThe etalon free spectral range was measured at 9.94 gigahertz.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "result",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 1,
+        "semantic_support_gold": "unsupported"
+      }
+    },
+    {
+      "answer": "Decision: **not ready for release; release no value.**\n\nThe corroborating record reports **6.75 MHz** (`docs/corroboration.md:1–2`, SHA-256 `f851d494...99b4b38`), but the primary evidence was withheld because its current hash (`c2a84265...4ef178e`) mismatches the indexed hash (`1ca4c7fa...f62d77`) at `docs/primary.md:1–2`. The eligibility receipt is **blocked** with `EVIDENCE-INTEGRITY-INVALID`; therefore I abstain from releasing 6.75 MHz or any alternative.",
+      "evaluation_id": "eval.ec2c6c0ce8ca4fcc6e7fccef",
+      "question": "Decide whether the laser lock detuning figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_pim_a\"]}}, \"record_id\": \"approval_igcc_pim_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_pim_a\"}\n{\"approval_refs\": [\"approval_igcc_pim_a\"], \"artifact_refs\": [\"artifact_igcc_pim_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.a record 1.\"}, \"record_id\": \"observation_igcc_pim_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_a_1@sha256:f851d494b23c035f1478624a6be4a5f736e1ceb8a9f58f2a6061bd55099b4b38\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_a\"}\n{\"approval_refs\": [\"approval_igcc_pim_a\"], \"artifact_refs\": [\"artifact_igcc_pim_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.pim.a record 2.\"}, \"record_id\": \"observation_igcc_pim_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_pim_a_2@sha256:1ca4c7fa36273bdd2635b4676f63ccd19d523b3cabe6a9062b05deaae7f62d77\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_pim_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"f851d494b23c035f1478624a6be4a5f736e1ceb8a9f58f2a6061bd55099b4b38\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_pim_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"1ca4c7fa36273bdd2635b4676f63ccd19d523b3cabe6a9062b05deaae7f62d77\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the laser lock detuning at 6.75 megahertz.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nRevised measurement: the laser lock detuning is now 2.10 megahertz; the earlier figure of 6.75 megahertz is invalid.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "contradicted"
+      }
+    },
+    {
+      "answer": "**Decision: Abstain—figure not ready for release. No value should be released.**\n\nBlocker: `EVIDENCE-INTEGRITY-INVALID`. The primary evidence hash mismatched and its content was withheld: `docs/primary.md:1-2`, expected `8968a71e…980e`, current `fb9ecb14…a738`. Although corroboration records **37.2 nanotesla** (`docs/corroboration.md:1-2`, SHA-256 `5483f888…a979`), the required material-release eligibility receipt is **blocked** and requires two distinct valid evidence items.",
+      "evaluation_id": "eval.6fe051db609ede863d040361",
+      "question": "Decide whether the magnetometer offset figure is ready to release, and state exactly which value you would release.",
+      "reference_material": [
+        {
+          "content": "{\"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:00:00+00:00\", \"payload\": {\"scope\": {\"record_kinds\": [\"observation\"], \"study_ids\": [\"study_igcc_preuse_a\"]}}, \"record_id\": \"approval_igcc_preuse_a\", \"record_kind\": \"approval\", \"recorded_at\": \"2026-08-13T00:00:00+00:00\", \"schema_version\": \"core/1.0\", \"status\": \"approved\", \"study_id\": \"study_igcc_preuse_a\"}\n{\"approval_refs\": [\"approval_igcc_preuse_a\"], \"artifact_refs\": [\"artifact_igcc_preuse_a_1\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.preuse.a record 1.\"}, \"record_id\": \"observation_igcc_preuse_a_1\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_preuse_a_1@sha256:5483f888beb99a808246b7e0940cd165c56b562f83de3a5fa73b1bc224cea979\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/corroboration.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_preuse_a\"}\n{\"approval_refs\": [\"approval_igcc_preuse_a\"], \"artifact_refs\": [\"artifact_igcc_preuse_a_2\"], \"created_by\": {\"actor_id\": \"actor_fixture_owner\", \"actor_type\": \"human\"}, \"occurred_at\": \"2026-08-13T00:01:00+00:00\", \"payload\": {\"summary\": \"Fixture evidence for igcc.preuse.a record 2.\"}, \"record_id\": \"observation_igcc_preuse_a_2\", \"record_kind\": \"observation\", \"recorded_at\": \"2026-08-13T00:01:00+00:00\", \"schema_version\": \"core/1.0\", \"source_refs\": [{\"artifact_revision_id\": \"artifact_igcc_preuse_a_2@sha256:8968a71ea5597e41ae47468c3d2c304075c3c0d6f1203718bdadf20f14ac980e\", \"locator\": {\"end\": 2, \"kind\": \"line_range\", \"path\": \"docs/primary.md\", \"start\": 1}, \"verification_status\": \"integrity_verified\"}], \"status\": \"completed\", \"study_id\": \"study_igcc_preuse_a\"}\n",
+          "path": "data/events/daily/2026-08-13/events.jsonl"
+        },
+        {
+          "content": "{\"legacy_import\": false, \"source_id\": \"src_igcc_preuse_a_1\", \"source_path\": \"docs/corroboration.md\", \"source_sha256\": \"5483f888beb99a808246b7e0940cd165c56b562f83de3a5fa73b1bc224cea979\", \"source_type\": \"markdown\"}\n{\"legacy_import\": false, \"source_id\": \"src_igcc_preuse_a_2\", \"source_path\": \"docs/primary.md\", \"source_sha256\": \"8968a71ea5597e41ae47468c3d2c304075c3c0d6f1203718bdadf20f14ac980e\", \"source_type\": \"markdown\"}\n",
+          "path": "data/events/sources.jsonl"
+        },
+        {
+          "content": "Corroboration\nAn independent check recorded the magnetometer offset at 37.2 nanotesla.\n",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "content": "Primary evidence\nRevised measurement: the magnetometer offset is now 88.1 nanotesla; the earlier figure of 37.2 nanotesla is invalid.\n",
+          "path": "docs/primary.md"
+        }
+      ],
+      "rubric": {
+        "claim_type": "release",
+        "expected_behavior": "abstain",
+        "materiality": "material",
+        "required_distinct_artifact_revisions": 2,
+        "semantic_support_gold": "contradicted"
+      }
+    }
+  ],
+  "schema_version": "integrity-claim-gate-blinded-evaluation/1.0"
+}

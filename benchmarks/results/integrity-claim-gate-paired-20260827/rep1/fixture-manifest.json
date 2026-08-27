@@ -1,0 +1,1057 @@
+{
+  "fixtures": [
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_clean_a_1",
+          "expected_sha256": "0a1eb9ac8d392bd6e164348edc3af30af5bb4341bb8db18f5feefe53eff6fadd",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_clean_a_2",
+          "expected_sha256": "632467f65e48f9b53af3bdb7c5083504f820b5c9f72deb51c67494cb04147266",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "current_supported",
+      "index_fingerprint": "21b7953a72d9d4e6c6b3a3a6d87e9b831ef1fb835ff679ff5a423a92cec0a15e",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "21b7953a72d9d4e6c6b3a3a6d87e9b831ef1fb835ff679ff5a423a92cec0a15e",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.a/data/index/index-health.json",
+        "indexed_fingerprint": "21b7953a72d9d4e6c6b3a3a6d87e9b831ef1fb835ff679ff5a423a92cec0a15e",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "0a1eb9ac8d392bd6e164348edc3af30af5bb4341bb8db18f5feefe53eff6fadd",
+        "docs/primary.md": "632467f65e48f9b53af3bdb7c5083504f820b5c9f72deb51c67494cb04147266"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.clean.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_clean_b_1",
+          "expected_sha256": "3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_clean_b_2",
+          "expected_sha256": "3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "current_supported",
+      "index_fingerprint": "a996638475263b03c70da1143f272b278448c1750b1bd01f2074c7b4c3624f1c",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "a996638475263b03c70da1143f272b278448c1750b1bd01f2074c7b4c3624f1c",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.b/data/index/index-health.json",
+        "indexed_fingerprint": "a996638475263b03c70da1143f272b278448c1750b1bd01f2074c7b4c3624f1c",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "3d5a0a64a650ec893fe5e0eb741fff20e58e0e1f229231836b304bc416cfe13a",
+        "docs/primary.md": "3c82870579a660c03407eb1b708e25c9a5cfea36846c83fe491bb79816b47ff4"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.clean.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_clean_c_1",
+          "expected_sha256": "f014531081214a8f4049dc6fce20c6b0bf77ade3639c8e809db53fc8139bd2d3",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_clean_c_2",
+          "expected_sha256": "8bc621202444a8bd29de2f4f3e9e3639b998c21883e769496571451e922e3791",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "current_supported",
+      "index_fingerprint": "84dd3d670b34babe21442863af5920e5127cff8389944b44b5df638d48972e2d",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "84dd3d670b34babe21442863af5920e5127cff8389944b44b5df638d48972e2d",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.c/data/index/index-health.json",
+        "indexed_fingerprint": "84dd3d670b34babe21442863af5920e5127cff8389944b44b5df638d48972e2d",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.c/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "f014531081214a8f4049dc6fce20c6b0bf77ade3639c8e809db53fc8139bd2d3",
+        "docs/primary.md": "8bc621202444a8bd29de2f4f3e9e3639b998c21883e769496571451e922e3791"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.c",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.clean.c"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_clean_d_1",
+          "expected_sha256": "75ce81a82f726ff68b1e9eaca0217b9c8b0ffdc22413354931768fef13816368",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_clean_d_2",
+          "expected_sha256": "f9fac4ed690d7e2ef389edb2818256f035dd22aa9952a76ba9432ae5d1872e4f",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "current_supported",
+      "index_fingerprint": "4860359d6ca3c8977367582aedc3f9a51ba1f4e6a42fdf062ce884c2a852ad99",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "4860359d6ca3c8977367582aedc3f9a51ba1f4e6a42fdf062ce884c2a852ad99",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.d/data/index/index-health.json",
+        "indexed_fingerprint": "4860359d6ca3c8977367582aedc3f9a51ba1f4e6a42fdf062ce884c2a852ad99",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.d/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "75ce81a82f726ff68b1e9eaca0217b9c8b0ffdc22413354931768fef13816368",
+        "docs/primary.md": "f9fac4ed690d7e2ef389edb2818256f035dd22aa9952a76ba9432ae5d1872e4f"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.clean.d",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.clean.d"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_pim_a_1",
+          "expected_sha256": "f851d494b23c035f1478624a6be4a5f736e1ceb8a9f58f2a6061bd55099b4b38",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_pim_a_2",
+          "expected_sha256": "1ca4c7fa36273bdd2635b4676f63ccd19d523b3cabe6a9062b05deaae7f62d77",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "post_index_mutation",
+      "index_fingerprint": "5c2f4b98fe11c8cc44c9eda833fa84902f2c8d674d5598fb0297dcef2cc84e35",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "5c2f4b98fe11c8cc44c9eda833fa84902f2c8d674d5598fb0297dcef2cc84e35",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.a/data/index/index-health.json",
+        "indexed_fingerprint": "5c2f4b98fe11c8cc44c9eda833fa84902f2c8d674d5598fb0297dcef2cc84e35",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "f851d494b23c035f1478624a6be4a5f736e1ceb8a9f58f2a6061bd55099b4b38",
+        "docs/primary.md": "c2a8426501a5dbcb48484b1def784dc01b67512673e59b3598b942e694ef178e"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.pim.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_pim_b_1",
+          "expected_sha256": "0614ca14689cce11a28435a890a810df0bc129568757d97b018e0f4cf6ac137a",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_pim_b_2",
+          "expected_sha256": "4379b3290f8d938269a4cb1b6fc83e509388f92699a415d3c2e30cd3ce936327",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "post_index_mutation",
+      "index_fingerprint": "894ab1e26e1c1aa5190703d6f723a5445edd97c17244eabffecab21828093fc4",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "894ab1e26e1c1aa5190703d6f723a5445edd97c17244eabffecab21828093fc4",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.b/data/index/index-health.json",
+        "indexed_fingerprint": "894ab1e26e1c1aa5190703d6f723a5445edd97c17244eabffecab21828093fc4",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "0614ca14689cce11a28435a890a810df0bc129568757d97b018e0f4cf6ac137a",
+        "docs/primary.md": "e7b6663834e5477b2f147bdbc5619e591e5eba5d56eb3b71a187b139e43d3a69"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.pim.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_pim_c_1",
+          "expected_sha256": "dd1fcbfe06ecfef65ee4b0ab9e6a0f16d01967077ee18f15848c2d694ce943dd",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_pim_c_2",
+          "expected_sha256": "397581c301600308a9f035a25a57e57ca75bd90c5224b79cbd0b3e841e8ce0d1",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "post_index_mutation",
+      "index_fingerprint": "030158b908cf77940d996cbfc1165840ff13b27b883371dc0cade06d70a9b77e",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "030158b908cf77940d996cbfc1165840ff13b27b883371dc0cade06d70a9b77e",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.c/data/index/index-health.json",
+        "indexed_fingerprint": "030158b908cf77940d996cbfc1165840ff13b27b883371dc0cade06d70a9b77e",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.c/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "dd1fcbfe06ecfef65ee4b0ab9e6a0f16d01967077ee18f15848c2d694ce943dd",
+        "docs/primary.md": "4f0b1f2b90416a0e0c455c451191c1b3c77d195a7c1329e8c802e98aff7a7d74"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.pim.c",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.pim.c"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_preuse_a_1",
+          "expected_sha256": "5483f888beb99a808246b7e0940cd165c56b562f83de3a5fa73b1bc224cea979",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_preuse_a_2",
+          "expected_sha256": "8968a71ea5597e41ae47468c3d2c304075c3c0d6f1203718bdadf20f14ac980e",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "path_reuse",
+      "index_fingerprint": "f3725ce58d9c0a028c6f7baaf65181cd968a415202481546449d5ddcf19e8ddf",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "f3725ce58d9c0a028c6f7baaf65181cd968a415202481546449d5ddcf19e8ddf",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.preuse.a/data/index/index-health.json",
+        "indexed_fingerprint": "f3725ce58d9c0a028c6f7baaf65181cd968a415202481546449d5ddcf19e8ddf",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.preuse.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "5483f888beb99a808246b7e0940cd165c56b562f83de3a5fa73b1bc224cea979",
+        "docs/primary.md": "fb9ecb143c6f47016dd8404053dd6f92ac9522b93df52fc0ee83190a728fa738"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.preuse.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.preuse.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_drift_a_1",
+          "expected_sha256": "59b6c797c28ed3ce8c545be576697f48e11ec97832271caea45ad7c14d46805b",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_drift_a_2",
+          "expected_sha256": "3453561549e93c59b313f430d56ee1be8388871812f8cd40853b7df1fe1e9538",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "line_range_drift",
+      "index_fingerprint": "27537ee68d85e3410dcac5bc8cd37605bc94e141da04e19fb7e7c6d51a618d52",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "27537ee68d85e3410dcac5bc8cd37605bc94e141da04e19fb7e7c6d51a618d52",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.a/data/index/index-health.json",
+        "indexed_fingerprint": "27537ee68d85e3410dcac5bc8cd37605bc94e141da04e19fb7e7c6d51a618d52",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "59b6c797c28ed3ce8c545be576697f48e11ec97832271caea45ad7c14d46805b",
+        "docs/primary.md": "965d31f1e0ac592fd25a0ba1b4799aff7355a178fe875c8d8803c6a52540f40c"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.drift.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_drift_b_1",
+          "expected_sha256": "ae0f5187ec19e711adc3259927c79c64f8656b1fdbf1f2429414c3931e4a53ba",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_drift_b_2",
+          "expected_sha256": "ec2b944f73a6ef9bb336a93cfc037c54183a8bf7be22d6145d0d66a8711aa7a2",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "line_range_drift",
+      "index_fingerprint": "f7348afc4fb867111248005b855d4d6ae3b60bb10ec4730dad4180472e9bd324",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "f7348afc4fb867111248005b855d4d6ae3b60bb10ec4730dad4180472e9bd324",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.b/data/index/index-health.json",
+        "indexed_fingerprint": "f7348afc4fb867111248005b855d4d6ae3b60bb10ec4730dad4180472e9bd324",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "ae0f5187ec19e711adc3259927c79c64f8656b1fdbf1f2429414c3931e4a53ba",
+        "docs/primary.md": "17b3032509836933e9c03716ea9d0b4eb09b5d47f3c3c743ae9a74e8e1ece8ff"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.drift.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.drift.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_stale_a_1",
+          "expected_sha256": "09cdd16ee152a6166882f874d7882f7922887da4715410d47bc2ca9d2f302cb7",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_stale_a_2",
+          "expected_sha256": "1d632e7948d6e0a643c2f3f5e01750064f47cae82194bd26375e4c98fd423980",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "stale_derived_index",
+      "index_fingerprint": "021d05f6d0ea1f2c354acccf77f1f29c2daf96ab5757ec23d5895795f12ae2e3",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "7ca508a3ea7617beab46c338928764c706f5e4c1352e803b74551c6547a6d605",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.a/data/index/index-health.json",
+        "indexed_fingerprint": "021d05f6d0ea1f2c354acccf77f1f29c2daf96ab5757ec23d5895795f12ae2e3",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": true,
+        "status": "stale"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "09cdd16ee152a6166882f874d7882f7922887da4715410d47bc2ca9d2f302cb7",
+        "docs/primary.md": "1d632e7948d6e0a643c2f3f5e01750064f47cae82194bd26375e4c98fd423980"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.stale.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_stale_b_1",
+          "expected_sha256": "76c4cce385707d4a12a2f6ba11fff7cfafb4b5f3821b7f8513b2e3d165dc3597",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_stale_b_2",
+          "expected_sha256": "f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "stale_derived_index",
+      "index_fingerprint": "1a41d30de0676d7779b5cf5b6b83eefd946b672b7655b94d02be47f30df4cb58",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "44464fdfc4e06b11f8cb5aa4c10ea3c83db07c42d684bce48eed2061c9763aaa",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.b/data/index/index-health.json",
+        "indexed_fingerprint": "1a41d30de0676d7779b5cf5b6b83eefd946b672b7655b94d02be47f30df4cb58",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": true,
+        "status": "stale"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "76c4cce385707d4a12a2f6ba11fff7cfafb4b5f3821b7f8513b2e3d165dc3597",
+        "docs/primary.md": "f7a41fa057c6e9ff9f18fc0ff03fc0140ad53d1bd7c97198df44bff4d06f97be"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.stale.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.stale.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md",
+        "docs/unregistered.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_unreg_a_1",
+          "expected_sha256": "31fc4ae3a5e249ab638cf4f0b34129a693645333b20870d60c4e8ae011249a43",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "unregistered_source",
+      "index_fingerprint": "fbf515642671e35c261aaba759012f33398e92e4e27ad15e62fc12d2e4092d61",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "fbf515642671e35c261aaba759012f33398e92e4e27ad15e62fc12d2e4092d61",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.unreg.a/data/index/index-health.json",
+        "indexed_fingerprint": "fbf515642671e35c261aaba759012f33398e92e4e27ad15e62fc12d2e4092d61",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.unreg.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "a7053b005e247e496576ca2a434a14bf7d2a54942fef2c651bf846c2ee7a08f4",
+        "docs/primary.md": "31fc4ae3a5e249ab638cf4f0b34129a693645333b20870d60c4e8ae011249a43",
+        "docs/unregistered.md": "276389ae811d03f398e99c49e4735780a7825c0a6526ed80e2461d0f39ae7267"
+      },
+      "registered_paths": [
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.unreg.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.unreg.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_miss_a_1",
+          "expected_sha256": "f742337df59980c4710e8227bce541cf2c3a5c50369707885abccb06de2f1280",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_miss_a_2",
+          "expected_sha256": "4a0bf7f3fa6e2c26625fc39a9a01c80b51f75f7f362c3c8f1f49dcf99f7544bc",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "missing_evidence",
+      "index_fingerprint": "32e2c936acfe0b4ace8202401a0070d6a7da10a905f9c119569c20fe5c57976a",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "32e2c936acfe0b4ace8202401a0070d6a7da10a905f9c119569c20fe5c57976a",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.miss.a/data/index/index-health.json",
+        "indexed_fingerprint": "32e2c936acfe0b4ace8202401a0070d6a7da10a905f9c119569c20fe5c57976a",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.miss.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "f742337df59980c4710e8227bce541cf2c3a5c50369707885abccb06de2f1280",
+        "docs/primary.md": "4a0bf7f3fa6e2c26625fc39a9a01c80b51f75f7f362c3c8f1f49dcf99f7544bc"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.miss.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.miss.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_conf_a_1",
+          "expected_sha256": "2f99829663a1995799985c13e3e2fd1963569368f2d11443adb04576b34f7a9d",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_conf_a_2",
+          "expected_sha256": "988485731107ff1bb3b86b1790d5a3e25e16ae59013438f8b9de88b1bf2b052b",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "conflicting_evidence",
+      "index_fingerprint": "063b474be8101784c9be62838390771a48fd2c07befa299c82abebc52ff337c6",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "063b474be8101784c9be62838390771a48fd2c07befa299c82abebc52ff337c6",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.conf.a/data/index/index-health.json",
+        "indexed_fingerprint": "063b474be8101784c9be62838390771a48fd2c07befa299c82abebc52ff337c6",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.conf.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "2f99829663a1995799985c13e3e2fd1963569368f2d11443adb04576b34f7a9d",
+        "docs/primary.md": "988485731107ff1bb3b86b1790d5a3e25e16ae59013438f8b9de88b1bf2b052b"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.conf.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.conf.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_conf_b_1",
+          "expected_sha256": "d3450ecb13f37628fd30bdb9c098f9ecd661a005f76d6e2663fede581756752f",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_conf_b_2",
+          "expected_sha256": "664ea8e56ee1b9bfe3dd371f387bf32d1f12ee70a576331e776e04325a6ba624",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "conflicting_evidence",
+      "index_fingerprint": "5b657315417100d684580c10b4e1284dc4f30cfba031c5101eaa9ce894b26dca",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "5b657315417100d684580c10b4e1284dc4f30cfba031c5101eaa9ce894b26dca",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.conf.b/data/index/index-health.json",
+        "indexed_fingerprint": "5b657315417100d684580c10b4e1284dc4f30cfba031c5101eaa9ce894b26dca",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.conf.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "d3450ecb13f37628fd30bdb9c098f9ecd661a005f76d6e2663fede581756752f",
+        "docs/primary.md": "664ea8e56ee1b9bfe3dd371f387bf32d1f12ee70a576331e776e04325a6ba624"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.conf.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.conf.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_withdrawn_a_1",
+          "expected_sha256": "820c688447e7094afd18b15229e49bd1c4cd076226066fba53a8e6b9a299489a",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_withdrawn_a_2",
+          "expected_sha256": "3eed390aa619320ca1a565742ad94243215da511dd3ddd79be6eba504571f829",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "withdrawn_evidence",
+      "index_fingerprint": "3553f9c8d4f15b9dd2f5de6733a98b709e8cb30893f253c114b8522357b33784",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "3553f9c8d4f15b9dd2f5de6733a98b709e8cb30893f253c114b8522357b33784",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.withdrawn.a/data/index/index-health.json",
+        "indexed_fingerprint": "3553f9c8d4f15b9dd2f5de6733a98b709e8cb30893f253c114b8522357b33784",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.withdrawn.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "820c688447e7094afd18b15229e49bd1c4cd076226066fba53a8e6b9a299489a",
+        "docs/primary.md": "3eed390aa619320ca1a565742ad94243215da511dd3ddd79be6eba504571f829"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.withdrawn.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.withdrawn.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_super_a_1",
+          "expected_sha256": "3c382f6c6f31bd73f695047fd60bfeb0a286879f6a38a622fa615b8f860fc1e0",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_super_a_2",
+          "expected_sha256": "91087c960d3141d08df5075a34fd7af5b94757814748a51f7cf92e09f24838e6",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "superseded_amendment",
+      "index_fingerprint": "7098c38e9dce7ae4af3464c4c58118872c17637ddc8b74b97a6e2ae4c33db28a",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "7098c38e9dce7ae4af3464c4c58118872c17637ddc8b74b97a6e2ae4c33db28a",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.super.a/data/index/index-health.json",
+        "indexed_fingerprint": "7098c38e9dce7ae4af3464c4c58118872c17637ddc8b74b97a6e2ae4c33db28a",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.super.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "3c382f6c6f31bd73f695047fd60bfeb0a286879f6a38a622fa615b8f860fc1e0",
+        "docs/primary.md": "91087c960d3141d08df5075a34fd7af5b94757814748a51f7cf92e09f24838e6"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.super.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.super.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_irr_a_1",
+          "expected_sha256": "4a48bfe94100aac1e6672bfb9e437e3c45040434f0b89e079352af972c9d4775",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_irr_a_2",
+          "expected_sha256": "8b2085a1aedb41ebe38f63988f08d681ffc85fd1c65b087f9ef93a61028bb2b4",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "valid_but_irrelevant",
+      "index_fingerprint": "324123547868ab7d6c4704d9d804d6fd5e17ac5cf3282db18cc7ec657f75d38d",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "324123547868ab7d6c4704d9d804d6fd5e17ac5cf3282db18cc7ec657f75d38d",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.a/data/index/index-health.json",
+        "indexed_fingerprint": "324123547868ab7d6c4704d9d804d6fd5e17ac5cf3282db18cc7ec657f75d38d",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "4a48bfe94100aac1e6672bfb9e437e3c45040434f0b89e079352af972c9d4775",
+        "docs/primary.md": "8b2085a1aedb41ebe38f63988f08d681ffc85fd1c65b087f9ef93a61028bb2b4"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.irr.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_irr_b_1",
+          "expected_sha256": "202f45b04d2693ff8e35e0662679590feabaa331857651dc96a73b2a442b58ae",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_irr_b_2",
+          "expected_sha256": "784bc75e0870f39d08526336fcd3ecc30e2b69024a99522a831962e9f6a0e5f8",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "valid_but_irrelevant",
+      "index_fingerprint": "c56b2373ba6026e3cedb5d47a7ac63dee201089eb9343f8e28990c04c0cb3dd3",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "c56b2373ba6026e3cedb5d47a7ac63dee201089eb9343f8e28990c04c0cb3dd3",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.b/data/index/index-health.json",
+        "indexed_fingerprint": "c56b2373ba6026e3cedb5d47a7ac63dee201089eb9343f8e28990c04c0cb3dd3",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "202f45b04d2693ff8e35e0662679590feabaa331857651dc96a73b2a442b58ae",
+        "docs/primary.md": "784bc75e0870f39d08526336fcd3ecc30e2b69024a99522a831962e9f6a0e5f8"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.irr.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.irr.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_poison_a_1",
+          "expected_sha256": "efe2c7ad83635c40d118248c7078911af9424856d926a0aea7875fd22aa9d0ec",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_poison_a_2",
+          "expected_sha256": "1a5192c54d24ad54aff9123c645ddeb713298c4d19d50632e43fa786f4d62107",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "poisoned_before_registration",
+      "index_fingerprint": "1edfec9220f15bd160adad0d981a4fd431c9b11608d37b0e0d9dc3b0cccdea37",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "1edfec9220f15bd160adad0d981a4fd431c9b11608d37b0e0d9dc3b0cccdea37",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.poison.a/data/index/index-health.json",
+        "indexed_fingerprint": "1edfec9220f15bd160adad0d981a4fd431c9b11608d37b0e0d9dc3b0cccdea37",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.poison.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "efe2c7ad83635c40d118248c7078911af9424856d926a0aea7875fd22aa9d0ec",
+        "docs/primary.md": "1a5192c54d24ad54aff9123c645ddeb713298c4d19d50632e43fa786f4d62107"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.poison.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.poison.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_poison_b_1",
+          "expected_sha256": "3ce0e6560ac8b6ffa7527cb4b4e8ff1b363a0177b7cb7e6cb831970300eaf7c7",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_poison_b_2",
+          "expected_sha256": "4b0ff2f2bc782db87d67d8ec217a86e1314da2473db23301e6b2c956d0372b43",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "poisoned_before_registration",
+      "index_fingerprint": "cf5871816cdeb869b7ad5e2d2b937d4be0e68931e452c5e9273ace81638c9e0a",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "cf5871816cdeb869b7ad5e2d2b937d4be0e68931e452c5e9273ace81638c9e0a",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.poison.b/data/index/index-health.json",
+        "indexed_fingerprint": "cf5871816cdeb869b7ad5e2d2b937d4be0e68931e452c5e9273ace81638c9e0a",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.poison.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "3ce0e6560ac8b6ffa7527cb4b4e8ff1b363a0177b7cb7e6cb831970300eaf7c7",
+        "docs/primary.md": "4b0ff2f2bc782db87d67d8ec217a86e1314da2473db23301e6b2c956d0372b43"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.poison.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.poison.b"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_routine_a_1",
+          "expected_sha256": "925c28eae3460fedb8e38fcf968673278f75ad0f1a29cb68f89a919b0d0f58c3",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_routine_a_2",
+          "expected_sha256": "c0ae2a762b6ffd1b2eae73bf6d9f6fc9950da9097b38de6abe192d49e73c0098",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "current_supported",
+      "index_fingerprint": "3b0945dda43e5674d9f2faa0cfc049288a684287448a9aa6d3154a5fdd620c2c",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "3b0945dda43e5674d9f2faa0cfc049288a684287448a9aa6d3154a5fdd620c2c",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.a/data/index/index-health.json",
+        "indexed_fingerprint": "3b0945dda43e5674d9f2faa0cfc049288a684287448a9aa6d3154a5fdd620c2c",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.a/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "925c28eae3460fedb8e38fcf968673278f75ad0f1a29cb68f89a919b0d0f58c3",
+        "docs/primary.md": "c0ae2a762b6ffd1b2eae73bf6d9f6fc9950da9097b38de6abe192d49e73c0098"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.a",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.routine.a"
+    },
+    {
+      "all_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "development_only": true,
+      "evidence_references": [
+        {
+          "event_id": "observation_igcc_routine_b_1",
+          "expected_sha256": "b2bfdb99c3339bcb089d0ffefb36a31f4fb975fc8578ca97b68f26543c48c974",
+          "path": "docs/corroboration.md"
+        },
+        {
+          "event_id": "observation_igcc_routine_b_2",
+          "expected_sha256": "8f7b779eaeae0922055bddac259f0679a8be49375c5010b0a9a7030729c28d53",
+          "path": "docs/primary.md"
+        }
+      ],
+      "evidence_state": "current_supported",
+      "index_fingerprint": "1650f22a6e11ab9a26cff20d774cfc22a235f8c59fddb9154b56e29f765688aa",
+      "index_status": {
+        "canonical_file_count": 2,
+        "current_fingerprint": "1650f22a6e11ab9a26cff20d774cfc22a235f8c59fddb9154b56e29f765688aa",
+        "health_status": "succeeded",
+        "index_health": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.b/data/index/index-health.json",
+        "indexed_fingerprint": "1650f22a6e11ab9a26cff20d774cfc22a235f8c59fddb9154b56e29f765688aa",
+        "integrity": "ok",
+        "lexical_db": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.b/data/index/research.sqlite",
+        "schema_version": "1.1",
+        "stale": false,
+        "status": "current"
+      },
+      "post_setup_source_sha256": {
+        "docs/corroboration.md": "b2bfdb99c3339bcb089d0ffefb36a31f4fb975fc8578ca97b68f26543c48c974",
+        "docs/primary.md": "8f7b779eaeae0922055bddac259f0679a8be49375c5010b0a9a7030729c28d53"
+      },
+      "registered_paths": [
+        "docs/corroboration.md",
+        "docs/primary.md"
+      ],
+      "root": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/exec-rep1/fixtures/igcc.routine.b",
+      "schema_version": "integrity-claim-gate-fixture/1.0",
+      "task_id": "igcc.routine.b"
+    }
+  ],
+  "schema_version": "integrity-claim-gate-fixtures/1.0"
+}
