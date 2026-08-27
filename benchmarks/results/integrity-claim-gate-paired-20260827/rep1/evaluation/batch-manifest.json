@@ -1,0 +1,77 @@
+{
+  "batches": [
+    {
+      "batch": 1,
+      "evaluation_ids": [
+        "eval.585b059770a74fd89be36d5b",
+        "eval.d3d7703032725661f29977a5",
+        "eval.865f47cfb5b12c4e8a880dbb",
+        "eval.add48972d76f8364ab60964d",
+        "eval.42fa3e9511a7f811f5ea9bd0",
+        "eval.cf311557446ba3d213dfe7a1",
+        "eval.66c04071e5d50f3ecdd84968",
+        "eval.2bae3b4b1ad78efe7626f5c5",
+        "eval.9c5f132cdf598105a45452ba",
+        "eval.9b07ca1dacefdeaba392bf1e",
+        "eval.43bbadf7b173799b9aa1da5b",
+        "eval.7ca5ceb4eba34c63d1028bb2"
+      ],
+      "path": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/eval-rep1/batches/batch-001"
+    },
+    {
+      "batch": 2,
+      "evaluation_ids": [
+        "eval.0a08fe42f9983f36af1bbf1c",
+        "eval.75e42d8ad92aab35860f1559",
+        "eval.f304a411399d840ddd3e7406",
+        "eval.616e63226aec4152b9edf03f",
+        "eval.695a787897b4ccf48c338d68",
+        "eval.8de63859cef48c879471ca53",
+        "eval.6ca9ede45b7c2f8e55244dd2",
+        "eval.96edf0f40daaa3046b2a824e",
+        "eval.b2328c4d55bcdb2f532bf411",
+        "eval.917ced0ab73ef77977b49475",
+        "eval.ec2c6c0ce8ca4fcc6e7fccef",
+        "eval.6fe051db609ede863d040361"
+      ],
+      "path": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/eval-rep1/batches/batch-002"
+    },
+    {
+      "batch": 3,
+      "evaluation_ids": [
+        "eval.02262d36ccb7c9b98450ea5f",
+        "eval.96ef5c4460efd5016adb22ed",
+        "eval.d5bdcf2e75d0acd26c0bf80f",
+        "eval.41decf3793497c74b37953f3",
+        "eval.ce382e004f081a1c4f54f6a1",
+        "eval.cb4362ce373245bc9a91e2da",
+        "eval.7410ae233c610e5c58b48555",
+        "eval.cb110a40a17b2ec041e1e363",
+        "eval.e4cea0dca24c00e70bd5235c",
+        "eval.39eaa5083561608a41fd037c",
+        "eval.50ae2b185eec6f287f4933c5",
+        "eval.9c17d6b0667b9d134b3dbd67"
+      ],
+      "path": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/eval-rep1/batches/batch-003"
+    },
+    {
+      "batch": 4,
+      "evaluation_ids": [
+        "eval.a2fd5257fe594cfd50c5670c",
+        "eval.05d3998b63a1490edd0674ce",
+        "eval.194f9e86545e7deb275e84c7",
+        "eval.c3a9eae312246c8b1585cd28",
+        "eval.da7f3fae718765dfbd2c3a36",
+        "eval.b83e05f99d1c5f8afb3446a2",
+        "eval.a8f6ebd7a3dfc561523c1653",
+        "eval.49053f1c15af3d73839d40dc",
+        "eval.8a30f9990e7c41a914e01769",
+        "eval.c9a5a2c7b95d4146e001c2ce",
+        "eval.83de711c526c9479963b4cbd",
+        "eval.2c0cd6be0e73b56e0288cb9e"
+      ],
+      "path": "/tmp/claude-1000/-home-mpwsl2-paper-universal-research-mcp--claude-worktrees-mcp-codex-rules-review-a443ff/40a627c3-8fd7-46f6-9cb7-4da6384728fb/scratchpad/confirmatory/eval-rep1/batches/batch-004"
+    }
+  ],
+  "schema_version": "integrity-claim-gate-blinded-evaluation/1.0"
+}

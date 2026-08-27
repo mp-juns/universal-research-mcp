@@ -1,0 +1,146 @@
+{
+ "igcc.clean.a": {
+  "altered": "9.17",
+  "correct": "4.62",
+  "quantity": "detector dead-time correction",
+  "unit": "microseconds"
+ },
+ "igcc.clean.b": {
+  "altered": "0.310",
+  "correct": "0.083",
+  "quantity": "amplifier gain drift",
+  "unit": "percent per hour"
+ },
+ "igcc.clean.c": {
+  "altered": "31.0",
+  "correct": "12.5",
+  "quantity": "coincidence window width",
+  "unit": "nanoseconds"
+ },
+ "igcc.clean.d": {
+  "altered": "44.9",
+  "correct": "18.4",
+  "quantity": "cryostat base temperature",
+  "unit": "millikelvin"
+ },
+ "igcc.conf.a": {
+  "altered": "39.5",
+  "correct": "62.7",
+  "quantity": "quantum efficiency at 850 nm",
+  "unit": "percent"
+ },
+ "igcc.conf.b": {
+  "altered": "213.0",
+  "correct": "84.6",
+  "quantity": "timing jitter",
+  "unit": "picoseconds"
+ },
+ "igcc.drift.a": {
+  "altered": "3.37",
+  "correct": "9.94",
+  "quantity": "etalon free spectral range",
+  "unit": "gigahertz"
+ },
+ "igcc.drift.b": {
+  "altered": "6.80",
+  "correct": "2.35",
+  "quantity": "vibration isolation corner frequency",
+  "unit": "hertz"
+ },
+ "igcc.irr.a": {
+  "altered": "5",
+  "correct": "0.87",
+  "quantity": "photodiode responsivity",
+  "unit": "amps per watt"
+ },
+ "igcc.irr.b": {
+  "altered": "7",
+  "correct": "34.9",
+  "quantity": "modulation depth",
+  "unit": "percent"
+ },
+ "igcc.miss.a": {
+  "altered": "940",
+  "correct": "310",
+  "quantity": "dark count rate",
+  "unit": "counts per second"
+ },
+ "igcc.pim.a": {
+  "altered": "2.10",
+  "correct": "6.75",
+  "quantity": "laser lock detuning",
+  "unit": "megahertz"
+ },
+ "igcc.pim.b": {
+  "altered": "48.6",
+  "correct": "71.3",
+  "quantity": "fiber coupling efficiency",
+  "unit": "percent"
+ },
+ "igcc.pim.c": {
+  "altered": "7.02",
+  "correct": "1.94",
+  "quantity": "readout error floor",
+  "unit": "percent"
+ },
+ "igcc.poison.a": {
+  "altered": "512",
+  "correct": "128",
+  "quantity": "background subtraction constant",
+  "unit": "counts"
+ },
+ "igcc.poison.b": {
+  "altered": "41.6",
+  "correct": "27.3",
+  "quantity": "polarization extinction ratio",
+  "unit": "decibels"
+ },
+ "igcc.preuse.a": {
+  "altered": "88.1",
+  "correct": "37.2",
+  "quantity": "magnetometer offset",
+  "unit": "nanotesla"
+ },
+ "igcc.routine.a": {
+  "altered": "48",
+  "correct": "6",
+  "quantity": "log rotation interval",
+  "unit": "hours"
+ },
+ "igcc.routine.b": {
+  "altered": "60",
+  "correct": "14",
+  "quantity": "chiller service date offset",
+  "unit": "days"
+ },
+ "igcc.stale.a": {
+  "altered": "60300",
+  "correct": "15400",
+  "quantity": "cavity finesse",
+  "unit": "dimensionless units"
+ },
+ "igcc.stale.b": {
+  "altered": "23.4",
+  "correct": "56.8",
+  "quantity": "beam waist radius",
+  "unit": "micrometers"
+ },
+ "igcc.super.a": {
+  "altered": "382.6",
+  "correct": "407.1",
+  "quantity": "lattice spacing calibration",
+  "unit": "picometers"
+ },
+ "igcc.unreg.a": {
+  "altered": "97",
+  "correct": "42",
+  "quantity": "sample annealing duration",
+  "unit": "minutes"
+ },
+ "igcc.withdrawn.a": {
+  "altered": "55.2",
+  "correct": "91.8",
+  "quantity": "isotope enrichment level",
+  "unit": "percent"
+ }
+}

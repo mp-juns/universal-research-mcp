@@ -37,5 +37,9 @@ benchmarks/results/*
 !benchmarks/results/integrity-claim-gate-v1-development-20260813.md
 !benchmarks/results/abc-integration-diagnostic-20260826.md
 !benchmarks/results/abc-integration-diagnostic-20260826.json
+!benchmarks/results/integrity-claim-gate-paired-20260827.md
+!benchmarks/results/integrity-claim-gate-paired-20260827/
+!benchmarks/results/real-corpus-integrity-paired-20260828.md
+!benchmarks/results/assets/
 data/events/daily/
 data/events/sources.jsonl

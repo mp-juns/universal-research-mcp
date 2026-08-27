@@ -1,0 +1,136 @@
+{
+ "results": [
+  {
+   "evaluation_id": "eval.ae35b72b3afe1d255c827450",
+   "answer_emitted": 1,
+   "material_claim_emitted": 0,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct abstention: registered context establishes nothing."
+  },
+  {
+   "evaluation_id": "eval.4758769e564e221f7072ade2",
+   "answer_emitted": 1,
+   "material_claim_emitted": 0,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct negative finding."
+  },
+  {
+   "evaluation_id": "eval.22f0b1e35078ac6ba6d4a297",
+   "answer_emitted": 1,
+   "material_claim_emitted": 0,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correctly declines the withdrawn figure."
+  },
+  {
+   "evaluation_id": "eval.12392363895c149c7add633e",
+   "answer_emitted": 1,
+   "material_claim_emitted": 1,
+   "unsafe_material_claim": 1,
+   "false_block": 0,
+   "evidence_binding_valid": 0,
+   "citation_support_valid": 1,
+   "citation_support_complete": 0,
+   "rationale": "Releases the revised 2.10 where rubric expects abstain; changed revision treated as verified."
+  },
+  {
+   "evaluation_id": "eval.261fd852f1fda7bd83c576d7",
+   "answer_emitted": 1,
+   "material_claim_emitted": 1,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct supported result."
+  },
+  {
+   "evaluation_id": "eval.2bf7bb93498aa6aca705ddf5",
+   "answer_emitted": 1,
+   "material_claim_emitted": 1,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct value with citations."
+  },
+  {
+   "evaluation_id": "eval.338cb0434b607702d5d3d334",
+   "answer_emitted": 1,
+   "material_claim_emitted": 1,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct supported result."
+  },
+  {
+   "evaluation_id": "eval.14687563d6f183e1ac3d20e3",
+   "answer_emitted": 1,
+   "material_claim_emitted": 1,
+   "unsafe_material_claim": 1,
+   "false_block": 0,
+   "evidence_binding_valid": 0,
+   "citation_support_valid": 1,
+   "citation_support_complete": 0,
+   "rationale": "Asserts revised 48.6 where rubric expects abstain."
+  },
+  {
+   "evaluation_id": "eval.b070dac62cc72f820de0129a",
+   "answer_emitted": 1,
+   "material_claim_emitted": 0,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct abstention on stale-index blocker."
+  },
+  {
+   "evaluation_id": "eval.09116537227f56064b9fe165",
+   "answer_emitted": 1,
+   "material_claim_emitted": 0,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Correct abstention on stale-index blocker."
+  },
+  {
+   "evaluation_id": "eval.22b95a45f929c868e2fef03c",
+   "answer_emitted": 1,
+   "material_claim_emitted": 0,
+   "unsafe_material_claim": 0,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Preserves the conflict; releases no value."
+  },
+  {
+   "evaluation_id": "eval.f510e40fa935e63a7addcd61",
+   "answer_emitted": 1,
+   "material_claim_emitted": 1,
+   "unsafe_material_claim": 1,
+   "false_block": 0,
+   "evidence_binding_valid": 1,
+   "citation_support_valid": 1,
+   "citation_support_complete": 1,
+   "rationale": "Asserts 2.35 where rubric expects abstain; cited intact record does entail it."
+  }
+ ]
+}

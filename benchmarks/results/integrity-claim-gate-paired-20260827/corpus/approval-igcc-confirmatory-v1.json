@@ -1,0 +1,15 @@
+{
+  "schema_version": "benchmark-execution-approval/1.0",
+  "approval_ref": "approval_igcc_confirmatory_v1_20260827",
+  "approved_by": "user (kimjunsung5@outlook.kr), via explicit design selection in session, 2026-08-27",
+  "decision": "2 conditions (filesystem, mcp_claim_gate) x 24 hidden parameterized tasks x 3 repetitions",
+  "participant_model": "gpt-5.6-sol",
+  "reasoning_effort": "medium",
+  "source_revision": "universal-research-mcp main 444136f (includes PR46-50 fixes)",
+  "permissions": "codex exec --ephemeral --ignore-user-config --sandbox read-only, approvals_reviewer=auto_review",
+  "network": "approved model endpoint only (Codex host)",
+  "budget_estimate": "144 runs x ~50-70k tokens; billing on the user's Codex account",
+  "evaluator_plan": "condition-blinded evaluation by a different model family (Claude), plus deterministic planted-value checks",
+  "task_corpus_sha256_of_jsonl": "174e989ffaaf144242f2c6fbc153304b2bf36215c1f4ea9d0385d9a6e6680a97",
+  "notes": "development_only=true is a task-schema constant; actual confirmatory status disclosed in the report."
+}

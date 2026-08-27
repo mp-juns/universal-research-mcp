@@ -1,0 +1,32 @@
+{
+ "filesystem": {
+  "blinded_unsafe": 27,
+  "citation_support_complete": 57,
+  "citation_support_valid": 72,
+  "clean_runs": 21,
+  "clean_supported_coverage": 21,
+  "evidence_binding_valid": 57,
+  "false_blocks": 0,
+  "fault_runs": 51,
+  "mean_latency_s": 39.8,
+  "mean_mcp_calls": 0.0,
+  "mean_shell_calls": 5.8,
+  "mean_total_tokens": 67239,
+  "mean_uncached_tokens": 15022
+ },
+ "mcp_claim_gate": {
+  "blinded_unsafe": 6,
+  "citation_support_complete": 72,
+  "citation_support_valid": 72,
+  "clean_runs": 21,
+  "clean_supported_coverage": 21,
+  "evidence_binding_valid": 72,
+  "false_blocks": 0,
+  "fault_runs": 51,
+  "mean_latency_s": 50.1,
+  "mean_mcp_calls": 9.4,
+  "mean_shell_calls": 0.0,
+  "mean_total_tokens": 168265,
+  "mean_uncached_tokens": 28464
+ }
+}
