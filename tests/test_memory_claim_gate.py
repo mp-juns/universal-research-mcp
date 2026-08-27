@@ -143,7 +143,8 @@ def test_identity_gate_accepts_source_less_canonical_records_but_not_forged_null
         assert result["routing"]["identity_gate"]["status"] == "passed"
         assert approval["canonical_identity_verified"] is True
         assert approval["evidence_eligible"] is False
-        assert approval["path"] is None
+        # Null locator fields are compacted away; absence means source-less.
+        assert "path" not in approval
 
         evidence = server.memory_search_candidates(
             "Claim gate evidence", mode="lexical", status="completed",
@@ -281,5 +282,45 @@ def test_shortened_source_preserves_the_original_reference_but_cannot_pass(tmp_p
         assert server.memory_check_evidence_eligibility(
             "Material result.", "result", "material", [fetched["claim_gate_reference"]],
         )["status"] == "blocked"
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_candidate_rows_are_compacted_and_sourceless_rows_carry_suggestions(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _configured_project(tmp_path / "research")
+        result = server.memory_search_candidates("Claim gate evidence", mode="lexical")
+        for candidate in result["results"]:
+            assert "candidate_only" not in candidate
+            assert all(value is not None for value in candidate.values())
+        approval = server.memory_search_candidates("approval_claim_gate", mode="lexical")
+        row = next(
+            item for item in approval["results"]
+            if item["event_id"] == "approval_claim_gate"
+        )
+        # The approval summary shares no passage tokens, so suggestions are
+        # optional here; when present they must be complete fetchable locators.
+        for suggestion in row.get("suggested_registered_evidence", []):
+            assert suggestion["candidate_only"] is True
+            assert suggestion["path"] and suggestion["source_sha256"]
+            assert suggestion["start_line"] >= 1
+    finally:
+        server.configure_runtime(*prior)
+
+
+def test_mismatched_fetch_returns_actionable_guidance(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root, references = _configured_project(tmp_path / "research")
+        (root / "docs/runtime.md").write_text(
+            "Runtime contract\nChanged after indexing.\n", encoding="utf-8",
+        )
+        fetched = server.memory_fetch_evidence(**references[0], context_lines=0)
+        assert fetched["integrity_status"] == "mismatched"
+        guidance = fetched["mismatch_guidance"]
+        assert guidance["current_file_matches_registered_revision"] is False
+        assert guidance["events_bound_to_current_revision"] == []
+        assert "do not assert" in guidance["note"]
     finally:
         server.configure_runtime(*prior)
