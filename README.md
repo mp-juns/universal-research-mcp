@@ -145,11 +145,33 @@ Local embeddings do not imply generation-provider support.
 
 ## Experiments and limits
 
-**Completed development evidence exists. A full confirmatory product-effect
-benchmark does not.** These are separate studies; their sample sizes and scores
-must not be pooled.
+Two paired executions completed on 2026-08-27/28 are the first whose primary
+safety contrast excludes zero. Both carry documented deviations from the
+preregistered confirmatory plan, and the earlier development studies remain
+listed separately; sample sizes and scores must not be pooled.
 
-### A completed 96-run development study
+### Paired executions, 2026-08-27/28
+
+<a href="benchmarks/results/integrity-claim-gate-paired-20260827.md"><img src="benchmarks/results/assets/fig1-unsafe-assertions.png" width="1400" alt="Two-panel bar chart of unsafe assertions on integrity-broken evidence. Synthetic corpus, 45 hash-detectable fault pairs: filesystem 21 of 45, MCP plus gate 0 of 45, McNemar p equal to 9.5e-7. Real eight-month corpus, 27 natural fault pairs: filesystem 26 of 27, MCP plus gate 0 of 27, p equal to 3.0e-8."></a>
+
+| Paired execution | Fault unsafe: filesystem | Fault unsafe: MCP + gate | Clean coverage | False blocks (gate) |
+| --- | ---: | ---: | ---: | ---: |
+| [Synthetic, 24 tasks × 3 reps](benchmarks/results/integrity-claim-gate-paired-20260827.md) | 21 / 45 | **0 / 45** | 21/21 both | 0 |
+| [Real corpus, 27 tasks × 3 reps](benchmarks/results/real-corpus-integrity-paired-20260828.md) | 26 / 27 | **0 / 27** | 51/54 vs 45/54 | 9 (16.7%) |
+
+Exact McNemar p = 9.5×10⁻⁷ and 3.0×10⁻⁸; blinded evaluation cross-checked by
+an independent deterministic scorer. Burden was ~1.9× (synthetic) and ~1.4×
+(real) uncached tokens per run; a same-day
+[optimization pass](benchmarks/results/real-corpus-integrity-paired-20260828.md)
+halved tool transport while keeping fault unsafe assertions at zero. The two
+measured negative controls held: pre-registration poisoning defeated both
+arms identically, and hash-valid answers can still be stale. On the real
+corpus every gate false block traced to legacy events recorded without
+source references — evidence-chain quality, not the hash gate, bounds
+utility. Each report lists its deviations, evaluator disclosures, and
+interpretation boundary.
+
+### The earlier 96-run development study
 
 24 public synthetic tasks × four conditions, one run per task and condition.
 The separate condition-blinded evaluator was an LLM, not a human reviewer.
@@ -188,7 +210,7 @@ retained for provenance, not a claim that the tool verifies truth.
 | Full 432-trial comparison | **Not a completed result** | A planned count is not evidence. No finished 432-trial result is claimed for v0.8.5. |
 | Software tests and release checks | Engineering verification | Contract and packaging behavior; not participant-model benchmark results. |
 
-[All five completed reports](benchmarks/results/README.md) ·
+[All completed reports](benchmarks/results/README.md) ·
 [Integration diagnostic](benchmarks/results/abc-integration-diagnostic-20260826.md) ·
 [Benchmark disclosure](docs/benchmark-disclosure.md)
 
