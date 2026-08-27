@@ -821,6 +821,87 @@ def _locator_matches_projection(db: sqlite3.Connection, locator: dict[str, Any])
     )
 
 
+def _compact_candidates(results: list[dict[str, Any]]) -> None:
+    """Drop null-valued and per-row-redundant fields from candidate rows.
+
+    The response-level ``candidate_only`` flag and the identity-gate summary
+    already carry the per-row constants; null locator fields on source-less
+    events carry no information beyond ``evidence_eligible: false``. Dropped
+    keys are exactly recoverable through memory_fetch_evidence.
+    """
+
+    for candidate in results:
+        candidate.pop("candidate_only", None)
+        retrieval = candidate.get("retrieval")
+        if isinstance(retrieval, dict):
+            for key in [k for k, v in retrieval.items() if v is None]:
+                del retrieval[key]
+        for key in [k for k, v in candidate.items() if v is None]:
+            del candidate[key]
+
+
+def _suggest_registered_evidence(results: list[dict[str, Any]]) -> None:
+    """Attach registered passage suggestions to source-less candidates.
+
+    A canonical event recorded without a source reference can never satisfy
+    evidence eligibility by itself. Instead of leaving the caller to search
+    blindly, surface up to two registered passages whose text matches the
+    event summary. Suggestions are candidates only: each still requires
+    memory_fetch_evidence plus the eligibility receipt before any claim.
+    """
+
+    sourceless = [c for c in results if not c.get("path") and c.get("summary")]
+    if not sourceless:
+        return
+    intact_cache: dict[str, bool] = {}
+
+    def _currently_intact(path: str, registered: str) -> bool:
+        if path not in intact_cache:
+            try:
+                resolved = resolve_safe_path(path)
+                intact_cache[path] = (
+                    hashlib.sha256(resolved.read_bytes()).hexdigest() == registered
+                )
+            except (OSError, ValueError):
+                intact_cache[path] = False
+        return intact_cache[path]
+
+    with closing(open_readonly(RESEARCH_DB)) as db:
+        for candidate in sourceless:
+            try:
+                query = safe_fts_query(str(candidate["summary"])[:200])
+            except ValueError:
+                continue
+            rows = db.execute(
+                """
+                SELECT event_id, source_path, source_heading, line_start,
+                       line_end, source_sha256
+                FROM source_passage_fts WHERE source_passage_fts MATCH ?
+                ORDER BY bm25(source_passage_fts) ASC LIMIT 6
+                """,
+                (query,),
+            ).fetchall()
+            suggestions = [
+                {
+                    "event_id": row["event_id"], "path": row["source_path"],
+                    "heading": row["source_heading"],
+                    "start_line": row["line_start"], "end_line": row["line_end"],
+                    "source_sha256": row["source_sha256"],
+                    "currently_intact": _currently_intact(
+                        str(row["source_path"]), str(row["source_sha256"] or "")
+                    ),
+                    "candidate_only": True,
+                }
+                for row in rows
+            ]
+            # Drifted passages only waste a blocked fetch; prefer passages whose
+            # file still equals its registered revision.
+            suggestions.sort(key=lambda item: not item["currently_intact"])
+            suggestions = suggestions[:2]
+            if suggestions:
+                candidate["suggested_registered_evidence"] = suggestions
+
+
 def _apply_candidate_identity_gate(results: list[dict[str, Any]]) -> dict[str, Any]:
     """Fail closed unless every locator exists in the current derived projection."""
 
@@ -925,7 +1006,7 @@ def _recency_key(row: sqlite3.Row) -> float:
     return parsed.astimezone(timezone.utc).timestamp()
 
 
-@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS, structured_output=False)
 def memory_search_candidates(
     query: str,
     top_k: int = 8,
@@ -986,6 +1067,8 @@ def memory_search_candidates(
     if selected_mode in {"semantic", "hybrid"}:
         routing["semantic_backend"] = _semantic_backend_descriptor()
     identity_gate = _apply_candidate_identity_gate(results)
+    _suggest_registered_evidence(results)
+    _compact_candidates(results)
     routing["candidate_backend"] = candidate_backend
     routing["candidate_backend_applied"] = selected_mode in {"lexical", "hybrid"}
     routing["candidate_backend_reason"] = (
@@ -1004,7 +1087,7 @@ def memory_search_candidates(
     }
 
 
-@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS, structured_output=False)
 def memory_latest(top_k: int = 5) -> dict[str, Any]:
     """Return latest non-reference records, ordered by recorded event time."""
 
@@ -1015,7 +1098,7 @@ def memory_latest(top_k: int = 5) -> dict[str, Any]:
     return {"results": [{key: row[key] for key in ("event_id", "event_type", "status", "date", "summary")} for row in ordered]}
 
 
-@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS, structured_output=False)
 def memory_fetch_evidence(
     path: str,
     start_line: int,
@@ -1107,8 +1190,31 @@ def memory_fetch_evidence(
     }
     if integrity_status == "matched" or allow_mismatched_content:
         result["content"] = content
-    if integrity_status == "mismatched" and allow_mismatched_content:
-        result["diagnostic_mode"] = True
+    if integrity_status == "mismatched":
+        if allow_mismatched_content:
+            result["diagnostic_mode"] = True
+        with closing(open_readonly(RESEARCH_DB)) as db:
+            bound = [
+                str(row["event_id"]) for row in db.execute(
+                    """
+                    SELECT DISTINCT event_id FROM event_sources
+                    WHERE source_path = ? AND lower(source_sha256) = lower(?)
+                    LIMIT 3
+                    """,
+                    (path, current_sha256),
+                ).fetchall()
+            ]
+        result["mismatch_guidance"] = {
+            "current_file_matches_registered_revision": bool(bound),
+            "events_bound_to_current_revision": bound,
+            "note": (
+                "the current file equals a different registered revision; fetch it "
+                "through one of the listed events instead of asserting from this reference"
+                if bound else
+                "no registered revision matches the current file; do not assert its "
+                "content, and treat other intact registered evidence as the only usable support"
+            ),
+        }
     return result
 
 
@@ -1204,7 +1310,7 @@ def _evidence_eligibility_receipt(
     }
 
 
-@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS)
+@mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS, structured_output=False)
 def memory_check_evidence_eligibility(
     claim: str,
     claim_type: Literal[
