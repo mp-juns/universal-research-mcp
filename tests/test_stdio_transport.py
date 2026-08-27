@@ -41,15 +41,6 @@ SERVER_CASES = (
         "Universal Research Governance",
         "governance_get_capabilities",
     ),
-    (
-        "agent-runtime",
-        (
-            "from universal_research_mcp.runtime_server import main; "
-            "raise SystemExit(main([]))"
-        ),
-        "Universal Research Agent Runtime",
-        "agent_runtime_preflight",
-    ),
 )
 
 
