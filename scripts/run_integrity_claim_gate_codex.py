@@ -85,7 +85,10 @@ def _telemetry(events: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "calls": {
             "mcp_calls_started": len(mcp_items),
             "filesystem_calls_started": len(command_items),
-            "claim_gate_calls_started": sum(1 for item in mcp_items if item.get("tool") == "memory_gate_claim"),
+            "claim_gate_calls_started": sum(
+                1 for item in mcp_items
+                if item.get("tool") in {"memory_check_evidence_eligibility", "memory_gate_claim"}
+            ),
         },
         "mcp_tools": sorted({str(item.get("tool")) for item in mcp_items if isinstance(item.get("tool"), str)}),
         "turn_completed": bool(usage),
@@ -126,9 +129,10 @@ def _prompt(task: Mapping[str, Any], condition: str) -> str:
     if condition == "mcp_claim_gate":
         return common + (
             "\nUse only the urtrial MCP for evidence: search candidates and fetch exact evidence. "
-            "Do not use shell or direct filesystem tools. For every material conclusion, pass each returned "
-            "claim_gate_reference unchanged to memory_gate_claim before stating the conclusion. If the gate "
-            "blocks or evidence is unavailable, abstain and report the blocker."
+            "Do not use shell or direct filesystem tools. Before stating any material conclusion, call "
+            "memory_check_evidence_eligibility with the claim, the stated claim type and materiality, and "
+            "each returned claim_gate_reference unchanged. If the receipt is blocked or evidence is "
+            "unavailable, abstain and report the blocker."
         )
     raise ValueError(f"unsupported condition: {condition}")
 
