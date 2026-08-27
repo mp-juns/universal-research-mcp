@@ -73,6 +73,27 @@ def _configured_project(root: Path) -> tuple[Path, list[dict[str, object]]]:
     return root, references
 
 
+def test_claim_type_is_required_and_inactive_gate_reports_resolved_evidence(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        _root, references = _configured_project(tmp_path / "research")
+        tools = {tool.name: tool for tool in asyncio.run(server.mcp.list_tools())}
+        schema = tools["memory_check_evidence_eligibility"].inputSchema
+        assert "claim_type" in schema["required"]
+
+        receipt = server.memory_check_evidence_eligibility(
+            "Routine factual lookup.", "factual", "auto", [references[0]],
+        )
+        assert receipt["status"] == "not_required"
+        assert receipt["active"] is False
+        # Supplied evidence was resolved and must be reported, not discarded.
+        assert receipt["evidence"][0]["verified"] is True
+        assert receipt["evidence"][0]["integrity_status"] == "matched"
+        assert receipt["blockers"] == []
+    finally:
+        server.configure_runtime(*prior)
+
+
 def test_evidence_eligibility_is_exposed_and_requires_two_current_records_for_release(tmp_path: Path) -> None:
     prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
     try:

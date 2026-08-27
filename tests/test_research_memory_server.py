@@ -80,6 +80,41 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "escapes"):
                 server.resolve_safe_path("docs/outside.md")
 
+    def test_lexical_gate_caches_current_verdict_until_canonical_stats_change(self) -> None:
+        import universal_research_mcp.indexing as indexing
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            daily = root / "data/events/daily/2026-08-27"
+            daily.mkdir(parents=True)
+            ledger = daily / "events.jsonl"
+            ledger.write_text('{"record_id": "evt"}\n', encoding="utf-8")
+            (root / "data/index").mkdir()
+            (root / "data/index/research.sqlite").write_bytes(b"fixture")
+            (root / "data/index/index-health.json").write_text("{}", encoding="utf-8")
+            server.configure_runtime(root)
+            calls = {"count": 0}
+
+            def counting_status(_root: object) -> dict[str, str]:
+                calls["count"] += 1
+                return {"status": "current"}
+
+            with patch.object(indexing, "index_status", counting_status):
+                server._require_current_lexical_index()
+                server._require_current_lexical_index()
+                self.assertEqual(calls["count"], 1)
+                ledger.write_text(
+                    '{"record_id": "evt"}\n{"record_id": "evt_2"}\n', encoding="utf-8",
+                )
+                server._require_current_lexical_index()
+                self.assertEqual(calls["count"], 2)
+
+            server.configure_runtime(root)
+            with patch.object(indexing, "index_status", lambda _root: {"status": "stale"}):
+                for _attempt in range(2):
+                    with self.assertRaisesRegex(RuntimeError, "stale"):
+                        server._require_current_lexical_index()
+
     def test_safe_path_sensitive_name_policy_matches_word_boundaries_only(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

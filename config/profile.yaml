@@ -1,3 +1,8 @@
+# Declarative design artifact only. No runtime code loads this file: the MCP
+# and CLI read config/research-profile.json (research-profile/1.0). The
+# policy_overlay below documents the human working agreement for this
+# repository; it is not enforced by the server, and listing an action here
+# grants or revokes nothing.
 profile_version: profile/2.0
 
 project:

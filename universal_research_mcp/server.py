@@ -99,6 +99,8 @@ with the exact path and line range returned by search, then report that source
 range and its hash. Before reporting a material result, comparison, causal,
 release, or other load-bearing factual claim, call
 memory_check_evidence_eligibility with the exact fetched evidence references.
+Its claim_type has no default: classify the claim by its consequence, and use
+materiality "material" for a load-bearing factual statement.
 This verifies integrity and eligibility, not semantic support or truth; route
 eligible evidence through relevance and conflict review before the final claim.
 Governance tools validate plans, authority, and returned decisions but
@@ -211,6 +213,7 @@ def configure_runtime(
     EVENTS_ROOT = Path(events_root).resolve() if events_root is not None else Path(
         os.environ.get("UNIVERSAL_RESEARCH_EVENTS_ROOT", ROOT / "data/events")
     ).resolve()
+    _LEXICAL_GATE_CACHE.clear()
 
 
 def _require_private_write_surface() -> None:
@@ -284,17 +287,67 @@ def open_readonly(path: Path) -> sqlite3.Connection:
     return connection
 
 
+# Verified-current verdicts keyed by resolved project root; see the gate below.
+_LEXICAL_GATE_CACHE: dict[str, tuple[tuple[str, int, int], ...]] = {}
+
+
+def _canonical_state_signature() -> tuple[tuple[str, int, int], ...] | None:
+    """Stat identity of every file the lexical index gate inspects.
+
+    Mirrors ``index_status``: the canonical source manifest, every daily event
+    ledger, the derived lexical database, and its health record. Returns None
+    on any stat failure so the caller falls back to the full check.
+    """
+
+    from universal_research_mcp.runtime import ProjectPaths
+
+    try:
+        paths = ProjectPaths.from_root(ROOT)
+        inspected: list[Path] = []
+        sources = paths.events_root / "sources.jsonl"
+        if sources.is_file():
+            inspected.append(sources)
+        inspected.extend(sorted((paths.events_root / "daily").glob("*/events.jsonl")))
+        inspected.extend((paths.lexical_db, paths.index_health))
+        entries: list[tuple[str, int, int]] = []
+        for path in inspected:
+            metadata = path.stat()
+            entries.append((str(path), metadata.st_mtime_ns, metadata.st_size))
+        return tuple(entries)
+    except OSError:
+        return None
+
+
 def _require_current_lexical_index() -> None:
-    """Refuse candidate/evidence reads from a stale derived view."""
+    """Refuse candidate/evidence reads from a stale derived view.
+
+    The full check re-hashes every canonical JSONL file and runs a SQLite
+    integrity check, which grows linearly with the ledger. Between tool calls
+    whose inspected files keep an identical stat identity (path, mtime_ns,
+    size), the verified "current" verdict is reused; any stat change, stat
+    failure, or non-current verdict forces the full check, and only a
+    "current" verdict is ever cached. The cache trusts filesystem stat
+    identity, so an out-of-band writer that preserves mtime_ns and size can
+    evade it; set UNIVERSAL_RESEARCH_NO_INDEX_GATE_CACHE=1 to force the full
+    check on every call. The research_index_status tool never uses this cache.
+    """
 
     from universal_research_mcp.indexing import index_status
 
+    signature = None
+    if os.environ.get("UNIVERSAL_RESEARCH_NO_INDEX_GATE_CACHE") != "1":
+        signature = _canonical_state_signature()
+        if signature is not None and _LEXICAL_GATE_CACHE.get(str(ROOT)) == signature:
+            return
+    _LEXICAL_GATE_CACHE.pop(str(ROOT), None)
     status = index_status(ROOT)
     if status.get("status") != "current":
         raise RuntimeError(
             "derived lexical index is stale; run `universal-research index ensure "
             "--kind lexical --root <project-root>` before retrieval"
         )
+    if signature is not None:
+        _LEXICAL_GATE_CACHE[str(ROOT)] = signature
 
 
 def _require_current_semantic_index():
@@ -1157,11 +1210,16 @@ def memory_check_evidence_eligibility(
     claim_type: Literal[
         "factual", "result", "comparative", "causal", "release",
         "recommendation", "creative",
-    ] = "factual",
+    ],
     materiality: Literal["auto", "routine", "material"] = "auto",
     evidence: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Check exact evidence integrity and count, never semantic claim support."""
+    """Check exact evidence integrity and count, never semantic claim support.
+
+    ``claim_type`` is deliberately required: the gate activates from claim
+    consequence, so a caller must classify the claim instead of inheriting a
+    silent inactive default.
+    """
 
     return _evidence_eligibility_receipt(claim, claim_type, materiality, evidence)
 
