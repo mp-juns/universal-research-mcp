@@ -4,8 +4,8 @@
 
 **Research memory with traceable sources, explicit write approval, and measured — not assumed — safety.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.2-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.2/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.2/)
+[![Version](https://img.shields.io/badge/version-v0.9.3-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.3/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.3/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22118223.svg)](https://doi.org/10.5281/zenodo.22118223)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
@@ -289,3 +289,5 @@ engineering checks, separate from model experiments.
 </details>
 
 License: [MIT](LICENSE)
+
+mcp-name: io.github.mp-juns/universal-research-mcp
