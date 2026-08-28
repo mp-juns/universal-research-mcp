@@ -45,3 +45,7 @@ data/events/daily/
 data/events/sources.jsonl
 !benchmarks/results/trace-audit-20260828.json
 !benchmarks/results/trace-audit-20260828.md
+!benchmarks/results/rebench-ablation-v1-20260828.json
+!benchmarks/results/rebench-ablation-v1-20260828.md
+!benchmarks/results/assets/fig4-rebench.png
+!benchmarks/results/assets/fig4-rebench.pdf
