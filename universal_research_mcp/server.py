@@ -1376,6 +1376,22 @@ def _evidence_eligibility_receipt(
                 "reference does not bear on it."
             ),
         }
+        # Disclosure alone is rationalized away (measured: 9/13 surfaced
+        # warnings were overridden, rebench v1.2), so an active material
+        # gate fails closed on silent omission. Citing the mismatched
+        # reference lifts this block: the gate then judges that evidence
+        # directly and reports the integrity failure itself.
+        if receipt.get("active") and receipt.get("status") == "eligible":
+            receipt["status"] = "blocked"
+            receipt["evidence_eligibility"] = "blocked"
+            receipt["claim_eligibility"] = "blocked"
+            receipt["block_reason"] = "OMITTED-MISMATCHED-EVIDENCE"
+            receipt["remedy"] = (
+                "cite each listed fetched reference so the gate can judge it, "
+                "re-search for evidence registered against the current "
+                "revision, or abstain; do not release the claim on the "
+                "remaining subset alone"
+            )
     return receipt
 
 

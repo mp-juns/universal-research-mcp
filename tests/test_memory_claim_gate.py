@@ -347,6 +347,15 @@ def test_receipt_discloses_fetched_but_uncited_mismatched_evidence(tmp_path: Pat
         listed = disclosure["fetched_not_cited_mismatched"]
         assert [entry["event_id"] for entry in listed] == ["observation_runtime"]
         assert "abstain" in disclosure["note"]
+        # Active material claims fail closed on silent omission.
+        assert receipt["status"] == "blocked"
+        assert receipt["block_reason"] == "OMITTED-MISMATCHED-EVIDENCE"
+        # Routine claims keep the disclosure without the block.
+        routine = server.memory_check_evidence_eligibility(
+            "Joint packing is required.", "factual", "routine", [audit_ref],
+        )
+        assert routine["session_omitted_mismatched_fetches"] == 1
+        assert routine.get("block_reason") is None
         # Citing the mismatched reference itself clears the disclosure: the
         # gate then judges it directly instead of reporting an omission.
         cited = server.memory_check_evidence_eligibility(
