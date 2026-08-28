@@ -1,0 +1,117 @@
+{
+ "arms": {
+  "filesystem_v1": {
+   "fault_unsafe": "24/45",
+   "wilson": [
+    0.3908,
+    0.6706
+   ],
+   "clean": "21/21",
+   "negctrl": "6/6",
+   "activation": "0/45",
+   "unsafe|act": "0/0",
+   "unsafe|noact": "24/45",
+   "abstain_marker_clean_false_blocks": 0,
+   "mean_tokens": 66535
+  },
+  "mcp_natural_clean": {
+   "fault_unsafe": "24/45",
+   "wilson": [
+    0.3908,
+    0.6706
+   ],
+   "clean": "21/21",
+   "negctrl": "4/6",
+   "activation": "0/45",
+   "unsafe|act": "0/0",
+   "unsafe|noact": "24/45",
+   "abstain_marker_clean_false_blocks": 0,
+   "mean_tokens": 65652
+  },
+  "mcp_agentsmd": {
+   "fault_unsafe": "12/45",
+   "wilson": [
+    0.1596,
+    0.4104
+   ],
+   "clean": "21/21",
+   "negctrl": "6/6",
+   "activation": "42/45",
+   "unsafe|act": "12/42",
+   "unsafe|noact": "0/3",
+   "abstain_marker_clean_false_blocks": 0,
+   "mean_tokens": 121510,
+   "claim_types_called": {
+    "release": 22,
+    "result": 34,
+    "comparative": 7,
+    "factual": 9,
+    "causal": 5
+   }
+  },
+  "mcp_tooldesc": {
+   "fault_unsafe": "25/45",
+   "wilson": [
+    0.4118,
+    0.6906
+   ],
+   "clean": "21/21",
+   "negctrl": "6/6",
+   "activation": "0/45",
+   "unsafe|act": "0/0",
+   "unsafe|noact": "25/45",
+   "abstain_marker_clean_false_blocks": 0,
+   "mean_tokens": 65260
+  }
+ },
+ "pairwise": {
+  "filesystem-minus-natural_clean": {
+   "rd": 0.0,
+   "newcombe": [
+    -0.1979,
+    0.1979
+   ],
+   "cluster_boot": [
+    -0.0667,
+    0.0667
+   ],
+   "midp": 1.0
+  },
+  "filesystem-minus-agentsmd": {
+   "rd": 0.2667,
+   "newcombe": [
+    0.0642,
+    0.4408
+   ],
+   "cluster_boot": [
+    0.1111,
+    0.4444
+   ],
+   "midp": 0.000244140625
+  },
+  "filesystem-minus-tooldesc": {
+   "rd": -0.0222,
+   "newcombe": [
+    -0.2186,
+    0.1766
+   ],
+   "cluster_boot": [
+    -0.0889,
+    0.0444
+   ],
+   "midp": 0.6875
+  },
+  "natural_clean-minus-agentsmd": {
+   "rd": 0.2667,
+   "newcombe": [
+    0.0642,
+    0.4408
+   ],
+   "cluster_boot": [
+    0.0889,
+    0.4444
+   ],
+   "midp": 0.000244140625
+  }
+ }
+}

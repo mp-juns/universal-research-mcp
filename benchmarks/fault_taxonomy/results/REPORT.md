@@ -40,6 +40,14 @@ links and still block the 27 displaced ones; the fix that addresses 59/61
 alarms is **content-anchored (passage-hash) evidence**, whose bones the
 store's passage system already has.
 
+**Measured, not projected**: the retrospective replay
+(`replay_content_anchor.py`, zero model tokens, read-only) re-verdicts the
+same 686 links under content-anchored semantics: the 61 alarms collapse to
+exactly the 2 substantive (C3) links — 32 pass in place, 27 pass displaced
+— while all 457 previously passing links keep passing and no new alarm
+appears (`results/content-anchor-replay.json`, design in
+`docs/decisions/0004-content-anchored-evidence.md`).
+
 ## Stage B — 80 hash_match links (79 rated after one B0 exclusion)
 
 B1 73 · B2 6 · B0 1 · B3/B4/B5/B6 0. Blind-spot rate **7.6%** (6/79,

@@ -171,6 +171,19 @@ source references — evidence-chain quality, not the hash gate, bounds
 utility. Each report lists its deviations, evaluator disclosures, and
 interpretation boundary.
 
+### What remains unmeasured
+
+The paired executions above exercise the evidence workflow (search, fetch,
+eligibility gate). The governance layer — the multi-agent contract tools and
+the eleven fixed roles ([contracts](docs/multi-agent-governance.md)) — has
+**zero benchmark coverage** to date: no experiment here measures whether
+those contracts change agent behavior. The same holds for the ingest-receipt
+path under adversarial use. Statements about them are design claims, not
+measured ones. A preregistered ablation
+([protocol](benchmarks/protocols/rebench-ablation-v1.md)) additionally
+re-measures the headline safety contrast without prompt scaffolding and
+against a cheap hash-manifest baseline; its results ship separately.
+
 ### The earlier 96-run development study
 
 24 public synthetic tasks × four conditions, one run per task and condition.

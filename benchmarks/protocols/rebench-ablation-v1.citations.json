@@ -1,0 +1,312 @@
+{
+ "citations": [
+  {
+   "citation_id": "cit_metatool2023_activation",
+   "cited_in_code": [
+    {
+     "anchor": "## Arms",
+     "file": "benchmarks/protocols/rebench-ablation-v1.md",
+     "role": "no-scaffold rule"
+    },
+    {
+     "anchor": "activation report block",
+     "file": "benchmarks/rebench/analyze_rebench.py",
+     "role": "E4 endpoint"
+    }
+   ],
+   "exact_quote": "we introduce MetaTool, a benchmark designed to evaluate whether LLMs have tool usage awareness and can correctly choose tools",
+   "locus": {
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Huang, Zhu et al.",
+    "ids": {
+     "arxiv": "2310.03128"
+    },
+    "title": "MetaTool Benchmark for Large Language Models: Deciding Whether to Use Tools and Which to Use",
+    "url": "https://arxiv.org/abs/2310.03128",
+    "venue": "ICLR 2024"
+   },
+   "parameter": "E4 activation endpoint; no-scaffold prompt rule",
+   "quote_sha256": "61174f0fa57fc5db8252db182b27c3fd534d477fb2b730ee46b26eab3ea73923",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_metatool2023_activation",
+    "expected_sha256": "67c21e915684482da37810a280ea9c453b8f4f5baa0265bb926c19ead1795301",
+    "path": "docs/citations/cit_metatool2023_activation.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "툴을 '쓸지 말지'의 인지 자체가 별도 측정 대상임을 확립한 벤치마크 — 스캐폴드 없는 자연 세션에서 게이트 호출률(E4)을 1차 조건자로 두는 근거"
+  },
+  {
+   "citation_id": "cit_agentsmatter2024_cost_baseline",
+   "cited_in_code": [
+    {
+     "anchor": "manifest_prompt arm",
+     "file": "benchmarks/protocols/rebench-ablation-v1.md",
+     "role": "cheap-baseline arm"
+    },
+    {
+     "anchor": "mean_tokens field",
+     "file": "benchmarks/rebench/analyze_rebench.py",
+     "role": "cost co-reporting"
+    }
+   ],
+   "exact_quote": "SOTA agents are needlessly complex and costly, and the community has reached mistaken conclusions about the sources of accuracy gains",
+   "locus": {
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Kapoor, Stroebl, Siegel, Nadgir, Narayanan",
+    "ids": {
+     "arxiv": "2407.01502"
+    },
+    "title": "AI Agents That Matter",
+    "url": "https://arxiv.org/abs/2407.01502",
+    "venue": "arXiv 2024 / TMLR"
+   },
+   "parameter": "manifest_prompt cheap-baseline arm; cost co-reporting",
+   "quote_sha256": "663d9287f7279b7fe8c567557c2dcefd9b062a2fb16d7fbcf7764fa08ab3cc0f",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_agentsmatter2024_cost_baseline",
+    "expected_sha256": "0d94a77b7b5b9b93ff699490a1f5ff4fcd32d6bda64b6fba7a8efb845b109a56",
+    "path": "docs/citations/cit_agentsmatter2024_cost_baseline.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "에이전트 벤치의 관행 비판: 비용 무시와 부실한 베이스라인이 잘못된 결론을 만든다 — 값싼 manifest arm과 비용 공동 보고를 강제하는 근거"
+  },
+  {
+   "citation_id": "cit_mtbench2023_judge_agreement",
+   "cited_in_code": [
+    {
+     "anchor": "Judge validation",
+     "file": "benchmarks/protocols/rebench-ablation-v1.md",
+     "role": "rater-validity ground"
+    }
+   ],
+   "exact_quote": "strong LLM judges like GPT-4 can match both controlled and crowdsourced human preferences well, achieving over 80% agreement, the same level of agreement between humans",
+   "locus": {
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Zheng et al.",
+    "ids": {
+     "arxiv": "2306.05685"
+    },
+    "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+    "url": "https://arxiv.org/abs/2306.05685",
+    "venue": "NeurIPS 2023 Datasets & Benchmarks"
+   },
+   "parameter": "50-verdict model-rater validation with kappa",
+   "quote_sha256": "8032c6899fe50c6584d7a21adc3de6ce330d8c11636461cd285376f59e5db035",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_mtbench2023_judge_agreement",
+    "expected_sha256": "88971c024d98d11dd62e81d0725787dd5ff5c25d902370ac78c9d68e8c3065ee",
+    "path": "docs/citations/cit_mtbench2023_judge_agreement.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "LLM 판정자가 인간 합의 수준(>80%)에 도달함을 실측 — 모델 2차 판정자 κ 검증 절차의 타당성 근거"
+  },
+  {
+   "citation_id": "cit_newcombe1998_score_single",
+   "cited_in_code": [
+    {
+     "anchor": "def wilson_ci",
+     "file": "benchmarks/rebench/analyze_rebench.py",
+     "role": "method choice"
+    }
+   ],
+   "exact_quote": "Intervals based on tail areas and the simpler score methods are recommended for use.",
+   "locus": {
+    "where": "Abstract (final sentence pair)"
+   },
+   "paper": {
+    "authors": "Newcombe RG",
+    "ids": {
+     "pmid": "9595616"
+    },
+    "title": "Two-sided confidence intervals for the single proportion: comparison of seven methods",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/9595616/",
+    "venue": "Statistics in Medicine 17(8), 1998"
+   },
+   "parameter": "Wilson score CI for single proportions",
+   "quote_sha256": "737bd1772e5aa8a2971aa7be2b808f9de6baa96a40bb53135e41baff226abb1e",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_newcombe1998_score_single",
+    "expected_sha256": "9300cbb3cb3d5633edd6d39c54e50df56a68d6f8d9f452568f6abcd3bc2f814d",
+    "path": "docs/citations/cit_newcombe1998_score_single.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "단일 비율 CI 7종 비교에서 score 방법 권고 — analyze의 wilson_ci 채택 근거"
+  },
+  {
+   "citation_id": "cit_newcombe1998_hybrid_difference",
+   "cited_in_code": [
+    {
+     "anchor": "def newcombe_rd_ci",
+     "file": "benchmarks/rebench/analyze_rebench.py",
+     "role": "method choice"
+    }
+   ],
+   "exact_quote": "A method combining Wilson score intervals for the two proportions to be compared also performs well, and is readily implemented irrespective of sample size.",
+   "locus": {
+    "where": "Abstract (final sentence)"
+   },
+   "paper": {
+    "authors": "Newcombe RG",
+    "ids": {
+     "pmid": "9595617"
+    },
+    "title": "Interval estimation for the difference between independent proportions: comparison of eleven methods",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/9595617/",
+    "venue": "Statistics in Medicine 17(8), 1998"
+   },
+   "parameter": "Newcombe hybrid CI for risk differences (E2 primary)",
+   "quote_sha256": "78fb01aff31a62329362c7fcf7b13b3878195d43a8f7d04f8466174bd1da1f1d",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_newcombe1998_hybrid_difference",
+    "expected_sha256": "3762ce2b8a16853c54f1507c726ec5fed3702e86fb2396ba51f2c145772cf416",
+    "path": "docs/citations/cit_newcombe1998_hybrid_difference.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "비율 차 CI 11종 비교에서 Wilson 결합(hybrid) 방법이 표본 크기와 무관하게 잘 작동 — E2 주 분석 채택 근거"
+  },
+  {
+   "citation_id": "cit_eypasch1995_rule_of_three",
+   "cited_in_code": [
+    {
+     "anchor": "def rule_of_three",
+     "file": "benchmarks/rebench/analyze_rebench.py",
+     "role": "zero-cell rule"
+    }
+   ],
+   "exact_quote": "upper limit of 95% confidence interval = maximum risk = 3/n (for n > 30)",
+   "locus": {
+    "where": "Abstract"
+   },
+   "paper": {
+    "authors": "Eypasch, Lefering, Kum, Troidl",
+    "ids": {
+     "pmcid": "PMC2550668",
+     "pmid": "7663258"
+    },
+    "title": "Probability of adverse events that have not yet occurred: a statistical reminder",
+    "url": "https://europepmc.org/article/MED/7663258",
+    "venue": "BMJ 311:619, 1995"
+   },
+   "parameter": "3/n zero-cell bound reporting rule",
+   "quote_sha256": "116d59cf74f05f23be2a27d735f53422cb5d830d8d0c7d319143d38d5c6c0952",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_eypasch1995_rule_of_three",
+    "expected_sha256": "fb0e4d87e02309a659c77fdc848bbad7f77d0545a571108ef417afb3f96fa4ef",
+    "path": "docs/citations/cit_eypasch1995_rule_of_three.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "0-분자에서 3/n 상한 보고 규칙 — 0/45 같은 셀의 정직한 해석 규칙 근거"
+  },
+  {
+   "citation_id": "cit_fagerland2013_midp",
+   "cited_in_code": [
+    {
+     "anchor": "def midp_mcnemar",
+     "file": "benchmarks/rebench/analyze_rebench.py",
+     "role": "paired-test choice"
+    }
+   ],
+   "exact_quote": "We do not recommend use of the McNemar exact conditional test in any situation.",
+   "locus": {
+    "where": "Discussion"
+   },
+   "paper": {
+    "authors": "Fagerland, Lydersen, Laake",
+    "ids": {
+     "doi": "10.1186/1471-2288-13-91"
+    },
+    "title": "The McNemar test for binary matched-pairs data: mid-p and asymptotic are better than exact conditional",
+    "url": "https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/1471-2288-13-91",
+    "venue": "BMC Medical Research Methodology 13:91, 2013"
+   },
+   "parameter": "mid-p McNemar as paired test; exact conditional abandoned",
+   "quote_sha256": "5c088a5fe534cf2ccad511cd7000fd95a70328a8228ab023ee33f9fa9610e1c7",
+   "rag_binding": {
+    "eligibility_probe": "registered_matched",
+    "end_line": 4,
+    "event_id": "observation_cit_fagerland2013_midp",
+    "expected_sha256": "f21389cad22adc4172382244c7800fe20839114ca875b9e33f47962a025783be",
+    "path": "docs/citations/cit_fagerland2013_midp.md",
+    "start_line": 1,
+    "store": "lit-store (canonical JSONL + FTS5 lexical index), study_rebench_lit"
+   },
+   "verification": {
+    "method": "raw_source_fetch_substring_match",
+    "note": "quote checked as exact substring of the raw fetched HTML/EuropePMC-API text; no LLM summarization in the loop",
+    "retrieved_at": "2026-08-28",
+    "status": "verified"
+   },
+   "why": "정확조건부 McNemar는 어떤 상황에서도 비권장(과보수) — 기존 exact 사용을 공개적으로 폐기하고 mid-p로 전환하는 근거"
+  }
+ ],
+ "created_at": "2026-08-28",
+ "manifest_sha256": "5e091f01e7fab107085243f75d4387305361278af47e9e1df7dd6b03412636fe",
+ "planned_code_artifacts": [
+  "benchmarks/protocols/rebench-ablation-v1.md",
+  "benchmarks/rebench/analyze_rebench.py",
+  "scratchpad rebench runner (private, derived from run_confirmatory.py)"
+ ],
+ "purpose": "Ground every design parameter of rebench-ablation-v1 (and the statistical corrections applied retroactively to the paired benches) in verified primary literature.",
+ "rag_store": "scratchpad lit-store; append-only canonical events under approval_lit_evidence_v2",
+ "schema_version": "citation-manifest/1.0"
+}

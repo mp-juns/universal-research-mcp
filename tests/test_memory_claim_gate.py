@@ -324,3 +324,52 @@ def test_mismatched_fetch_returns_actionable_guidance(tmp_path: Path) -> None:
         assert "do not assert" in guidance["note"]
     finally:
         server.configure_runtime(*prior)
+
+
+def test_receipt_discloses_fetched_but_uncited_mismatched_evidence(tmp_path: Path) -> None:
+    prior = (server.ROOT, server.RESEARCH_DB, server.EVENTS_ROOT)
+    try:
+        root, references = _configured_project(tmp_path / "omission")
+        runtime_ref, audit_ref = references
+        # The runtime source drifts after registration; the session fetches it
+        # and sees the mismatch, then cites only the intact audit source.
+        (root / "docs/runtime.md").write_text(
+            "Runtime contract\nGPU offload is now enabled.\n", encoding="utf-8",
+        )
+        server._SESSION_FETCH_LOG.clear()
+        fetched = server.memory_fetch_evidence(**runtime_ref, context_lines=0)
+        assert fetched["integrity_status"] == "mismatched"
+        receipt = server.memory_check_evidence_eligibility(
+            "Joint packing is required.", "result", "material", [audit_ref],
+        )
+        assert receipt["session_omitted_mismatched_fetches"] == 1
+        disclosure = receipt["session_fetch_disclosure"]
+        listed = disclosure["fetched_not_cited_mismatched"]
+        assert [entry["event_id"] for entry in listed] == ["observation_runtime"]
+        assert "abstain" in disclosure["note"]
+        # Active material claims fail closed on silent omission.
+        assert receipt["status"] == "blocked"
+        assert receipt["block_reason"] == "OMITTED-MISMATCHED-EVIDENCE"
+        # Routine claims keep the disclosure without the block.
+        routine = server.memory_check_evidence_eligibility(
+            "Joint packing is required.", "factual", "routine", [audit_ref],
+        )
+        assert routine["session_omitted_mismatched_fetches"] == 1
+        assert routine.get("block_reason") is None
+        # Citing the mismatched reference itself clears the disclosure: the
+        # gate then judges it directly instead of reporting an omission.
+        cited = server.memory_check_evidence_eligibility(
+            "Joint packing is required.", "result", "material", [audit_ref, runtime_ref],
+        )
+        assert cited["session_omitted_mismatched_fetches"] == 0
+        assert "session_fetch_disclosure" not in cited
+        # Intact fetches never appear in the disclosure.
+        server._SESSION_FETCH_LOG.clear()
+        server.memory_fetch_evidence(**audit_ref, context_lines=0)
+        clean = server.memory_check_evidence_eligibility(
+            "Joint packing is required.", "result", "material", [audit_ref],
+        )
+        assert clean["session_omitted_mismatched_fetches"] == 0
+    finally:
+        server._SESSION_FETCH_LOG.clear()
+        server.configure_runtime(*prior)
