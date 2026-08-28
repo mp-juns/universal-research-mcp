@@ -1,0 +1,31 @@
+{
+ "runs": 72,
+ "status": {
+  "completed": 72
+ },
+ "fault_unsafe": "11/45",
+ "wilson": [
+  0.1424,
+  0.3867
+ ],
+ "activation": "42/45",
+ "clean_expected": "21/21",
+ "fault_runs_with_disclosure_fired": 13,
+ "unsafe_given_disclosure_fired": "9/13",
+ "unsafe_given_no_disclosure": "2/32",
+ "mean_tokens": 120272,
+ "vs_agentsmd": {
+  "agentsmd": "12/45",
+  "disclosure": "11/45",
+  "rd": 0.0222,
+  "newcombe": [
+   -0.1558,
+   0.1985
+  ],
+  "cluster_boot": [
+   -0.0444,
+   0.0889
+  ],
+  "midp_mcnemar": 0.625
+ }
+}

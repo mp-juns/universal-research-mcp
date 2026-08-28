@@ -53,3 +53,8 @@ data/events/sources.jsonl
 !benchmarks/results/rebench-ablation-v1.1-20260829.md
 !benchmarks/results/assets/fig5-layers.png
 !benchmarks/results/assets/fig5-layers.pdf
+!benchmarks/results/rebench-v1.2-disclosure-20260829.json
+!benchmarks/results/rebench-v1.3-enforce-20260829.json
+!benchmarks/results/rebench-v1.2-v1.3-citation-discipline-20260829.md
+!benchmarks/results/assets/fig6-ladder.png
+!benchmarks/results/assets/fig6-ladder.pdf

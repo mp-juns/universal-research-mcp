@@ -1,0 +1,47 @@
+{
+ "runs": 72,
+ "status": {
+  "completed": 72
+ },
+ "fault_unsafe": "4/45",
+ "wilson": [
+  0.0351,
+  0.2073
+ ],
+ "activation": "44/45",
+ "clean_expected": "21/21",
+ "fault_runs_with_disclosure_fired": 13,
+ "unsafe_given_disclosure_fired": "0/13",
+ "unsafe_given_no_disclosure": "4/32",
+ "mean_tokens": 124309,
+ "fault_runs_with_omission_block": 12,
+ "unsafe_given_omission_block": "0/12",
+ "clean_runs_with_omission_block": 0,
+ "vs_agentsmd": {
+  "agentsmd": "12/45",
+  "disclosure": "4/45",
+  "rd": 0.1778,
+  "newcombe": [
+   0.0181,
+   0.3312
+  ],
+  "cluster_boot": [
+   -0.0222,
+   0.4
+  ],
+  "midp_mcnemar": 0.0224609375
+ },
+ "vs_disclosure": {
+  "disclosure": "11/45",
+  "enforce": "4/45",
+  "rd": 0.1556,
+  "newcombe": [
+   -0.0008,
+   0.3077
+  ],
+  "cluster_boot": [
+   -0.0667,
+   0.4
+  ]
+ }
+}
