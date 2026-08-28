@@ -19,7 +19,7 @@ assertion interval includes zero. These limitations remain in the original
 reports and are not replaced by a more favorable aggregate.
 
 The latest completed
-[A/B/C integration diagnostic](../benchmarks/results/abc-integration-diagnostic-20260826.md)
+A/B/C integration diagnostic (2026-08-26; archived in git history)
 used one public synthetic task, no repetitions, and deterministic exact scoring
 with no human or LLM evaluator. Its three tool-backed responses followed seven
 startup diagnostics. All ten attempts remain represented; the filesystem
@@ -58,5 +58,5 @@ Static regression checks and zero-model simulations must be labeled separately
 from observed participant-model performance. A source hash or eligibility
 receipt does not itself prove semantic support or scientific truth.
 
-See [`benchmarks/protocols/mcp-ab-v1.md`](../benchmarks/protocols/mcp-ab-v1.md)
+See `benchmarks/protocols/mcp-ab-v1.md` (archived in git history)
 for the preregistered method and failure-retention rules.

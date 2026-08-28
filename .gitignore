@@ -22,39 +22,36 @@ WORK_LOG.md
 
 # Generated benchmark outputs are not package source.
 benchmarks/live_v*/
-benchmarks/results/
-# Public result summaries are source-controlled only when deliberately named
-# below; raw outputs and unreviewed results remain excluded.
-!benchmarks/results/
+# Only the published reports, their data sidecars, and the README figures are
+# source-controlled; every other result artifact stays local.
 benchmarks/results/*
 !benchmarks/results/README.md
-!benchmarks/results/codex-directional-v1.md
-!benchmarks/results/codex-directional-v1.json
-!benchmarks/results/codex-directional-v1-source.md
-!benchmarks/results/codex-claim-safety-v3.md
-!benchmarks/results/authority-safety-pilot-v1.md
-!benchmarks/results/integrity-claim-gate-v1-development-20260813.json
-!benchmarks/results/integrity-claim-gate-v1-development-20260813.md
-!benchmarks/results/abc-integration-diagnostic-20260826.md
-!benchmarks/results/abc-integration-diagnostic-20260826.json
 !benchmarks/results/integrity-claim-gate-paired-20260827.md
-!benchmarks/results/integrity-claim-gate-paired-20260827/
 !benchmarks/results/real-corpus-integrity-paired-20260828.md
-!benchmarks/results/assets/
-data/events/daily/
-data/events/sources.jsonl
-!benchmarks/results/trace-audit-20260828.json
-!benchmarks/results/trace-audit-20260828.md
-!benchmarks/results/rebench-ablation-v1-20260828.json
 !benchmarks/results/rebench-ablation-v1-20260828.md
-!benchmarks/results/assets/fig4-rebench.png
-!benchmarks/results/assets/fig4-rebench.pdf
-!benchmarks/results/rebench-ablation-v1.1-20260829.json
+!benchmarks/results/rebench-ablation-v1-20260828.json
 !benchmarks/results/rebench-ablation-v1.1-20260829.md
-!benchmarks/results/assets/fig5-layers.png
-!benchmarks/results/assets/fig5-layers.pdf
+!benchmarks/results/rebench-ablation-v1.1-20260829.json
+!benchmarks/results/rebench-v1.2-v1.3-citation-discipline-20260829.md
 !benchmarks/results/rebench-v1.2-disclosure-20260829.json
 !benchmarks/results/rebench-v1.3-enforce-20260829.json
-!benchmarks/results/rebench-v1.2-v1.3-citation-discipline-20260829.md
+!benchmarks/results/assets/
+benchmarks/results/assets/*
+!benchmarks/results/assets/fig1-unsafe-assertions.png
+!benchmarks/results/assets/fig2-utility-burden.png
+!benchmarks/results/assets/fig3-payload-composition.png
+!benchmarks/results/assets/fig4-rebench.png
+!benchmarks/results/assets/fig5-layers.png
 !benchmarks/results/assets/fig6-ladder.png
-!benchmarks/results/assets/fig6-ladder.pdf
+# Research process artifacts (working papers, taxonomy coding, superseded
+# development studies) live locally and in git history only.
+benchmarks/fault_taxonomy/
+benchmarks/protocols/real-corpus-fault-taxonomy-v1.md
+benchmarks/protocols/real-corpus-fault-taxonomy-v1.citations.json
+benchmarks/protocols/mcp-ab-v1.md
+docs/paper/
+docs/assets/
+scripts/render_exploratory_benchmark_figure.py
+scripts/render_integrity_claim_gate_development_figure.py
+data/events/daily/
+data/events/sources.jsonl

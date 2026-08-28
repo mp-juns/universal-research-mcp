@@ -65,7 +65,7 @@ Use `scripts/validate_integrity_claim_gate_benchmark.py` to validate a run file
 or emit its safety–coverage–burden report.
 
 A 96-run public development execution is available in
-[`results/integrity-claim-gate-v1-development-20260813.md`](results/integrity-claim-gate-v1-development-20260813.md).
+`results/integrity-claim-gate-v1-development-20260813.md` (archived in git history).
 It used 24 synthetic public tasks once per condition and a separate
 condition-blinded model evaluator. Its paired confidence interval includes
 zero, so it must be read as development instrumentation rather than a product
@@ -79,7 +79,7 @@ Git commit.
 
 ## Completed A/B/C integration diagnostic
 
-The [2026-08-26 integration report](results/abc-integration-diagnostic-20260826.md)
+The 2026-08-26 integration report (archived in git history)
 contains three tool-backed responses to one public synthetic task, plus the
 seven preceding startup attempts. It uses deterministic exact scoring with
 zero human evaluators and zero LLM judges. Filesystem retains its original
@@ -87,7 +87,7 @@ zero human evaluators and zero LLM judges. Filesystem retains its original
 diagnostic ceiling. The strict scores 0/1, 0/1 and 1/1 are not a uniform-budget
 comparison, repeated experiment, or confirmatory result.
 
-Its [sanitized JSON projection](results/abc-integration-diagnostic-20260826.json)
+Its sanitized JSON projection (archived in git history)
 preserves all ten attempt identities, known usage and four unknown-usage rows.
 It omits operational logs, local paths, authority records and raw model streams.
 Unknown usage is not converted to zero; normalized list-price accounting is

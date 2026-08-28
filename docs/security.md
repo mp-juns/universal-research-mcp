@@ -90,7 +90,7 @@ manifest.
 
 Provider-backed runtime prototypes were removed from the source tree
 entirely (commit a40b5b2); no such module ships or remains. Any future
-provider integration is outside the 0.9.0 support and compatibility contract and
+provider integration is outside the 0.9.1 support and compatibility contract and
 must not be treated as an enabled security boundary. A future provider release
 requires a separate threat-model review, credential boundary, explicit
 cost/network approval, and distribution contract before activation.

@@ -4,8 +4,8 @@
 
 **Research memory with traceable sources, explicit write approval, and measured — not assumed — safety.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.0-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.0/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.0/)
+[![Version](https://img.shields.io/badge/version-v0.9.1-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.1/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.1/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22118223.svg)](https://doi.org/10.5281/zenodo.22118223)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
@@ -198,7 +198,7 @@ pip install universal-research-mcp
 ```
 
 This installs the `universal-research` CLI (alias: `urmcp`) and the MCP
-server. Verify: `universal-research --version` → `0.9.0`.
+server. Verify: `universal-research --version` → `0.9.1`.
 
 ### 1. Initialize a store
 

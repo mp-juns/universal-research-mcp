@@ -1,9 +1,0 @@
-{
-  "attempted_run_count": 48,
-  "completed_run_count": 48,
-  "evaluation_status": "pending",
-  "new_run_count": 48,
-  "planned_run_count": 48,
-  "schema_version": "integrity-claim-gate-execution-summary/1.0",
-  "terminal_blocker": null
-}

@@ -1,6 +1,6 @@
 # Host Integration Contract
 
-> Support status for 0.9.0: Codex only. Other host adapters and
+> Support status for 0.9.1: Codex only. Other host adapters and
 > local/remote model-provider routes are design work, not supported runtime
 > integrations.
 
