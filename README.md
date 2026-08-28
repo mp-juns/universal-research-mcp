@@ -4,8 +4,8 @@
 
 **Research memory with traceable sources, explicit write approval, and measured — not assumed — safety.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.1-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.1/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.1/)
+[![Version](https://img.shields.io/badge/version-v0.9.2-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.2/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.2/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22118223.svg)](https://doi.org/10.5281/zenodo.22118223)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
@@ -186,93 +186,61 @@ agent behavior under the multi-agent governance contracts (the controls
 fail closed under direct adversarial input, but no model-in-the-loop
 governance benchmark exists yet).
 
-## Getting started — build the RAG store, connect the MCP
-
-Every command below was executed against the released package in a clean
-sandbox before this section was written; the outputs shown are real.
-
-### 0. Install
+## Getting started — two commands to a verified research memory
 
 ```bash
-pip install universal-research-mcp
+pip install universal-research-mcp        # or: uv tool install universal-research-mcp
+universal-research quickstart ~/my-research --yes
 ```
 
-This installs the `universal-research` CLI (alias: `urmcp`) and the MCP
-server. Verify: `universal-research --version` → `0.9.1`.
+`quickstart` takes a folder of Markdown documents and does the whole RAG
+setup in one pass: initializes the store, registers every document's
+SHA-256, appends an operator-approved observation per document (the
+`--yes` is your human approval — without it, quickstart only prints a dry
+run), and builds the search index. Re-running it only picks up new files.
+No JSON authoring, no manual approval plumbing. (`uvx
+universal-research-mcp quickstart …` works without installing anything.)
 
-### 1. Initialize a store
+### Connect your MCP host
 
+The server is plain stdio — any MCP host launches the same command.
+
+**Claude Code**
 ```bash
-universal-research init ~/my-research
+claude mcp add universal-research -- universal-research serve --root ~/my-research --no-auto-index
 ```
 
-Creates the canonical layout and an empty, healthy lexical index:
-
-```
-data/events/sources.jsonl      # source registry (path → sha256)
-data/events/daily/…            # append-only canonical events (JSONL)
-data/index/research.sqlite     # derived FTS5 index
-data/index/index-health.json   # index fingerprint + health
-```
-
-### 2. Register a source file
-
-Put a document in the project, then bind its exact bytes:
-
-```bash
-universal-research source register docs/calibration.md \
-  --source-id src_calib --source-type markdown --root ~/my-research
+**Claude Desktop / Cursor** (`claude_desktop_config.json` / `mcp.json`)
+```json
+{
+  "mcpServers": {
+    "universal-research": {
+      "command": "universal-research",
+      "args": ["serve", "--root", "/home/you/my-research", "--no-auto-index"]
+    }
+  }
+}
 ```
 
-The reply records `source_sha256` (the file's SHA-256 at registration) and
-refreshes the index. From now on, evidence citing this file is verified
-against that hash.
-
-### 3. Approve, then record
-
-Canonical writes are governed: a human approval record must exist first,
-and every non-approval record must reference one.
-
-```bash
-universal-research record template            # prints the record shape
-universal-research record approve approval.json --confirm approval_calib --root ~/my-research
-universal-research record append obs.json --approval-ref approval_calib --root ~/my-research
-```
-
-The observation's `source_refs` carry the path, line range, and the
-registered hash — that triple is what the evidence gate later verifies.
-
-### 4. Keep the index current
-
-```bash
-universal-research index ensure --kind lexical --root ~/my-research
-universal-research index status --kind lexical --root ~/my-research
-```
-
-`ensure` refuses to rebuild over a drifted registered source (fail-closed);
-`status` reports the fingerprint the retrieval gate checks on every call.
-Optional offline semantic retrieval: `universal-research semantic setup`
-(plans an isolated local SentenceTransformer environment; nothing is
-downloaded without an explicit step).
-
-### 5. Connect the MCP server to your host
-
-Codex (or any MCP host) launches the stdio server:
-
+**Codex** (`~/.codex/config.toml`, or install the plugin from
+`plugin/universal-research-memory/`)
 ```toml
-# ~/.codex/config.toml style
 [mcp_servers.universal_research]
 command = "universal-research"
 args = ["serve", "--root", "/home/you/my-research", "--no-auto-index"]
 ```
 
-Or install the Codex plugin (`plugin/universal-research-memory/`), whose
-`.mcp.json` runs the same command. On session start the server delivers
-its scope instructions (ASK-FIRST), and the model sees the memory tools.
+| host | support |
+| --- | --- |
+| Codex | officially tested (all benchmarks above ran here) |
+| any stdio MCP host | protocol-compatible |
+| Claude Code / Claude Desktop / Cursor | config verified, behavior unverified |
+| remote / hosted MCP | not offered (see `--public-demo` for the reviewed read-only path) |
 
-### 6. The evidence loop your agent should run
+### The evidence loop your agent should run
 
-Executed verbatim against the store built above:
+Executed verbatim against a quickstart-built store before this section was
+written:
 
 1. `memory_search_candidates {query: "dead-time correction", mode: "lexical"}`
    → returns the observation as a **candidate** (`candidate_only: true` —
@@ -281,9 +249,9 @@ Executed verbatim against the store built above:
    → `integrity_status: "matched"` and the exact cited lines; a drifted
    file instead returns `mismatched` and withholds content.
 3. `memory_check_evidence_eligibility {claim, claim_type, materiality, evidence:[…]}`
-   → `status: "eligible"` for this intact single-source result claim.
-   The same call returns `blocked: OMITTED-MISMATCHED-EVIDENCE` if the
-   session fetched a mismatched source and did not cite it.
+   → `status: "eligible"` for an intact single-source result claim, and
+   `blocked: OMITTED-MISMATCHED-EVIDENCE` if the session fetched a
+   mismatched source and silently dropped it.
 
 **Adoption note (measured, not advice).** In our ablation the model never
 called these tools without workspace policy. Add an `AGENTS.md` to the
