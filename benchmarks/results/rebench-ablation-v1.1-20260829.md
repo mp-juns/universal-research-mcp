@@ -6,6 +6,8 @@ rebench-ablation-v1.1-amendment.md`, commits `f18194f`/`38d98f3`/`ab884d4`
 scope-stall). 3 arms × 24 × 3 = 216 new runs, all completed and reported.
 Numbers: `rebench-ablation-v1.1-20260829.json`.
 
+![fig5](assets/fig5-layers.png)
+
 ## Arms (primary fault stratum, 45 runs each)
 
 | arm | activation | unsafe | clean | RD vs filesystem (24/45) |

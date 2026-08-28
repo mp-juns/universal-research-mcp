@@ -51,3 +51,5 @@ data/events/sources.jsonl
 !benchmarks/results/assets/fig4-rebench.pdf
 !benchmarks/results/rebench-ablation-v1.1-20260829.json
 !benchmarks/results/rebench-ablation-v1.1-20260829.md
+!benchmarks/results/assets/fig5-layers.png
+!benchmarks/results/assets/fig5-layers.pdf
