@@ -1,6 +1,6 @@
 # Universal Research MCP 사용자 설명서
 
-이 문서는 `v0.8.5` 기준으로 Universal Research MCP를 처음 설치하고,
+이 문서는 `v0.9.0` 기준으로 Universal Research MCP를 처음 설치하고,
 독립 연구 저장소를 만들고, Codex에서 근거를 검색·검증하고, 승인된 기록을
 추가하는 전체 흐름을 설명한다.
 
@@ -11,7 +11,7 @@ Universal Research MCP는 검색 결과를 곧바로 사실로 취급하지 않�
 
 ## 1. 지원 범위
 
-| 항목 | v0.8.5 지원 상태 |
+| 항목 | v0.9.0 지원 상태 |
 | --- | --- |
 | 호스트 | 로컬 Codex |
 | 전송 방식 | 로컬 `stdio` 권장 |
@@ -32,13 +32,13 @@ Python 3.11 이상이 필요하다. Windows, macOS, Linux에서 배포 검증을
 없다.
 
 ```bash
-python -m pip install "universal-research-mcp==0.8.5"
+python -m pip install "universal-research-mcp==0.9.0"
 ```
 
 또는:
 
 ```bash
-python -m pip install "urmcp==0.8.5"
+python -m pip install "urmcp==0.9.0"
 ```
 
 `urmcp`는 별도의 구현이 아니라 정확히 같은 버전의
@@ -51,7 +51,7 @@ universal-research --version
 universal-research --help
 ```
 
-정상이라면 첫 명령은 `0.8.5`를 출력한다. 명령을 찾지 못한다면 현재 터미널과
+정상이라면 첫 명령은 `0.9.0`을 출력한다. 명령을 찾지 못한다면 현재 터미널과
 패키지를 설치한 Python 환경이 같은지 확인한다.
 
 ## 3. 빈 연구 프로젝트 만들기
@@ -465,7 +465,7 @@ universal-research serve --help
 운영 변경을 확인한다.
 
 ```bash
-python -m pip install --upgrade "universal-research-mcp==0.8.5"
+python -m pip install --upgrade "universal-research-mcp==0.9.0"
 universal-research --version
 universal-research doctor --root ./my-research
 ```
@@ -479,6 +479,10 @@ README에 임의의 DOI나 badge를 넣지 않는다.
 
 ---
 
-`v0.8.5`는 사용자 설명과 새 세션 권한 확인을 정리한 유지보수 release다. 검색,
-근거 확인, 승인형 ingest의 기능 기준은 동결된 `v0.8.4` 계열과 동일하며, 문서에
-적힌 적격성 검사는 사실 판정이나 일반적인 환각 감소를 보증하지 않는다.
+`v0.9.0`은 동작이 바뀌는 release다. 서버가 세션의 근거 fetch 이력을 기록하고,
+무결성 검사에 실패한 근거를 조용히 누락한 material claim은 적격성 영수증이
+`blocked`(`OMITTED-MISMATCHED-EVIDENCE`)로 내려간다 — 공개만으로는 모델이
+경고를 무시한다는 실측(9/13 무시)에 근거한 fail-closed 설계다
+(benchmarks/results/rebench-v1.2-v1.3-citation-discipline-20260829.md).
+routine claim은 공개만 받는다. 이전과 동일하게, 적격성 검사는 무결성·범위·
+개수 검사이며 사실 판정이나 일반적인 환각 감소를 보증하지 않는다.
