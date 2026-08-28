@@ -198,8 +198,9 @@ setup in one pass: initializes the store, registers every document's
 SHA-256, appends an operator-approved observation per document (the
 `--yes` is your human approval — without it, quickstart only prints a dry
 run), and builds the search index. Re-running it only picks up new files.
-No JSON authoring, no manual approval plumbing. (`uvx
-universal-research-mcp quickstart …` works without installing anything.)
+No JSON authoring, no manual approval plumbing. No-install alternative,
+verified against the published package: `uvx --from universal-research-mcp
+universal-research quickstart … --yes`.
 
 ### Connect your MCP host
 
