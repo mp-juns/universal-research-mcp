@@ -712,7 +712,7 @@ def _quickstart_command(root: Path, args: argparse.Namespace) -> int:
         lines = data.decode("utf-8", errors="replace").splitlines()
         if not lines:
             continue
-        summary = next((l.lstrip("# ").strip() for l in lines if l.strip()), relative)[:200]
+        summary = next((text.lstrip("# ").strip() for text in lines if text.strip()), relative)[:200]
         append_record(root, {
             "schema_version": "core/1.0", "record_id": record_id,
             "record_kind": "observation", "study_id": args.study_id,
