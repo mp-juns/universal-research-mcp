@@ -1188,6 +1188,14 @@ def memory_fetch_evidence(
             "expected_sha256": expected_sha256,
         },
     }
+    _record_session_fetch({
+        "event_id": event_id,
+        "path": path,
+        "start_line": start_line,
+        "end_line": requested_end,
+        "expected_sha256": expected_sha256,
+        "integrity_status": integrity_status,
+    })
     if integrity_status == "matched" or allow_mismatched_content:
         result["content"] = content
     if integrity_status == "mismatched":
@@ -1279,6 +1287,53 @@ def _claim_evidence_check(reference: Any) -> dict[str, Any]:
     }
 
 
+# In-process log of this stdio session's evidence fetches. The eligibility
+# receipt uses it to disclose fetched-but-uncited references whose integrity
+# check failed: the gate can only verify the citation set it is given, and a
+# caller that silently drops a mismatched fetch would otherwise obtain a
+# clean receipt (measured: benchmarks/results/rebench-ablation-v1.1-20260829.md).
+_SESSION_FETCH_LOG: list[dict[str, Any]] = []
+_SESSION_FETCH_LOG_LIMIT = 500
+
+
+def _record_session_fetch(entry: dict[str, Any]) -> None:
+    if len(_SESSION_FETCH_LOG) < _SESSION_FETCH_LOG_LIMIT:
+        _SESSION_FETCH_LOG.append(entry)
+
+
+def _omitted_mismatched_fetches(evidence: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    cited: set[tuple[str | None, str | None]] = set()
+    for item in evidence or []:
+        if isinstance(item, dict):
+            cited.add((item.get("event_id"), item.get("path")))
+    omitted: list[dict[str, Any]] = []
+    seen: set[tuple[str | None, str | None]] = set()
+    for entry in _SESSION_FETCH_LOG:
+        if entry.get("integrity_status") != "mismatched":
+            continue
+        key = (entry.get("event_id"), entry.get("path"))
+        if key in seen:
+            continue
+        entry_event = entry.get("event_id")
+        entry_path = entry.get("path")
+        is_cited = any(
+            (entry_event is not None and cited_event == entry_event)
+            or (cited_event is None and entry_event is None and cited_path == entry_path)
+            for cited_event, cited_path in cited
+        )
+        if is_cited:
+            continue
+        seen.add(key)
+        omitted.append({
+            "event_id": entry.get("event_id"),
+            "path": entry.get("path"),
+            "start_line": entry.get("start_line"),
+            "end_line": entry.get("end_line"),
+            "integrity_status": "mismatched",
+        })
+    return omitted
+
+
 def _evidence_eligibility_receipt(
     claim: str,
     claim_type: Literal[
@@ -1303,11 +1358,25 @@ def _evidence_eligibility_receipt(
         materiality=materiality,
         evidence_checks=checks,
     )
-    return {
+    omitted = _omitted_mismatched_fetches(evidence)
+    receipt = {
         **result,
         "claim_sha256": hashlib.sha256(claim.encode("utf-8")).hexdigest(),
         "claim_text_included": False,
+        "session_omitted_mismatched_fetches": len(omitted),
     }
+    if omitted:
+        receipt["session_fetch_disclosure"] = {
+            "fetched_not_cited_mismatched": omitted,
+            "note": (
+                "this session fetched the listed evidence, its integrity check "
+                "failed, and it is not cited here. A material claim that "
+                "silently drops mismatched evidence is unsafe: before releasing "
+                "the claim, either abstain or state explicitly why each listed "
+                "reference does not bear on it."
+            ),
+        }
+    return receipt
 
 
 @mcp.tool(annotations=READ_ONLY_TOOL_ANNOTATIONS, structured_output=False)
