@@ -32,7 +32,11 @@ both mandates the workflow and pre-approves session scope restores full MCP
 engagement, whereas product-side tool-description triggers alone do not (0/45
 activation) — and even activated runs reveal a third layer: models
 cherry-pick intact evidence around visibly mismatched sources (12/42
-activated runs), so citation discipline must be enforced server-side. We contribute the benchmark suite, the fault
+activated runs). A server-side disclosure of the omission is ignored
+(9/13 overridden); the fail-closed version drives integrity-omission
+failures to zero (4/45 total unsafe, zero false blocks). The measured
+ordering — information < instruction < enforcement — held at every
+layer. We contribute the benchmark suite, the fault
 taxonomy with reliability analysis, and the design consequences.
 
 ## 1. Introduction
@@ -232,13 +236,26 @@ cited subset eligible; 3/12 never fetched the faulted source. The gate
 verifies what you cite, not what you omit; the original scaffold's "pass
 each returned reference unchanged" was itself a protection layer.
 Protection therefore decomposes into three separately measured factors —
-**enforcement × activation × citation discipline** — and the deployable
-countermeasure for the third is server-side: eligibility receipts that
-disclose fetched-but-uncited evidence with failed integrity (the server
-already holds the session's fetch history), which would surface 9 of
-these 12 failures without any model cooperation. The first honest
-claim-type self-report measurement (77 unprescribed gate calls) shows a
-9.1% downgrade rate, all evading the two-source `causal` rule.
+**enforcement × activation × citation discipline**. We then built and
+measured the third layer server-side in two preregistered steps. A
+*disclosure* receipt (naming each fetched-but-uncited mismatched
+reference, with an instruction to abstain or address it) fired with
+perfect precision (13/45 fault runs, 0/21 clean, 0/6 negative-control) —
+and was overridden in 9/13, leaving unsafe unchanged (11/45, mid-p
+0.625): the preregistered falsification rule triggered. A *fail-closed*
+variant (active material claims return `blocked:
+OMITTED-MISMATCHED-EVIDENCE`; citing the mismatched reference lifts the
+block) met every preregistered bar: unsafe **4/45** (RD vs AGENTS.md
+baseline 0.178, mid-p 0.022), 0/12 unsafe where the block fired, zero
+clean false blocks, clean coverage intact. The four residual failures
+are intact-hash semantic states (withdrawn, irrelevant) outside the
+integrity gate's documented remit. Across both layers the same ordering
+repeated — **information < instruction < enforcement**: tool schemas,
+in-context hash manifests, and disclosure receipts changed nothing;
+policy instructions recovered activation; only enforcement drove a
+failure class to zero. The first honest claim-type self-report
+measurement (77 unprescribed gate calls) shows a 9.1% downgrade rate,
+all evading the two-source `causal` rule.
 
 ## 8. Related work
 
