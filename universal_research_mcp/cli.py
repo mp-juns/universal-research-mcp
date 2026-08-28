@@ -429,6 +429,26 @@ def build_parser() -> argparse.ArgumentParser:
     public_verify.add_argument("--root", type=Path, required=True)
     public_verify.add_argument("--manifest", type=Path, default=Path("config/public-demo.json"))
 
+    quickstart = subparsers.add_parser(
+        "quickstart",
+        help="One command from a folder of documents to a searchable, evidence-bound store.",
+    )
+    quickstart.add_argument("path", nargs="?", type=Path, default=None,
+                            help="Project root (default: current directory).")
+    quickstart.add_argument("--root", type=Path, default=None)
+    quickstart.add_argument(
+        "--docs", action="append", default=None,
+        help="Glob of documents to register, relative to the root (repeatable; "
+             "default: *.md, docs/**/*.md, notes/**/*.md).",
+    )
+    quickstart.add_argument("--study-id", default="study_quickstart")
+    quickstart.add_argument("--actor-id", default="actor_owner")
+    quickstart.add_argument(
+        "--yes", action="store_true",
+        help="Confirm appending a human approval record authored by you. "
+             "Without it, quickstart only prints what it would do.",
+    )
+
     initialize = subparsers.add_parser("init", help="Initialize an independent research store.")
     initialize.add_argument("path", nargs="?", type=Path)
     initialize.add_argument("--root", type=Path)
@@ -605,6 +625,127 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _quickstart_command(root: Path, args: argparse.Namespace) -> int:
+    """Documents folder -> registered sources -> approved records -> current index.
+
+    Idempotent: already-registered revisions and already-recorded documents are
+    skipped, so re-running after adding files only appends the new ones. The
+    approval record is a human act: nothing is written without --yes.
+    """
+
+    import hashlib
+    from datetime import UTC, datetime
+
+    from universal_research_mcp.core.input import append_record, register_source
+    from universal_research_mcp.indexing import ensure_lexical_index, initialize_project
+    from universal_research_mcp.indexing.lexical import ProjectPaths
+
+    globs = args.docs or ["*.md", "docs/**/*.md", "notes/**/*.md"]
+    root.mkdir(parents=True, exist_ok=True)
+    candidates: list[Path] = []
+    for pattern in globs:
+        candidates.extend(p for p in sorted(root.glob(pattern)) if p.is_file())
+    seen: set[Path] = set()
+    files = []
+    for path in candidates:
+        resolved = path.resolve()
+        if resolved in seen or resolved.is_relative_to(root / "data"):
+            continue
+        seen.add(resolved)
+        if path.stat().st_size > 2_000_000:
+            continue
+        files.append(path)
+    if not files:
+        _emit({"status": "nothing_to_register", "root": str(root), "globs": globs,
+               "hint": "put .md files in the root or docs/, or pass --docs '<glob>'"})
+        return 1
+    plan = [str(p.relative_to(root)) for p in files]
+    if not args.yes:
+        _emit({"status": "dry_run", "root": str(root), "would_register": plan,
+               "note": "quickstart appends a human approval record authored by you; "
+                       "re-run with --yes to confirm and write"})
+        return 0
+
+    initialize_project(root)
+    paths = ProjectPaths.from_root(root)
+    registry: set[tuple[str, str]] = set()
+    sources_file = paths.events_root / "sources.jsonl"
+    if sources_file.is_file():
+        for line in sources_file.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                entry = json.loads(line)
+                registry.add((entry["source_path"], entry["source_sha256"].lower()))
+    existing_records: set[str] = set()
+    for day_file in sorted((paths.events_root / "daily").glob("*/events.jsonl")):
+        for line in day_file.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                existing_records.add(json.loads(line).get("record_id", ""))
+
+    now = datetime.now(UTC).replace(microsecond=0).isoformat()
+    approval_id = f"approval_{args.study_id}"
+    if approval_id not in existing_records:
+        append_record(root, {
+            "schema_version": "core/1.0", "record_id": approval_id,
+            "record_kind": "approval", "study_id": args.study_id,
+            "occurred_at": now, "recorded_at": now, "status": "approved",
+            "created_by": {"actor_id": args.actor_id, "actor_type": "human"},
+            "payload": {"scope": {"study_ids": [args.study_id],
+                                  "record_kinds": ["observation"]},
+                        "summary": "Quickstart registration of project documents, "
+                                   "confirmed by the operator with --yes."},
+        }, approval_bootstrap=True)
+
+    registered = skipped = recorded = 0
+    for path in files:
+        relative = str(path.relative_to(root))
+        data = path.read_bytes()
+        digest = hashlib.sha256(data).hexdigest()
+        short = digest[:12]
+        if (relative, digest) in registry:
+            skipped += 1
+        else:
+            register_source(root, relative, source_id=f"src_qs_{short}", source_type="markdown")
+            registered += 1
+        record_id = f"observation_qs_{short}"
+        if record_id in existing_records:
+            continue
+        lines = data.decode("utf-8", errors="replace").splitlines()
+        if not lines:
+            continue
+        summary = next((l.lstrip("# ").strip() for l in lines if l.strip()), relative)[:200]
+        append_record(root, {
+            "schema_version": "core/1.0", "record_id": record_id,
+            "record_kind": "observation", "study_id": args.study_id,
+            "occurred_at": now, "recorded_at": now, "status": "completed",
+            "created_by": {"actor_id": args.actor_id, "actor_type": "human"},
+            "approval_refs": [approval_id],
+            "source_refs": [{
+                "artifact_revision_id": f"artifact_qs_{short}@sha256:{digest}",
+                "locator": {"kind": "line_range", "path": relative,
+                            "start": 1, "end": len(lines)},
+                "verification_status": "integrity_verified",
+            }],
+            "artifact_refs": [f"artifact_qs_{short}"],
+            "payload": {"summary": f"{summary} ({relative})"},
+        }, approval_ref=approval_id)
+        recorded += 1
+
+    index = ensure_lexical_index(root)
+    _emit({
+        "status": "ready", "root": str(root),
+        "sources_registered": registered, "sources_already_current": skipped,
+        "records_appended": recorded,
+        "index": {"status": index.get("decision") or index.get("status"),
+                  "event_count": (index.get("health") or {}).get("event_count")},
+        "next": {
+            "serve": f"universal-research serve --root {root} --no-auto-index",
+            "note": "point any stdio MCP host at that command; "
+                    "search -> fetch -> check_evidence_eligibility",
+        },
+    })
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -689,6 +830,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     root = _root(args.root, getattr(args, "path", None))
+    if args.command == "quickstart":
+        return _quickstart_command(root, args)
     if args.command == "init":
         lexical = initialize_project(root)
         # Initialization creates only canonical + lexical state.  A zero-vector
