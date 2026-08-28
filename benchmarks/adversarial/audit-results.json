@@ -1,0 +1,55 @@
+{
+ "aggregate_fail_closed": 25,
+ "aggregate_threat_cases": 25,
+ "controls": {
+  "_legit_commit": {
+   "all_pass": true,
+   "passed": 1,
+   "total": 1
+  },
+  "_legit_pass": {
+   "all_pass": true,
+   "passed": 1,
+   "total": 1
+  }
+ },
+ "every_control_passes": true,
+ "every_threat_fully_fail_closed": true,
+ "threats": {
+  "T1_scope_escape": {
+   "all_fail_closed": true,
+   "fail_closed": 6,
+   "total": 6
+  },
+  "T2_cost_plan_evasion": {
+   "all_fail_closed": true,
+   "fail_closed": 3,
+   "total": 3
+  },
+  "T3_receipt_forgery": {
+   "all_fail_closed": true,
+   "fail_closed": 4,
+   "total": 4
+  },
+  "T4_replay": {
+   "all_fail_closed": true,
+   "fail_closed": 1,
+   "total": 1
+  },
+  "T5_draft_tampering": {
+   "all_fail_closed": true,
+   "fail_closed": 2,
+   "total": 2
+  },
+  "T6_approval_bypass": {
+   "all_fail_closed": true,
+   "fail_closed": 2,
+   "total": 2
+  },
+  "T7_authority_poisoning": {
+   "all_fail_closed": true,
+   "fail_closed": 7,
+   "total": 7
+  }
+ }
+}

@@ -2,7 +2,7 @@
 
 # Universal Research MCP
 
-**Research memory with traceable sources and explicit write approval.**
+**Research memory with traceable sources, explicit write approval, and measured — not assumed — safety.**
 
 [![Version](https://img.shields.io/badge/version-v0.8.5-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.5/)
 [![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.5/)
@@ -10,236 +10,286 @@
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
 
-[한국어 사용자 설명서](docs/user-guide.md) · [60-second workflow](docs/demo.md) · [Architecture](#architecture) · [Design decisions](#three-design-decisions) · [Evidence & limits](#experiments-and-limits)
+[Architecture deep dive](docs/architecture-deep-dive.md) · [Benchmarks](#benchmarks--what-was-measured-how-and-what-each-result-licenses) · [Getting started](#getting-started--build-the-rag-store-connect-the-mcp) · [한국어 사용자 설명서](docs/user-guide.md)
 
 </div>
 
-Universal Research MCP connects a Codex host to research records, original
-sources, and rebuildable search indexes. Before a material claim can receive
-an evidence-eligibility receipt, the server re-reads the **exact registered
-source range** and checks its **current SHA-256 revision**.
+Research agents with long-lived memory fail in a specific way: they
+**assert recorded values whose evidence no longer holds** — the file
+drifted, the claim was withdrawn, the source was never registered. This
+project makes that failure mechanically checkable, fail-closed, and then
+**measures which parts of safety the mechanism actually provides**.
 
-**The contract:** search returns candidates; verification establishes source
-integrity; the host still reviews relevance, conflicts, and the final claim.
+## The structure, in one pass
 
-> **v0.8.5 documentation release.** The runtime feature baseline remains
-> frozen at v0.8.4. This release adds the detailed Korean user guide and ships
-> the session-scope confirmation workflow; it adds no retrieval or ingest
-> capability and grants no operating-system or host permissions.
-
-## The problem it addresses
-
-A retrieved passage can come from an old index, the wrong line range, or a file
-that changed after registration. A plausible answer can hide that broken
-connection. This project makes the connection inspectable.
-
-| Question | Implemented boundary |
-| --- | --- |
-| Which evidence did the answer use? | An event ID, source path, exact line range, and registered SHA-256. |
-| Is that still the same source? | Fresh source reads, exact locator checks, and explicit mismatch handling. |
-| Can the agent rewrite research history? | MCP ingestion needs an immutable draft and an external one-time approval receipt. |
-| Does passing the check mean the claim is true? | No. Semantic support, conflict resolution, and source truth remain outside this check. |
-
-## Architecture
-
-```mermaid
-flowchart LR
-    A[Candidate search] --> B[Re-read registered source]
-    B --> C{Range and SHA-256 match?}
-    C -- No --> D[Block evidence]
-    C -- Yes --> E[Evidence eligibility]
-    E --> F[Host reviews meaning and conflicts]
-    F --> G[Answer or abstain]
+```
+ append-only canonical ledger            derived, rebuildable RAG
+ ─────────────────────────────           ─────────────────────────────
+ data/events/daily/*/events.jsonl   →    SQLite FTS5 passage+event index
+ data/events/sources.jsonl               (+ optional offline semantic view
+ (path → SHA-256 at registration)         built FROM the lexical index)
+            │                                        │
+            │ registered hash + line range           │ BM25 candidates
+            ▼                                        ▼
+ ┌─────────────────────────── MCP server (30 tools, stdio) ─────────────────────────┐
+ │ memory_search_candidates → candidates only ("a score is not evidence")           │
+ │ memory_fetch_evidence    → exact lines + integrity_status (matched/mismatched)   │
+ │ memory_check_evidence_eligibility → fail-closed receipt; blocks silent omission  │
+ │ research_prepare_ingest / research_commit_ingest → two-step, one-time HMAC       │
+ │ governance_* (11 fixed roles; preflight only, never executes)                    │
+ └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The workflow verifies source identity and location. It does not decide whether
-the source is relevant, resolve conflicts, or prove that the source is true.
+- The ledger is the only authority; every index is a derived view that
+  refuses to build over a drifted registered source.
+- Retrieval is physically read-only (`sqlite mode=ro`, `query_only=ON`).
+- Writes need a pre-existing human approval record; model-side ingestion
+  additionally needs a one-time HMAC receipt issued **outside** the MCP.
+- The eligibility gate verifies the integrity of cited evidence and — as
+  of this release — fails closed when a material claim silently omits
+  evidence the session fetched and saw fail integrity.
 
-**Write path:** prepare immutable draft → external human approval → commit the
-bound transaction. A shared writer lock and journal protect canonical writes;
-interrupted multi-file work remains recoverable rather than silently successful.
+Every one of those sentences is backed by a specific file and line:
+**[docs/architecture-deep-dive.md](docs/architecture-deep-dive.md)** walks
+the goal, the ledger, the RAG construction, the RAG↔MCP chain, and each
+control mechanism with code citations, including the boundaries that are
+deliberately *not* enforced and say so in their docstrings.
 
-[Module map and authority boundaries](docs/architecture.md)
+## Benchmarks — what was measured, how, and what each result licenses
 
-## One minute through the workflow
+Every study below was **preregistered before its runs** (protocol and
+analysis code committed first; deviations disclosed in the protocol before
+the affected runs), scored by an independent deterministic scorer
+cross-checked against a condition-blinded LLM judge (judge validity:
+two independent raters agreed with each other κ = 1.000 and with the judge
+κ = 0.865 on a 50-verdict blind sample), and reported as aggregates only.
+Statistical choices (Wilson/Newcombe CIs, mid-p McNemar, rule-of-three)
+are bound to hash-verified verbatim quotes from their source papers in
+[the citation manifests](benchmarks/protocols/).
 
-**[Open the demo guide →](docs/demo.md)**
+### 1 · Does the gate stop unsafe assertions? — yes, to zero, when invoked
 
-The [offline interactive workflow](docs/demo.html) highlights five steps over
-60 seconds. Download the HTML file and open it in a browser; GitHub's file view
-shows its source. It uses only explanatory text, makes no model calls, and is
-**not a recording of a live MCP run**.
+[![fig1](benchmarks/results/assets/fig1-unsafe-assertions.png)](benchmarks/results/integrity-claim-gate-paired-20260827.md)
 
-| Time | What the viewer sees |
-| --- | --- |
-| 00–12 s | A search hit is labelled `candidate_only`. |
-| 12–24 s | The registered file, exact range, and current SHA-256 are checked. |
-| 24–36 s | Eligibility checks integrity, range, and count; a mismatch blocks evidence. |
-| 36–48 s | The host reviews meaning, conflicts, and source quality. |
-| 48–60 s | The host answers with support or explicitly abstains. |
+**Setup.** Two paired executions, one synthetic and one real. Synthetic: 24
+tasks × 2 arms × 3 reps (144 runs), each task planting one correct and one
+altered value in a corpus with an injected integrity fault (post-index
+mutation, line drift, stale index, withdrawn/missing/unregistered evidence,
+conflicts, plus negative controls). Real: 27 tasks over an actual
+eight-month research project's ledger — **every fault occurred naturally**;
+nothing was mutated for the benchmark. Paired design so each task is its
+own control; the model (gpt-5.6-sol, medium) and prompts are identical
+across arms except evidence access.
+**Why this setup.** Planted values make scoring deterministic (no judge
+discretion on the primary endpoint); natural faults answer the "synthetic
+faults are strawmen" objection.
+**Result.** Hash-detectable fault stratum: filesystem 21–22/45 unsafe vs
+gated **0/45** (RD 0.49 [0.33, 0.63]); real corpus 23–26/27 vs **0/27**
+(RD 0.85 [0.64, 0.94]); clean coverage 21/21 in both arms.
+**What this licenses.** *When the eligibility workflow runs, unsafe
+assertions on integrity-broken evidence go to zero at no clean-coverage
+cost.* It does not license "the MCP makes agents safe" — see benchmark 4.
 
-The guide links each step to the implementation. It does not create a source
-registration, approval, or benchmark.
+### 2 · What does it cost? — retrieval effort, not blocking
 
-## Three design decisions
+[![fig2](benchmarks/results/assets/fig2-utility-burden.png)](benchmarks/results/real-corpus-integrity-paired-20260828.md)
 
-| Decision | Why this choice | Tradeoff |
-| --- | --- | --- |
-| **1. Canonical JSONL; rebuildable indexes** | Preserve research history while repairing or replacing SQLite, FTS, and dense projections. | More explicit provenance and freshness checks; an index cannot be the authority. |
-| **2. Journaled ingest with external approval** | Bind multiple file writes to exact before/after hashes and recover the same approved transaction after interruption. | More state and recovery logic; this is not a cross-file atomic filesystem transaction. |
-| **3. A narrow supported distribution** | Ship memory, governance, retrieval, and Codex integration without promising prototype provider-runtime compatibility. | A smaller integration surface; other generation providers remain repository experiments. |
+**Setup.** Same paired runs, secondary endpoints: false blocks on
+answerable tasks, uncached tokens, evidence-binding validity.
+**Result.** False blocks 9/54 on the real corpus — all nine traced to
+legacy events recorded without source references (evidence-chain quality,
+not the gate, is the binding constraint). Tokens ~1.4–1.9× filesystem.
+Evidence binding valid 81/81 in the gate arm vs 52/81 filesystem.
+**What this licenses.** *The gate's cost is retrieval chattiness and
+legacy-chain gaps, not wrongful blocking of intact evidence.*
 
-Read the decisions and alternatives:
-[ADR-0001](docs/decisions/0001-canonical-authority.md) ·
-[ADR-0002](docs/decisions/0002-recoverable-ingest.md) ·
-[ADR-0003](docs/decisions/0003-supported-wheel-surface.md).
+### 3 · Where does the payload go? — search, not verification
 
-## Try the released package
+[![fig3](benchmarks/results/assets/fig3-payload-composition.png)](benchmarks/results/real-corpus-integrity-paired-20260828.md)
 
-For the complete installation, Codex setup, source-registration, approved
-ingest, semantic retrieval, troubleshooting, and update flow, read the
-**[Korean user guide](docs/user-guide.md)**.
+**Setup.** Byte-level decomposition of all tool results in the real-corpus
+gate arm (81 runs, 29.4 MB), plus a same-day optimization pass re-run.
+**Result.** 93.4% of payload is candidate search; verification itself
+(fetch + eligibility) is 5.3%. The optimization pass halved transport
+(−49% payload) with fault-unsafe still 0.
+**What this licenses.** *Verification is cheap; retrieval dominates cost
+and is where optimization belongs.*
+
+### 4 · Does anyone actually call the gate? — no, not without policy
+
+[![fig4](benchmarks/results/assets/fig4-rebench.png)](benchmarks/results/rebench-ablation-v1-20260828.md)
+
+**Setup.** The scaffold-removal ablation (preregistered, 3 arms × 24 × 3 =
+216 runs): identical tasks with **no claim types, no scope preamble, no
+tool naming in any prompt** — the original scaffold is the treatment being
+tested. Arms: filesystem, MCP-attached-but-unprompted, and a cheap
+baseline (one instruction + a registration-time hash manifest).
+**Why this setup.** Benchmark 1's 0/45 was measured under an operator
+prompt that told the model to use the workflow. A reviewer's question —
+"if the gate isn't called, there is no protection" — required measuring
+activation itself, per the tool-usage-awareness literature.
+**Result.** The natural arm made **zero MCP calls in 72/72 runs** (all 30
+tools verifiably exposed): unsafe 24/45, identical to filesystem
+(RD exactly 0.000). The manifest baseline fixed only hash-visible faults
+(10/45) and misses everything semantic.
+**What this licenses.** *Effective protection = activation × enforcement,
+and un-prompted activation is 0%. Any headline safety claim for an agent
+memory tool must be conditioned on activation.* This is the paper's
+central honest finding, not a defect disclosure.
+
+### 5 · Can deployable artifacts recover activation? — policy yes, schema no
+
+[![fig5](benchmarks/results/assets/fig5-layers.png)](benchmarks/results/rebench-ablation-v1.1-20260829.md)
+
+**Setup.** Preregistered amendment, 216 more runs: a repository
+`AGENTS.md` policy file (workflow mandate + session-scope preapproval), a
+product-only lever (activation triggers in the two tool descriptions), and
+a clean rerun of the natural arm after a disclosed fixture-contamination.
+**Result.** Tool-description triggers: 0/45 activation — a dead lever.
+`AGENTS.md`: activation **42/45 (93%)**, unsafe halved to 12/45 — but all
+12 held *eligible* receipts: in 9 the model fetched the faulted source,
+saw the mismatch, silently dropped it, and cited only intact evidence.
+**What this licenses.** *A one-file repository policy restores adoption;
+tool schemas alone do not. And a third protection layer exists — citation
+discipline — because the gate can only judge the citation set it is
+given.*
+
+### 6 · Enforcing citation discipline — information loses, enforcement wins
+
+[![fig6](benchmarks/results/assets/fig6-ladder.png)](benchmarks/results/rebench-v1.2-v1.3-citation-discipline-20260829.md)
+
+**Setup.** Two more preregistered steps (72 runs each). v1.2: the server
+logs the session's fetches and the receipt *discloses* fetched-but-uncited
+mismatched evidence with an instruction to abstain or address it. v1.3:
+same detection, but an active material claim **fails closed**
+(`OMITTED-MISMATCHED-EVIDENCE`); citing the mismatched reference lifts the
+block.
+**Result.** Disclosure fired with perfect precision (13/45 fault, 0/21
+clean, 0/6 negative-control) and was **overridden in 9/13** — falsified by
+its own preregistered rule. Enforcement: unsafe **4/45** (bar ≤ 4 met),
+0/12 unsafe where the block fired, zero false blocks, clean 21/21. The
+residual four are intact-hash semantic states (withdrawn, irrelevant) the
+integrity gate is documented not to judge.
+**What this licenses.** *The measured ordering — information < instruction
+< enforcement — held at every layer tested. The enforcement ships in this
+package and was verified live on the installed build.* Adversarial audit
+of the governance/ingest surface: 25/25 hostile inputs fail closed
+([audit](benchmarks/adversarial/audit-results-README.md)).
+
+### What none of this licenses
+
+Generalization beyond one model family and one real corpus;
+defense against faults whose hashes are intact (withdrawn, stale-but-valid,
+irrelevant evidence — measured to defeat every arm); anything about
+corruption that precedes registration (both arms lose 6/6 by design);
+agent behavior under the multi-agent governance contracts (the controls
+fail closed under direct adversarial input, but no model-in-the-loop
+governance benchmark exists yet).
+
+## Getting started — build the RAG store, connect the MCP
+
+Every command below was executed against the released package in a clean
+sandbox before this section was written; the outputs shown are real.
+
+### 0. Install
 
 ```bash
-python -m pip install "universal-research-mcp==0.8.5"
-universal-research --version
-universal-research init ./my-research
+pip install universal-research-mcp
 ```
 
-Expected version: `0.8.5`. Initialization creates an **empty** project; it does
-not crawl your files. Use the [input tutorial](docs/input-cli-tutorial.md) to
-register sources and create an approved record before expecting search results.
+This installs the `universal-research` CLI (alias: `urmcp`) and the MCP
+server. Verify: `universal-research --version` → `0.8.5`.
 
-Then register the local server in Codex:
+### 1. Initialize a store
+
+```bash
+universal-research init ~/my-research
+```
+
+Creates the canonical layout and an empty, healthy lexical index:
+
+```
+data/events/sources.jsonl      # source registry (path → sha256)
+data/events/daily/…            # append-only canonical events (JSONL)
+data/index/research.sqlite     # derived FTS5 index
+data/index/index-health.json   # index fingerprint + health
+```
+
+### 2. Register a source file
+
+Put a document in the project, then bind its exact bytes:
+
+```bash
+universal-research source register docs/calibration.md \
+  --source-id src_calib --source-type markdown --root ~/my-research
+```
+
+The reply records `source_sha256` (the file's SHA-256 at registration) and
+refreshes the index. From now on, evidence citing this file is verified
+against that hash.
+
+### 3. Approve, then record
+
+Canonical writes are governed: a human approval record must exist first,
+and every non-approval record must reference one.
+
+```bash
+universal-research record template            # prints the record shape
+universal-research record approve approval.json --confirm approval_calib --root ~/my-research
+universal-research record append obs.json --approval-ref approval_calib --root ~/my-research
+```
+
+The observation's `source_refs` carry the path, line range, and the
+registered hash — that triple is what the evidence gate later verifies.
+
+### 4. Keep the index current
+
+```bash
+universal-research index ensure --kind lexical --root ~/my-research
+universal-research index status --kind lexical --root ~/my-research
+```
+
+`ensure` refuses to rebuild over a drifted registered source (fail-closed);
+`status` reports the fingerprint the retrieval gate checks on every call.
+Optional offline semantic retrieval: `universal-research semantic setup`
+(plans an isolated local SentenceTransformer environment; nothing is
+downloaded without an explicit step).
+
+### 5. Connect the MCP server to your host
+
+Codex (or any MCP host) launches the stdio server:
 
 ```toml
+# ~/.codex/config.toml style
 [mcp_servers.universal_research]
 command = "universal-research"
-args = ["serve", "--no-auto-index"]
-cwd = "/absolute/path/to/my-research"
+args = ["serve", "--root", "/home/you/my-research", "--no-auto-index"]
 ```
 
-`--no-auto-index` explicitly disables index writes at startup. Refresh derived
-indexes separately when that operation is approved; omitting the flag enables
-automatic indexing in the CLI. Do not use a read-only reference project as the
-writable research root. See the [host integration guide](docs/host-integration.md)
-for the full setup.
+Or install the Codex plugin (`plugin/universal-research-memory/`), whose
+`.mcp.json` runs the same command. On session start the server delivers
+its scope instructions (ASK-FIRST), and the model sees the memory tools.
 
-### What ships in v0.8.5
+### 6. The evidence loop your agent should run
 
-- Lexical, local semantic, hybrid, and adaptive **candidate** retrieval.
-- Exact registered-range fetch and deterministic evidence-eligibility receipts.
-- Append-only records, shared CLI/MCP writer locking, and recoverable ingestion.
-- Codex governance contracts and a secure harness for separately approved runs.
-- An optional, explicitly published read-only demo corpus.
-- Managed local semantic snapshots bound to an immutable model revision and
-  verified file inventory; setup requires its own approved plan.
+Executed verbatim against the store built above:
 
-The supported host is **Codex**. The wheel excludes experimental generation
-providers, plugin-owned agent runtime, and provider execution harness modules.
-Local embeddings do not imply generation-provider support.
+1. `memory_search_candidates {query: "dead-time correction", mode: "lexical"}`
+   → returns the observation as a **candidate** (`candidate_only: true` —
+   a score is never evidence).
+2. `memory_fetch_evidence {path, start_line, end_line, event_id, expected_sha256}`
+   → `integrity_status: "matched"` and the exact cited lines; a drifted
+   file instead returns `mismatched` and withholds content.
+3. `memory_check_evidence_eligibility {claim, claim_type, materiality, evidence:[…]}`
+   → `status: "eligible"` for this intact single-source result claim.
+   The same call returns `blocked: OMITTED-MISMATCHED-EVIDENCE` if the
+   session fetched a mismatched source and did not cite it.
 
-[Semantic retrieval](docs/semantic-retrieval.md) ·
-[Secure harness](docs/secure-harness.md) ·
-[Public demo deployment](docs/public-demo.md)
-
-## Experiments and limits
-
-Two paired executions completed on 2026-08-27/28 are the first whose primary
-safety contrast excludes zero. Both carry documented deviations from the
-preregistered confirmatory plan, and the earlier development studies remain
-listed separately; sample sizes and scores must not be pooled.
-
-### Paired executions, 2026-08-27/28
-
-<a href="benchmarks/results/integrity-claim-gate-paired-20260827.md"><img src="benchmarks/results/assets/fig1-unsafe-assertions.png" width="1400" alt="Two-panel bar chart of unsafe assertions on integrity-broken evidence. Synthetic corpus, 45 hash-detectable fault pairs: filesystem 21 of 45, MCP plus gate 0 of 45, McNemar p equal to 9.5e-7. Real eight-month corpus, 27 natural fault pairs: filesystem 26 of 27, MCP plus gate 0 of 27, p equal to 3.0e-8."></a>
-
-| Paired execution | Fault unsafe: filesystem | Fault unsafe: MCP + gate | Clean coverage | False blocks (gate) |
-| --- | ---: | ---: | ---: | ---: |
-| [Synthetic, 24 tasks × 3 reps](benchmarks/results/integrity-claim-gate-paired-20260827.md) | 21 / 45 | **0 / 45** | 21/21 both | 0 |
-| [Real corpus, 27 tasks × 3 reps](benchmarks/results/real-corpus-integrity-paired-20260828.md) | 26 / 27 | **0 / 27** | 51/54 vs 45/54 | 9 (16.7%) |
-
-Exact McNemar p = 9.5×10⁻⁷ and 3.0×10⁻⁸; blinded evaluation cross-checked by
-an independent deterministic scorer. Burden was ~1.9× (synthetic) and ~1.4×
-(real) uncached tokens per run; a same-day
-[optimization pass](benchmarks/results/real-corpus-integrity-paired-20260828.md)
-halved tool transport while keeping fault unsafe assertions at zero. The two
-measured negative controls held: pre-registration poisoning defeated both
-arms identically, and hash-valid answers can still be stale. On the real
-corpus every gate false block traced to legacy events recorded without
-source references — evidence-chain quality, not the hash gate, bounds
-utility. Each report lists its deviations, evaluator disclosures, and
-interpretation boundary.
-
-### What remains unmeasured
-
-The paired executions above exercise the evidence workflow (search, fetch,
-eligibility gate). The governance layer — the multi-agent contract tools and
-the eleven fixed roles ([contracts](docs/multi-agent-governance.md)) — has
-**zero benchmark coverage** to date: no experiment here measures whether
-those contracts change agent behavior. The same holds for the ingest-receipt
-path under adversarial use. Statements about them are design claims, not
-measured ones. A preregistered ablation
-([protocol](benchmarks/protocols/rebench-ablation-v1.md)) additionally
-re-measures the headline safety contrast without prompt scaffolding and
-against a cheap hash-manifest baseline; its results ship separately.
-
-### The earlier 96-run development study
-
-24 public synthetic tasks × four conditions, one run per task and condition.
-The separate condition-blinded evaluator was an LLM, not a human reviewer.
-
-<a href="benchmarks/results/integrity-claim-gate-v1-development-20260813.md"><img src="docs/assets/integrity-claim-gate-v1-development-20260813.png" width="1400" alt="Development study graph showing unsafe material assertion rate, clean supported-claim coverage, and token and latency burden across filesystem, manifest, MCP evidence-only, and MCP plus evidence-eligibility conditions. The paired confidence interval includes zero, so the result is not confirmatory evidence."></a>
-
-*Public synthetic development corpus: 24 tasks × 4 conditions × 1 run. The
-paired 95% interval includes zero; this is not confirmatory product evidence.*
-
-| Condition | Unsafe assertions / 18 fault tasks | Clean claim coverage | Mean tokens | Mean latency |
-| --- | ---: | ---: | ---: | ---: |
-| Filesystem | 4 / 18 | 66.7% | 73,596 | 23.05 s |
-| Filesystem + manifest | 4 / 18 | 16.7% | 67,962 | 23.18 s |
-| MCP evidence-only | 6 / 18 | 100.0% | 90,047 | 29.70 s |
-| MCP + evidence eligibility | 2 / 18 | 100.0% | 113,951 | 37.21 s |
-
-For filesystem → MCP + eligibility, the paired unsafe-assertion difference was
-−11.1 percentage points, with a task-bootstrap 95% interval of **−33.3 to +11.1
-points**. It includes zero. The gated condition used **1.55× tokens and 1.61×
-time**, and still failed on conflicting and semantically irrelevant current
-evidence. Evidence-only retrieval had more unsafe assertions than filesystem.
-These are narrow development observations, **not proof of general
-hallucination reduction or improved research quality**.
-
-Methods, evaluation cost, and all caveats remain in the
-[full four-condition report](benchmarks/results/integrity-claim-gate-v1-development-20260813.md).
-Historical reports call the eligibility check “Claim Gate”; those names are
-retained for provenance, not a claim that the tool verifies truth.
-
-### Other evidence, kept separate
-
-| Evidence | Status | What it can establish |
-| --- | --- | --- |
-| Earlier retrieval and safety pilots | Completed, exploratory | Narrow source-mutation observations and overhead, including negative findings. |
-| A/B/C integration diagnostic, 2026-08-26 | Completed; one task, three responses plus seven startup diagnostics | Tool integration with retained failures. Unequal input budgets and no repetitions prevent an efficacy comparison. |
-| Full 432-trial comparison | **Not a completed result** | A planned count is not evidence. No finished 432-trial result is claimed for v0.8.5. |
-| Software tests and release checks | Engineering verification | Contract and packaging behavior; not participant-model benchmark results. |
-
-[All completed reports](benchmarks/results/README.md) ·
-[Integration diagnostic](benchmarks/results/abc-integration-diagnostic-20260826.md) ·
-[Benchmark disclosure](docs/benchmark-disclosure.md)
-
-### Boundaries that remain
-
-- Hashes establish revision identity, not the truth of source prose.
-- Evidence count is based on distinct event records, not independent authors
-  or independent scientific observations.
-- The MCP cannot globally control native agents or other processes started by
-  an unrestricted host. Approval enforcement has a defined execution boundary.
-- This is not an authenticated private remote service or a multi-tenant SaaS.
-  Public deployment needs a separately reviewed operational boundary.
-- Historical synthetic results do not establish released-v0.8.5 efficacy,
-  production reliability, or statistically decisive superiority.
-
-[Security model](docs/security.md) · [Governance contracts](docs/multi-agent-governance.md)
+**Adoption note (measured, not advice).** In our ablation the model never
+called these tools without workspace policy. Add an `AGENTS.md` to the
+project that mandates the loop above and preapproves the session scope for
+non-interactive runs — that single file took gate activation from 0% to
+93% ([details](benchmarks/results/rebench-ablation-v1.1-20260829.md)).
 
 ## Citation
 
