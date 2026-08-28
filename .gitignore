@@ -43,3 +43,5 @@ benchmarks/results/*
 !benchmarks/results/assets/
 data/events/daily/
 data/events/sources.jsonl
+!benchmarks/results/trace-audit-20260828.json
+!benchmarks/results/trace-audit-20260828.md
