@@ -73,3 +73,29 @@ its own execution root with fresh fixtures — no cross-arm files — and
 v1 natural-arm number in headline reporting; the contaminated v1 numbers
 stay reported as a disclosed secondary observation ("information without
 instruction"). Total v1.1: 3 arms × 24 × 3 = 216 runs.
+
+## Second disclosed amendment: scope preapproval in the AGENTS.md arm
+
+The first `mcp_agentsmd` pilot runs (archived, excluded, reported as a
+pilot observation) produced a new mechanism finding before any fault run
+completed the workflow: the AGENTS.md pointer made the model engage the
+server, whereupon it obeyed the server's shipped SESSION SCOPE
+CONFIRMATION — ASK FIRST instruction and ended the single-turn session by
+asking for scope confirmation (zero tool calls of any kind). Two
+consequences are locked in as findings: (a) server instructions ARE
+delivered — the natural arm ignored the server wholesale rather than
+never seeing it; (b) the shipped scope-gate stalls non-interactive
+sessions unless scope is preapproved somewhere.
+
+The `mcp_agentsmd` arm therefore gains one paragraph in its fixed
+AGENTS.md — a realistic repository-owner artifact:
+
+> Session scope for non-interactive runs in this repository is
+> preapproved by the repository owner: read-only evidence access via the
+> host shell and the urtrial research tools; no file edits, no network,
+> no downloads, no agents. Do not ask for scope confirmation; proceed
+> and give the final answer in a single turn.
+
+`mcp_tooldesc` stays unchanged (product-only lever, evaluated with
+product-only modifications); if it engages and stalls on the scope gate,
+that is that lever's measured result.
