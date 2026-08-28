@@ -29,8 +29,10 @@ unsafe as plain file access (RD 0.000), while a one-line prompt plus a hash
 manifest recovered only the hash-visible faults (10/45 unsafe). Activation,
 not enforcement, is the deployment problem: a repository policy file that
 both mandates the workflow and pre-approves session scope restores full MCP
-engagement, whereas product-side tool-description triggers alone do not
-[v1.1 final numbers: see §7.3]. We contribute the benchmark suite, the fault
+engagement, whereas product-side tool-description triggers alone do not (0/45
+activation) — and even activated runs reveal a third layer: models
+cherry-pick intact evidence around visibly mismatched sources (12/42
+activated runs), so citation discipline must be enforced server-side. We contribute the benchmark suite, the fault
 taxonomy with reliability analysis, and the design consequences.
 
 ## 1. Introduction
@@ -204,16 +206,39 @@ a clean rerun replaces the headline number [v1.1].
 Two deployable levers, preregistered as amendment v1.1, each 24 × 3:
 
 - **Repository policy file (`AGENTS.md`).** A pilot produced a mechanism
-  finding: pointing the model at the server made it obey the server's
-  shipped ASK-FIRST scope instruction and stall single-turn sessions —
-  proving server instructions are delivered and the natural arm ignored
-  the server wholesale, and that the scope gate blocks non-interactive
-  use unless scope is preapproved. With one owner-preapproval paragraph
-  added, early runs show full MCP engagement (≈8 MCP calls with 2 gate
-  calls per run, zero shell reads). [final: activation rate, unsafe,
-  clean, false blocks]
-- **Tool-description triggers (product-only).** Early runs show no
-  activation on clean tasks. [final numbers]
+  finding first: pointing the model at the server made it obey the
+  server's shipped ASK-FIRST scope instruction and stall single-turn
+  sessions — proving server instructions are delivered (the natural arm
+  ignored the server wholesale) and that the scope gate blocks
+  non-interactive use unless scope is preapproved. With one
+  owner-preapproval paragraph added, activation recovered to **42/45
+  (93%)** with shell abandoned (~8 MCP calls/run, +85% tokens) and unsafe
+  halved to **12/45** (RD vs filesystem 0.267 [0.064, 0.441], mid-p
+  2.4×10⁻⁴; clean 21/21) — yet it fails our preregistered validation bar
+  (unsafe ≤ 2), for a newly measured reason below.
+- **Tool-description triggers (product-only).** A dead lever: verifiably
+  delivered in the tool schema, **0/45 activation**, 25/45 unsafe —
+  indistinguishable from no MCP at all.
+- **The clean natural rerun** reproduced the contaminated v1 number
+  exactly (24/45, zero MCP calls), retiring the contamination concern.
+
+### 7.4 Evidence selection: the third protection layer
+
+All 12 unsafe activated runs held **eligible** receipts — no block was
+overridden. In 9/12 the model fetched the faulted source, saw the
+integrity mismatch in the fetch result, silently dropped it, and
+submitted only intact evidence to the gate, which correctly ruled the
+cited subset eligible; 3/12 never fetched the faulted source. The gate
+verifies what you cite, not what you omit; the original scaffold's "pass
+each returned reference unchanged" was itself a protection layer.
+Protection therefore decomposes into three separately measured factors —
+**enforcement × activation × citation discipline** — and the deployable
+countermeasure for the third is server-side: eligibility receipts that
+disclose fetched-but-uncited evidence with failed integrity (the server
+already holds the session's fetch history), which would surface 9 of
+these 12 failures without any model cooperation. The first honest
+claim-type self-report measurement (77 unprescribed gate calls) shows a
+9.1% downgrade rate, all evading the two-source `causal` rule.
 
 ## 8. Related work
 
