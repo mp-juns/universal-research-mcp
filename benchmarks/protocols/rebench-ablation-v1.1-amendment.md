@@ -58,3 +58,18 @@ blocked-run endpoints.
   scaffolding is currently the only measured activation mechanism.
 - Pre-run probes (AGENTS.md visibility; tool-description delivery) are
   harness-validation runs, disclosed and excluded from the matrix.
+
+## Disclosed harness defect and clean rerun (added before v1.1 runs)
+
+Post-hoc trace inspection found v1 fixture sharing let the
+`manifest_prompt` setup write `HASH-MANIFEST.txt` into fixture roots that
+`mcp_natural` later ran in (68/72 natural runs saw it; 63 actively read
+it or ran sha256sum). Direction of bias is conservative for the headline
+(extra integrity information did not reduce natural-arm unsafe below the
+filesystem arm's, and MCP-activation zero cannot be explained by it), but
+the pure condition was compromised. Therefore v1.1 (a) runs every arm in
+its own execution root with fresh fixtures — no cross-arm files — and
+(b) adds a clean `mcp_natural` rerun (24 × 3) whose result replaces the
+v1 natural-arm number in headline reporting; the contaminated v1 numbers
+stay reported as a disclosed secondary observation ("information without
+instruction"). Total v1.1: 3 arms × 24 × 3 = 216 runs.
