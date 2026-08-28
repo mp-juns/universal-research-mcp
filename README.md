@@ -4,8 +4,8 @@
 
 **Research memory with traceable sources, explicit write approval, and measured — not assumed — safety.**
 
-[![Version](https://img.shields.io/badge/version-v0.8.5-0b766e)](https://pypi.org/project/universal-research-mcp/0.8.5/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.8.5/)
+[![Version](https://img.shields.io/badge/version-v0.9.0-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.0/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.0/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22118223.svg)](https://doi.org/10.5281/zenodo.22118223)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
@@ -198,7 +198,7 @@ pip install universal-research-mcp
 ```
 
 This installs the `universal-research` CLI (alias: `urmcp`) and the MCP
-server. Verify: `universal-research --version` → `0.8.5`.
+server. Verify: `universal-research --version` → `0.9.0`.
 
 ### 1. Initialize a store
 
@@ -294,9 +294,8 @@ non-interactive runs — that single file took gate activation from 0% to
 ## Citation
 
 Use the concept DOI [`10.5281/zenodo.22118223`](https://doi.org/10.5281/zenodo.22118223)
-to cite the software across releases. For an exact, reproducible reference to
-the core `v0.8.5` archive, use the version DOI
-[`10.5281/zenodo.22118224`](https://doi.org/10.5281/zenodo.22118224).
+to cite the software across releases; it always resolves to the latest
+archived release, and each GitHub Release mints its own version DOI under it.
 
 ## Development reference
 

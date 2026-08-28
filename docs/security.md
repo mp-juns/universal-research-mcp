@@ -88,8 +88,9 @@ secret boundary. The public demo currently rejects local learned embedding
 models because their external snapshot is not yet included in the publication
 manifest.
 
-Provider-backed runtime modules retained in the source tree are internal
-prototypes and excluded from the public wheel. They are outside the 0.8.5 support and compatibility contract and
+Provider-backed runtime prototypes were removed from the source tree
+entirely (commit a40b5b2); no such module ships or remains. Any future
+provider integration is outside the 0.9.0 support and compatibility contract and
 must not be treated as an enabled security boundary. A future provider release
 requires a separate threat-model review, credential boundary, explicit
 cost/network approval, and distribution contract before activation.

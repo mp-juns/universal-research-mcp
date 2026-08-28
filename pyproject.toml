@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-research-mcp"
-version = "0.8.5"
+version = "0.9.0"
 description = "Governed MCP for provenance-first research memory, evidence re-verification, and controlled canonical ingestion."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -69,9 +69,8 @@ select = ["E4", "E7", "E9", "F"]
 python_version = "3.11"
 files = ["universal_research_mcp"]
 ignore_missing_imports = true
-# Retained provider/runtime prototypes use runtime-validated mappings and
-# third-party structural interfaces. Keep namespace-wide static checking while
-# excluding their pre-existing gradual-typing categories from the release gate.
+# Pre-existing gradual-typing categories stay excluded from the release
+# gate; strict typing is re-enabled per-module below for the core boundaries.
 disable_error_code = ["arg-type", "assignment", "attr-defined", "call-overload", "dict-item", "misc", "operator", "union-attr"]
 
 [[tool.mypy.overrides]]
