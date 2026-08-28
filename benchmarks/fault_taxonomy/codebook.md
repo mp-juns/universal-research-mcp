@@ -24,6 +24,19 @@ the local annex, not in this public file.
    **B6 wrong at registration**
 6. Otherwise → **B1 supports**
 
+Clarifications (v1.1, added after the first reliability pass; deviation
+recorded):
+- **B0 unratable**: a link whose recorded claim has no propositional content
+  (e.g., a degenerate or truncated summary) is coded B0, excluded from the
+  blind-spot numerator and denominator, and reported separately.
+- **B5 scope**: only a later record that declares this claim's content
+  invalid, withdrawn, or replaced-as-wrong. The mere existence of later
+  versions, audits, or successor releases is not supersession.
+- **B2 boundary for interpretive claims**: an interpretation entailed by the
+  data inside the registered range (e.g., a direction readable from signed
+  gaps) counts as supported; only interpretations requiring information
+  outside the range are overreach.
+
 Severity order (most severe first): B6 > B4 > B5 > B3 > B2 > B1.
 
 ## Stage C tree (hash_mismatch links, after machine triage)

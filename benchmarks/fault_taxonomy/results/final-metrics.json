@@ -11,16 +11,19 @@
  "gate_visibility_D1": 0.1257,
  "chain_broken_share": 0.2362,
  "stage_b": {
-  "n": 80,
-  "blind_spot": 5,
-  "rate": 0.0625,
+  "n_sampled": 80,
+  "n_rated": 79,
+  "unratable_B0": 1,
+  "blind_spot": 6,
+  "rate": 0.0759,
   "wilson_95": [
-   0.027,
-   0.1381
+   0.0353,
+   0.156
   ],
   "codes": {
-   "B1": 75,
-   "B2": 5,
+   "B0": 1,
+   "B1": 73,
+   "B2": 6,
    "B3": 0,
    "B4": 0,
    "B5": 0,
@@ -36,11 +39,31 @@
   },
   "substantive_rate": 0.0328
  },
- "addressable_D1": 0.0654,
+ "addressable_D1": 0.0545,
  "addressable_D1_range_over_blindspot_CI": [
-  0.0307,
-  0.1395
+  0.0273,
+  0.1103
  ],
  "baseline": 0.3,
- "decision": "hash_gate_alone_insufficient"
+ "decision": "hash_gate_alone_insufficient",
+ "reliability": {
+  "coders": "primary Claude session (machine-assisted); second GPT-5.6 codex exec read-only, blind to primary codes",
+  "items": 20,
+  "seed": 20260830,
+  "initial_raw_agreement": "15/20",
+  "cohen_kappa": 0.0,
+  "kappa_paradox": true,
+  "gwet_ac1": 0.729,
+  "codebook_v1_1_reruns": {
+   "disputes": 5,
+   "converged": 3
+  },
+  "residual_adjudication": {
+   "mode": "evidence-based; owner adjudication deferred at owner's direction",
+   "link_42": "corrected stimulus (whole-file citation misprinted as range 1-1) -> converged B1",
+   "link_75": "primary flipped to B2: '0.8.1-descended' component absent from registered range"
+  },
+  "final_adjudicated_agreement": "20/20",
+  "honest_estimate": "pre-adjudication Gwet AC1 = 0.729"
+ }
 }
