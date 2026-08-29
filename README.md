@@ -211,6 +211,12 @@ The server is plain stdio — any MCP host launches the same command.
 claude mcp add universal-research -- universal-research serve --root ~/my-research --no-auto-index
 ```
 
+**Claude Desktop — one-click**: download
+[`universal-research-memory-0.9.3.mcpb`](https://github.com/mp-juns/universal-research-mcp/releases/download/v0.9.3/universal-research-memory-0.9.3.mcpb)
+and double-click (or Settings → Extensions → Install from file). Claude
+Desktop asks for your research folder and launches the server via uv; an
+empty folder is initialized automatically. Manual config alternative:
+
 **Claude Desktop / Cursor** (`claude_desktop_config.json` / `mcp.json`)
 ```json
 {
