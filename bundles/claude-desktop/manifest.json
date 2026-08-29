@@ -1,0 +1,59 @@
+{
+  "manifest_version": "0.4",
+  "name": "universal-research-memory",
+  "display_name": "Universal Research Memory",
+  "version": "0.9.3",
+  "description": "Provenance-first research memory: hash-bound evidence fetch and a fail-closed eligibility gate over an append-only ledger.",
+  "long_description": "Search returns candidates, never evidence. Before a material claim is released, the server re-reads the exact registered source range and checks its current SHA-256 revision; claims that silently omit evidence the session fetched and saw fail integrity are blocked. Safety properties are benchmarked, not assumed: https://github.com/mp-juns/universal-research-mcp#benchmarks",
+  "author": {
+    "name": "mp-juns",
+    "url": "https://github.com/mp-juns"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mp-juns/universal-research-mcp"
+  },
+  "homepage": "https://github.com/mp-juns/universal-research-mcp",
+  "license": "MIT",
+  "keywords": [
+    "research",
+    "provenance",
+    "evidence",
+    "rag",
+    "memory"
+  ],
+  "server": {
+    "type": "uv",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "${__dirname}",
+        "${__dirname}/server/main.py",
+        "--root",
+        "${user_config.research_root}"
+      ]
+    }
+  },
+  "user_config": {
+    "research_root": {
+      "type": "directory",
+      "title": "Research memory folder",
+      "description": "The folder holding (or that will hold) your research store. On first run an empty folder is initialized automatically; add documents any time with 'universal-research quickstart <folder> --yes'.",
+      "required": true,
+      "default": "${HOME}/research-memory"
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  }
+}
