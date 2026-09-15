@@ -1111,7 +1111,8 @@ def semantic_status(
 
 
 def _sync_file(path: Path) -> None:
-    with path.open("rb") as handle:
+    # Windows requires a writable descriptor for fsync, as in lexical staging.
+    with path.open("r+b") as handle:
         os.fsync(handle.fileno())
 
 
