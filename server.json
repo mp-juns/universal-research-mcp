@@ -6,13 +6,13 @@
     "url": "https://github.com/mp-juns/universal-research-mcp",
     "source": "github"
   },
-  "version": "0.9.3",
+  "version": "0.10.0",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "universal-research-mcp",
-      "version": "0.9.3",
+      "version": "0.10.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

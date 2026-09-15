@@ -77,6 +77,7 @@ class PublicDistributionTests(unittest.TestCase):
                 "docs/architecture.md",
                 "docs/failure-policy.md",
                 "docs/host-integration.md",
+                "docs/legacy-retrieval-migration.md",
                 "docs/public-demo.md",
                 "docs/research-operations-specification.md",
                 "docs/secure-harness.md",
@@ -173,6 +174,7 @@ class PublicDistributionTests(unittest.TestCase):
         self.assertIn("Codex-only", manifest["description"])
         self.assertIn("Codex host", manifest["interface"]["longDescription"])
         self.assertIn("external model APIs", manifest["interface"]["longDescription"])
+        self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 128)
         self.assertIn("Codex host-owned", manifest["interface"]["defaultPrompt"])
         self.assertIn("visualization off", manifest["interface"]["defaultPrompt"])
 

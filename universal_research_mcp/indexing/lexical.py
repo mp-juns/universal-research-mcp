@@ -76,8 +76,8 @@ def validate_registered_sources(
     if not sources_path.is_file():
         raise FileNotFoundError(f"canonical source manifest is missing: {sources_path}")
     records = _read_jsonl(sources_path)
-    if not records:
-        raise ValueError("populated canonical ledger has no registered sources")
+    # An empty registry permits discovery-only legacy corpora. Every source
+    # that is registered must still pass the byte and path checks below.
 
     verified: list[dict[str, str]] = []
     for index, record in enumerate(records, start=1):
@@ -263,8 +263,41 @@ def _record_fingerprint(database: Path, fingerprint: dict[str, Any]) -> None:
     connection.close()
 
 
+def _evidence_audit(db: sqlite3.Connection) -> dict[str, Any]:
+    """Classify canonical locators without promoting historical pointers."""
+    rows = db.execute("""
+        SELECT es.event_id, es.source_path, es.source_sha256,
+          CASE WHEN es.source_sha256 IS NULL OR es.source_sha256 = ''
+            THEN 'legacy_candidate_only'
+            WHEN EXISTS (SELECT 1 FROM sources AS s
+              WHERE s.source_path = es.source_path
+                AND lower(s.source_sha256) = lower(es.source_sha256))
+            THEN 'verified' ELSE 'unregistered_revision' END AS eligibility
+        FROM event_sources AS es JOIN events AS e ON e.event_id = es.event_id
+        WHERE e.event_type <> 'reference_document' AND es.source_path <> ''
+        ORDER BY es.event_id, es.source_path, es.source_sha256
+    """).fetchall()
+    counts = {state: sum(row[3] == state for row in rows)
+              for state in ('verified', 'legacy_candidate_only', 'unregistered_revision')}
+    ineligible = counts['legacy_candidate_only'] + counts['unregistered_revision']
+    return {
+        'source_evidence_eligible_count': counts['verified'],
+        'legacy_candidate_only_count': counts['legacy_candidate_only'],
+        'unregistered_revision_count': counts['unregistered_revision'],
+        'evidence_ineligible_count': ineligible,
+        'evidence_health': {'status': 'degraded' if ineligible else 'healthy', **counts},
+        'evidence_diagnostics': [dict(zip(
+            ('event_id', 'source_path', 'source_sha256', 'eligibility'), row
+        )) for row in rows if row[3] != 'verified'],
+    }
+
+
 def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str, Any]:
-    """Verify integrity, FTS retrieval, and canonical evidence eligibility."""
+    """Verify search integrity and report evidence eligibility separately.
+
+    Legacy pointers and unregistered historical revisions remain discovery
+    candidates. Only exact registered revisions may be fetched as evidence.
+    """
 
     if not database.is_file():
         raise RuntimeError(f"staged lexical index was not created: {database}")
@@ -314,38 +347,7 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
                 )
             retrieved_event_id = str(retrieved[0])
 
-        eligible_count = int(
-            db.execute(
-                """
-                SELECT COUNT(*)
-                FROM event_sources AS es
-                JOIN events AS e ON e.event_id = es.event_id
-                JOIN sources AS s
-                  ON s.source_path = es.source_path
-                 AND lower(s.source_sha256) = lower(es.source_sha256)
-                WHERE e.event_type <> 'reference_document'
-                """
-            ).fetchone()[0]
-        )
-        ineligible_source_count = int(
-            db.execute(
-                """
-                SELECT COUNT(*)
-                FROM event_sources AS es
-                JOIN events AS e ON e.event_id = es.event_id
-                LEFT JOIN sources AS s
-                  ON s.source_path = es.source_path
-                 AND lower(s.source_sha256) = lower(es.source_sha256)
-                WHERE e.event_type <> 'reference_document'
-                  AND es.source_path <> ''
-                  AND s.source_id IS NULL
-                """
-            ).fetchone()[0]
-        )
-        if ineligible_source_count:
-            raise RuntimeError(
-                "canonical events reference unregistered or hash-ineligible evidence"
-            )
+        evidence = _evidence_audit(db)
     return {
         "integrity": integrity,
         "event_count": event_count,
@@ -353,8 +355,8 @@ def verify_lexical_index(database: Path, expected_fingerprint: str) -> dict[str,
         "fingerprint": expected_fingerprint,
         "event_ids": [str(row[0]) for row in event_rows],
         "retrieved_event_id": retrieved_event_id,
-        "source_evidence_eligible_count": eligible_count,
-        "ineligible_source_count": ineligible_source_count,
+        **evidence,
+        "ineligible_source_count": evidence["evidence_ineligible_count"],
     }
 
 
@@ -388,6 +390,8 @@ def index_status(root: str | Path) -> dict[str, Any]:
         with closing(
             sqlite3.connect(f"file:{paths.lexical_db.as_posix()}?mode=ro", uri=True)
         ) as db:
+            audit = _evidence_audit(db)
+            result.update({key: value for key, value in audit.items() if key != "evidence_diagnostics"})
             integrity = str(db.execute("PRAGMA integrity_check").fetchone()[0])
             metadata = dict(db.execute("SELECT key, value FROM metadata"))
             tables = {
@@ -423,6 +427,7 @@ def index_status(root: str | Path) -> dict[str, Any]:
         **result,
         "status": "current" if current else "stale",
         "stale": not current,
+        "structural_current": current,
         "indexed_fingerprint": indexed,
         "integrity": integrity,
         "schema_version": metadata.get("schema_version"),
@@ -523,6 +528,11 @@ def _success_health(
             "source_evidence_eligible_count": verification[
                 "source_evidence_eligible_count"
             ],
+            "ineligible_source_count": verification["ineligible_source_count"],
+            "evidence_ineligible_count": verification["evidence_ineligible_count"],
+            "evidence_health": verification["evidence_health"],
+            "legacy_candidate_only_count": verification["legacy_candidate_only_count"],
+            "unregistered_revision_count": verification["unregistered_revision_count"],
         },
         "failures": [],
     }

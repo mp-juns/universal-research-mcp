@@ -1,6 +1,6 @@
 # Host Integration Contract
 
-> Support status for 0.9.3: Codex only. Other host adapters and
+> Support status for 0.10.0: Codex only. Other host adapters and
 > local/remote model-provider routes are design work, not supported runtime
 > integrations.
 
@@ -21,6 +21,12 @@ policy in both Skills. The hook reads no transcript, writes no state and
 cannot approve work. Codex must review and trust a plugin hook before running
 it; installing the plugin is not that trust decision. Do not use hook-trust
 bypass flags or create trust receipts on the user's behalf.
+
+After the user approves a specific hook, use Codex `/hooks` to trust that
+exact definition. Check that the installed hook is `trusted`, then verify a
+fresh session asks for scope before task tools. A changed hook definition
+requires review again; package installation and retrieval tests alone do not
+verify host startup behavior.
 
 The default plugin launcher uses `serve --no-auto-index`, so startup
 does not refresh derived indexes before the session question. After approval,

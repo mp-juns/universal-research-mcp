@@ -745,6 +745,13 @@ def _retrieval_verification(
             LIMIT 1
             """
         ).fetchone()
+        registered_target = latest is not None
+        if latest is None:
+            # A legacy-only corpus is still searchable. Verify its canonical
+            # summary without claiming that a source was fetched as evidence.
+            latest = lexical.execute(
+                "SELECT event_id FROM events ORDER BY date DESC, rowid DESC LIMIT 1"
+            ).fetchone()
         if latest is None:
             raise RuntimeError("retrieval verification could not select a canonical event")
         target_id = str(latest["event_id"])
@@ -769,8 +776,8 @@ def _retrieval_verification(
         paths,
         canonical["source_path"],
         canonical["source_sha256"],
-    )
-    if canonical_source is None:
+    ) if registered_target else None
+    if registered_target and canonical_source is None:
         raise RuntimeError("retrieval verification could not refetch canonical source")
 
     with closing(sqlite3.connect(f"file:{database.as_posix()}?mode=ro", uri=True)) as db:
@@ -828,7 +835,7 @@ def _retrieval_verification(
         "top_score": best,
         "candidate_found": True,
         "canonical_event_fetched": True,
-        "canonical_source_fetched": True,
+        "canonical_source_fetched": canonical_source is not None,
         "source_slice_fetched": source_slice_fetched,
     }
 

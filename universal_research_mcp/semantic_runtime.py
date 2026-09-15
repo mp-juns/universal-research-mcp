@@ -38,6 +38,8 @@ def _local_embedder(
     device: str,
     trust_local_model_code: bool,
     snapshot: SnapshotIdentity | None = None,
+    encoder_dtype: str | None = None,
+    max_length: int | None = None,
 ) -> LocalSentenceTransformerEmbedder:
     """Reuse an explicitly configured local embedder within one process.
 
@@ -55,6 +57,8 @@ def _local_embedder(
         device=device,
         trust_local_model_code=trust_local_model_code,
         snapshot=snapshot,
+        encoder_dtype=encoder_dtype,
+        max_length=max_length,
     )
 
 
@@ -84,6 +88,8 @@ def configured_backend(root: str | Path) -> SemanticBackend | None:
             model_path, device=str(backend["device"]),
             trust_local_model_code=bool(backend["trust_local_model_code"]),
             snapshot=snapshot,
+            encoder_dtype=backend.get("encoder_dtype"),
+            max_length=backend.get("max_length"),
         )
         return SemanticBackend(
             embedder=embedder,

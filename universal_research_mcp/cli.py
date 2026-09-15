@@ -579,6 +579,7 @@ def build_parser() -> argparse.ArgumentParser:
     for command in ("doctor", "validate"):
         diagnostic = subparsers.add_parser(command, help="Report readiness without changing state.")
         diagnostic.add_argument("--root", type=Path)
+        diagnostic.add_argument("--verbose", action="store_true", help="List evidence-ineligible canonical source references.")
 
     harness = subparsers.add_parser(
         "harness", help="Plan and run a hash-bound Codex session through isolated Docker workers.",
@@ -875,6 +876,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             "host_visualization_default": "off",
         },
     }
+    if getattr(args, "verbose", False) and report["lexical"].get("status") == "current":
+        from universal_research_mcp.indexing.lexical import verify_lexical_index
+        report["evidence_diagnostics"] = verify_lexical_index(
+            Path(report["lexical"]["lexical_db"]),
+            report["lexical"]["current_fingerprint"],
+        )["evidence_diagnostics"]
     _emit(report)
     return 0 if report["lexical"].get("status") == "current" else 2
 

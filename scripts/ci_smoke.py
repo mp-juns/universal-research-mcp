@@ -12,6 +12,7 @@ import tempfile
 
 
 BOUNDARY_TESTS = (
+    "tests/test_legacy_candidate_compatibility.py",
     "tests/test_memory_claim_gate.py",
     "tests/test_semantic_setup.py",
     "tests/test_semantic_runtime.py",
@@ -84,7 +85,10 @@ def main() -> int:
             # instead of the wheel whose platform compatibility we are checking.
             source_root = Path(__file__).resolve().parents[1]
             (root / "tests").mkdir()
-            for relative in sorted({node.split("::", 1)[0] for node in BOUNDARY_TESTS}):
+            test_files = {node.split("::", 1)[0] for node in BOUNDARY_TESTS}
+            # The compatibility tests share the canonical fixture constructor.
+            test_files.add("tests/test_lexical_index_foundation.py")
+            for relative in sorted(test_files):
                 shutil.copyfile(source_root / relative, root / relative)
             subprocess.run(
                 [str(python), "-m", "pytest", "-q", "-rs",

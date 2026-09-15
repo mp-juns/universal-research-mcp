@@ -1,5 +1,5 @@
 [project]
 name = "universal-research-memory-bundle"
-version = "0.9.3"
+version = "0.10.0"
 requires-python = ">=3.11"
-dependencies = ["universal-research-mcp==0.9.3"]
+dependencies = ["universal-research-mcp==0.10.0"]

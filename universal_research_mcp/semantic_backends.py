@@ -104,12 +104,17 @@ class LocalSentenceTransformerEmbedder:
     trust_local_model_code: bool = False
     provider_id: str = "local"
     snapshot: SnapshotIdentity | None = None
+    encoder_dtype: str | None = None
+    max_length: int | None = None
     _encoder: object | None = field(init=False, default=None, repr=False)
 
     @property
     def model_identity(self) -> str:
         path = str(Path(self.model_path).expanduser().resolve())
-        return f"{path}@sha256:{self.snapshot.manifest_sha256}" if self.snapshot is not None else path
+        identity = f"{path}@sha256:{self.snapshot.manifest_sha256}" if self.snapshot is not None else path
+        if self.encoder_dtype is not None or self.max_length is not None:
+            identity += f"#dtype={self.encoder_dtype};max_length={self.max_length}"
+        return identity
 
     def preflight(self) -> Availability:
         snapshot = Path(self.model_path).expanduser().resolve()
@@ -137,7 +142,7 @@ class LocalSentenceTransformerEmbedder:
         if not readiness.available:
             raise RuntimeError(readiness.reason)
         snapshot = Path(self.model_path).expanduser().resolve()
-        matches = model == self.model_identity if self.snapshot is not None else Path(model).expanduser().resolve() == snapshot
+        matches = model == self.model_identity
         if not matches:
             raise ValueError("semantic model does not match the approved local snapshot")
         encoder = self._encoder
@@ -167,10 +172,45 @@ class LocalSentenceTransformerEmbedder:
         from sentence_transformers import SentenceTransformer
 
         selected_device = None if self.device == "auto" else self.device
-        return SentenceTransformer(
+        encoder = SentenceTransformer(
             str(snapshot), device=selected_device, local_files_only=True,
             trust_remote_code=self.trust_local_model_code,
         )
+        if self.max_length is not None:
+            encoder.max_seq_length = self.max_length
+        if self.encoder_dtype is not None:
+            import torch
+            encoder.to(dtype=getattr(torch, self.encoder_dtype))
+        _restore_gte_runtime_buffers(encoder)
+        return encoder
+
+
+def _restore_gte_runtime_buffers(encoder: object) -> None:
+    """Recreate GTE new-impl's nonpersistent buffers after meta loading.
+
+    Transformers 5 loads parameters on meta, but this older custom model does
+    not initialize its non-checkpoint position/RoPE buffers afterwards. Reuse
+    the model's own RoPE constructor; never change checkpoint parameters.
+    """
+    modules = getattr(encoder, "modules", None)
+    if not callable(modules):
+        return
+    for model in tuple(modules()):
+        config = getattr(model, "config", None)
+        embeddings = getattr(model, "embeddings", None)
+        if (type(model).__name__ != "NewModel"
+                or getattr(config, "model_type", None) != "new"
+                or type(embeddings).__name__ != "NewEmbeddings"):
+            continue
+        import torch
+        weight = embeddings.word_embeddings.weight
+        embeddings.register_buffer(
+            "position_ids", torch.arange(config.max_position_embeddings, device=weight.device),
+            persistent=False,
+        )
+        if embeddings.position_embedding_type == "rope":
+            embeddings._init_rope(config)
+            embeddings.rotary_emb.to(device=weight.device, dtype=weight.dtype)
 
 
 __all__ = [

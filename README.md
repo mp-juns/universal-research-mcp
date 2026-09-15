@@ -4,8 +4,8 @@
 
 **Research memory with traceable sources, explicit write approval, and measured — not assumed — safety.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.3-0b766e)](https://pypi.org/project/universal-research-mcp/0.9.3/)
-[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.9.3/)
+[![Version](https://img.shields.io/badge/version-v0.10.0-0b766e)](https://pypi.org/project/universal-research-mcp/0.10.0/)
+[![Python](https://img.shields.io/pypi/pyversions/universal-research-mcp.svg)](https://pypi.org/project/universal-research-mcp/0.10.0/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22118223.svg)](https://doi.org/10.5281/zenodo.22118223)
 [![CI](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/mp-juns/universal-research-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-52617a)](LICENSE)
@@ -19,6 +19,10 @@ Research agents with long-lived memory fail in a specific way: they
 drifted, the claim was withdrawn, the source was never registered. This
 project makes that failure mechanically checkable, fail-closed, and then
 **measures which parts of safety the mechanism actually provides**.
+
+**New in 0.10.0:** historical candidate retrieval, separate evidence-health
+diagnostics, and semantic migration fixes. See the [release notes](docs/releases/v0.10.0.md)
+and [migration guide](docs/legacy-retrieval-migration.md).
 
 ## The structure, in one pass
 
@@ -45,8 +49,8 @@ project makes that failure mechanically checkable, fail-closed, and then
 - Retrieval is physically read-only (`sqlite mode=ro`, `query_only=ON`).
 - Writes need a pre-existing human approval record; model-side ingestion
   additionally needs a one-time HMAC receipt issued **outside** the MCP.
-- The eligibility gate verifies the integrity of cited evidence and — as
-  of this release — fails closed when a material claim silently omits
+- The eligibility gate verifies the integrity of cited evidence and
+  fails closed when a material claim silently omits
   evidence the session fetched and saw fail integrity.
 
 Every one of those sentences is backed by a specific file and line:
@@ -212,7 +216,7 @@ claude mcp add universal-research -- universal-research serve --root ~/my-resear
 ```
 
 **Claude Desktop — one-click**: download
-[`universal-research-memory-0.9.3.mcpb`](https://github.com/mp-juns/universal-research-mcp/releases/download/v0.9.3/universal-research-memory-0.9.3.mcpb)
+[`universal-research-memory-0.10.0.mcpb`](https://github.com/mp-juns/universal-research-mcp/releases/download/v0.10.0/universal-research-memory-0.10.0.mcpb)
 and double-click (or Settings → Extensions → Install from file). Claude
 Desktop asks for your research folder and launches the server via uv; an
 empty folder is initialized automatically. Manual config alternative:

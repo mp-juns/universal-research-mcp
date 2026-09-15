@@ -55,3 +55,6 @@ scripts/render_exploratory_benchmark_figure.py
 scripts/render_integrity_claim_gate_development_figure.py
 data/events/daily/
 data/events/sources.jsonl
+
+# Local recovery receipts may contain private project paths and session IDs.
+/docs/operations/

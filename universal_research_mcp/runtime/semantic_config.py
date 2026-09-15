@@ -50,6 +50,11 @@ def _validate(config: Any) -> dict[str, Any]:
             raise ValueError("signed hashing dimensions must be in [8, 4096]")
     elif kind == "local_sentence_transformer":
         expected = {"kind", "model_path", "device", "trust_local_model_code", "dimensions"}
+        expected.update(key for key in ("encoder_dtype", "max_length") if key in backend)
+        if "encoder_dtype" in backend and backend["encoder_dtype"] not in {"float32", "float16", "bfloat16"}:
+            raise ValueError("local semantic encoder_dtype is invalid")
+        if "max_length" in backend and (type(backend["max_length"]) is not int or backend["max_length"] < 1):
+            raise ValueError("local semantic max_length must be positive")
         if config["schema_version"] == SCHEMA_VERSION and "snapshot" in backend:
             expected.add("snapshot")
             SnapshotIdentity.from_dict(backend["snapshot"])

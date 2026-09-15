@@ -156,6 +156,7 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
                     "INSERT INTO event_sources VALUES (?, ?, ?, 1, 1)",
                     ("event_1", "docs/evidence.md", digest),
                 )
+                connection.execute("INSERT INTO sources VALUES (?, ?)", ("docs/evidence.md", digest))
             server.configure_runtime(root, database)
 
             with patch.object(server, "_require_current_lexical_index"):
@@ -190,6 +191,9 @@ class ResearchMemoryServerSafetyTests(unittest.TestCase):
                         ("event_current", "docs/evidence.md", current),
                     ],
                 )
+                connection.executemany("INSERT INTO sources VALUES (?, ?)", [
+                    ("docs/evidence.md", "0" * 64), ("docs/evidence.md", current),
+                ])
             server.configure_runtime(root, database)
 
             with patch.object(server, "_require_current_lexical_index"):

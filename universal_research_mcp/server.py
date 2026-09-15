@@ -580,16 +580,28 @@ def search_semantic(query: str, top_k: int, status: str | None = None) -> list[d
             candidate["lexical_score"] = None
             if passage is not None:
                 registered_source = lexical.execute(
-                    "SELECT source_sha256 FROM sources WHERE source_path = ?",
-                    (passage["source_path"],),
+                    """
+                    SELECT DISTINCT es.source_sha256, es.line_start, es.line_end
+                    FROM event_sources AS es JOIN sources AS s
+                      ON s.source_path = es.source_path
+                     AND lower(s.source_sha256) = lower(es.source_sha256)
+                    WHERE es.event_id = ? AND es.source_path = ?
+                      AND es.line_start <= ? AND es.line_end >= ?
+                    ORDER BY (es.line_end - es.line_start), es.line_start,
+                             es.line_end, es.source_sha256
+                    LIMIT 1
+                    """,
+                    (event_id, passage["source_path"], passage["line_start"], passage["line_end"]),
                 ).fetchone()
                 if registered_source is None:
                     raise RuntimeError("semantic passage is absent from the canonical source registry")
                 candidate.update({
                     "path": passage["source_path"],
                     "heading": passage["source_heading"],
-                    "start_line": passage["line_start"],
-                    "end_line": passage["line_end"],
+                    # Semantic chunks rank the candidate; evidence always
+                    # retains its complete canonical parent locator.
+                    "start_line": registered_source["line_start"],
+                    "end_line": registered_source["line_end"],
                     "source_sha256": registered_source["source_sha256"],
                 })
             candidate["semantic_score"] = float(details["score"])
@@ -597,6 +609,9 @@ def search_semantic(query: str, top_k: int, status: str | None = None) -> list[d
                 "semantic_rank": candidate["rank"],
                 "cosine_similarity": float(details["score"]),
                 "semantic_passage_id": None if passage is None else passage["passage_id"],
+                "semantic_chunk_range": None if passage is None else {
+                    "start_line": passage["line_start"], "end_line": passage["line_end"],
+                },
             }
             results.append(candidate)
             if len(results) == top_k:
@@ -924,8 +939,22 @@ def _apply_candidate_identity_gate(results: list[dict[str, Any]]) -> dict[str, A
                 and candidate.get("source_sha256")
                 and candidate.get("start_line") is not None
                 and candidate.get("end_line") is not None
+                and db.execute(
+                    "SELECT 1 FROM sources WHERE source_path = ? "
+                    "AND lower(source_sha256) = lower(?) LIMIT 1",
+                    (candidate.get("path"), candidate.get("source_sha256")),
+                ).fetchone() is not None
             )
             candidate["evidence_eligible"] = eligible
+            candidate["source_eligibility"] = (
+                "no_source" if not candidate.get("path") else
+                "legacy_candidate_only" if not candidate.get("source_sha256") else
+                "unregistered_revision" if db.execute(
+                    "SELECT 1 FROM sources WHERE source_path = ? "
+                    "AND lower(source_sha256) = lower(?) LIMIT 1",
+                    (candidate.get("path"), candidate.get("source_sha256")),
+                ).fetchone() is None else "verified"
+            )
             evidence_eligible += int(eligible)
     return {
         "status": "passed",
@@ -943,22 +972,21 @@ def indexed_source_hashes(path: str, event_id: str | None = None) -> list[str]:
         if event_id is not None:
             rows = db.execute(
                 """
-                SELECT DISTINCT source_sha256 FROM event_sources
-                WHERE event_id = ? AND source_path = ?
-                  AND source_sha256 IS NOT NULL AND source_sha256 <> ''
+                SELECT DISTINCT es.source_sha256 FROM event_sources AS es
+                JOIN sources AS s ON s.source_path = es.source_path
+                  AND lower(s.source_sha256) = lower(es.source_sha256)
+                WHERE es.event_id = ? AND es.source_path = ?
+                  AND es.source_sha256 IS NOT NULL AND es.source_sha256 <> ''
                 """,
                 (event_id, path),
             ).fetchall()
         else:
             rows = db.execute(
                 """
-                SELECT source_sha256 FROM event_sources
-                WHERE source_path = ? AND source_sha256 IS NOT NULL AND source_sha256 <> ''
-                UNION
                 SELECT source_sha256 FROM sources
                 WHERE source_path = ? AND source_sha256 IS NOT NULL AND source_sha256 <> ''
                 """,
-                (path, path),
+                (path,),
             ).fetchall()
     return sorted(str(row["source_sha256"]) for row in rows)
 
