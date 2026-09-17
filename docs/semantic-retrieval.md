@@ -113,6 +113,20 @@ instead of being silently reused. See
 [the 0.10.1 release notes](releases/v0.10.1.md) for the affected versions and
 the reindexing procedure.
 
+Transformers 5.17 added the same protection upstream, behind its own
+`is_custom_code` flag, and changed this hook's signature to carry it. The guard
+forwards whatever arguments it is called with, so it neither breaks on a newer
+release nor has to track the signature; it stays because the supported floor is
+older than 5.17.
+
+A pinned remote-code architecture can still stop working on a newer runtime for
+reasons this has nothing to do with. `Alibaba-NLP/gte-multilingual-base`, for
+example, calls `get_extended_attention_mask`, which 5.17 removed, so it raises
+during the forward pass there regardless of how its weights were loaded. That
+failure is loud rather than silent. Models outside the reviewed catalogue are
+configured at your own discretion, and pinning the Transformers version that a
+given snapshot was validated against is part of that choice.
+
 Both loaders share one implementation, in
 `universal_research_mcp/runtime/encoder_loading.py`. The defect above existed
 because the standalone builder in `tools/` carried a checkpoint workaround that

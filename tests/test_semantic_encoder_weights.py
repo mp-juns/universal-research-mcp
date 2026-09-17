@@ -153,6 +153,33 @@ def test_guard_restores_the_transformers_hook() -> None:
     assert PreTrainedModel._initialize_weights is original
 
 
+def test_guard_forwards_whatever_signature_transformers_uses() -> None:
+    """Transformers changes this hook's arguments between releases.
+
+    5.17 added `is_custom_code`, which raised TypeError against a guard that
+    pinned the older two-argument form and took the local backend down
+    entirely on an upgraded runtime.
+    """
+
+    from transformers.modeling_utils import PreTrainedModel
+
+    seen: list[tuple] = []
+
+    def original(self, module, *arguments, **keywords):
+        seen.append((arguments, keywords))
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(PreTrainedModel, "_initialize_weights", original, raising=False)
+        with checkpoint_weights_guarded():
+            guarded = PreTrainedModel._initialize_weights
+            bare = torch.nn.Linear(2, 2)
+            guarded(None, bare)
+            guarded(None, bare, True)
+            guarded(None, bare, is_custom_code=True)
+
+    assert seen == [((), {}), ((True,), {}), ((), {"is_custom_code": True})]
+
+
 def test_verification_accepts_a_faithfully_loaded_encoder(tiny_snapshot) -> None:
     tiny_encoder, snapshot, _ = tiny_snapshot
 

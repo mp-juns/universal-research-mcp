@@ -49,6 +49,10 @@ def checkpoint_weights_guarded() -> Iterator[None]:
     Skip modules whose tensors were all loaded, and restore the loaded ones for
     partially populated modules; anything genuinely missing is still
     initialized by the original implementation.
+
+    Transformers 5.17 added the same protection upstream, behind its own
+    ``is_custom_code`` flag. The guard stays because the supported floor is
+    older than that, and it is harmless once the runtime protects itself.
     """
 
     try:
@@ -64,7 +68,10 @@ def checkpoint_weights_guarded() -> Iterator[None]:
         return
     import torch
 
-    def guarded(self: Any, module: Any) -> Any:
+    # Transformers changes this hook's signature between releases: 5.17 added an
+    # `is_custom_code` argument. Forward whatever it is called with, so the guard
+    # neither breaks on a newer release nor has to track the signature.
+    def guarded(self: Any, module: Any, *arguments: Any, **keywords: Any) -> Any:
         present = [
             tensor
             for tensor in (*module._parameters.values(), *module._buffers.values())
@@ -72,7 +79,7 @@ def checkpoint_weights_guarded() -> Iterator[None]:
         ]
         loaded = [tensor for tensor in present if getattr(tensor, "_is_hf_initialized", False)]
         if not loaded:
-            return original(self, module)
+            return original(self, module, *arguments, **keywords)
         if len(loaded) == len(present):
             module._is_hf_initialized = True
             return None
@@ -82,7 +89,7 @@ def checkpoint_weights_guarded() -> Iterator[None]:
             if tensor.device.type != "meta"
         ]
         try:
-            return original(self, module)
+            return original(self, module, *arguments, **keywords)
         finally:
             with torch.no_grad():
                 for tensor, value in retained:
