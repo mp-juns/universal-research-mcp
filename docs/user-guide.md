@@ -1,6 +1,6 @@
 # Universal Research MCP 사용자 설명서
 
-이 문서는 `v0.10.0` 기준으로 Universal Research MCP를 처음 설치하고,
+이 문서는 `v0.10.1` 기준으로 Universal Research MCP를 처음 설치하고,
 독립 연구 저장소를 만들고, Codex에서 근거를 검색·검증하고, 승인된 기록을
 추가하는 전체 흐름을 설명한다.
 
@@ -11,7 +11,7 @@ Universal Research MCP는 검색 결과를 곧바로 사실로 취급하지 않�
 
 ## 1. 지원 범위
 
-| 항목 | v0.10.0 지원 상태 |
+| 항목 | v0.10.1 지원 상태 |
 | --- | --- |
 | 호스트 | 로컬 Codex |
 | 전송 방식 | 로컬 `stdio` 권장 |
@@ -32,13 +32,13 @@ Python 3.11 이상이 필요하다. Windows, macOS, Linux에서 배포 검증을
 없다.
 
 ```bash
-python -m pip install "universal-research-mcp==0.10.0"
+python -m pip install "universal-research-mcp==0.10.1"
 ```
 
 또는:
 
 ```bash
-python -m pip install "urmcp==0.10.0"
+python -m pip install "urmcp==0.10.1"
 ```
 
 `urmcp`는 별도의 구현이 아니라 정확히 같은 버전의
@@ -51,7 +51,7 @@ universal-research --version
 universal-research --help
 ```
 
-정상이라면 첫 명령은 `0.10.0`을 출력한다. 명령을 찾지 못한다면 현재 터미널과
+정상이라면 첫 명령은 `0.10.1`을 출력한다. 명령을 찾지 못한다면 현재 터미널과
 패키지를 설치한 Python 환경이 같은지 확인한다.
 
 ## 3. 빈 연구 프로젝트 만들기
@@ -465,9 +465,20 @@ universal-research serve --help
 운영 변경을 확인한다.
 
 ```bash
-python -m pip install --upgrade "universal-research-mcp==0.10.0"
+python -m pip install --upgrade "universal-research-mcp==0.10.1"
 universal-research --version
 universal-research doctor --root ./my-research
+```
+
+0.10.0 이하에서 local SentenceTransformer 백엔드로 semantic 색인을 만들었다면 그
+색인은 무효다. 임베딩이 체크포인트가 아니라 무작위 초기화 가중치로 만들어졌기
+때문에 semantic/hybrid/adaptive 검색 결과가 잡음이었다. lexical 검색, canonical
+기록, 근거 fetch와 검증은 영향을 받지 않았으므로 재수집은 필요 없다. 업그레이드
+후 semantic 색인만 다시 만든다.
+
+```bash
+universal-research semantic build --root ./my-research
+universal-research semantic status --root ./my-research
 ```
 
 패키지를 제거해도 연구 프로젝트가 자동으로 삭제되지는 않는다. 반대로 연구 root를

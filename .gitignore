@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 /build/
 /dist/
+/packages/urmcp/dist/
 *.egg-info/
 data/index/*.sqlite
 data/index/*.sqlite-*
