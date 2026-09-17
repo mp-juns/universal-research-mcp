@@ -15,9 +15,9 @@ import sys
 
 import pytest
 
-from universal_research_mcp.semantic_backends import (
-    _checkpoint_weights_guarded,
-    verify_encoder_checkpoint_weights,
+from universal_research_mcp.runtime.encoder_loading import (
+    checkpoint_weights_guarded,
+    verify_checkpoint_weights,
 )
 
 torch = pytest.importorskip(
@@ -117,7 +117,7 @@ def tiny_snapshot(tmp_path: Path):
 def test_guarded_load_keeps_checkpoint_weights(tiny_snapshot) -> None:
     tiny_encoder, snapshot, reference = tiny_snapshot
 
-    with _checkpoint_weights_guarded():
+    with checkpoint_weights_guarded():
         loaded = tiny_encoder.load(snapshot)
 
     expected = reference.state_dict()
@@ -125,11 +125,30 @@ def test_guarded_load_keeps_checkpoint_weights(tiny_snapshot) -> None:
         assert torch.equal(parameter, expected[name]), name
 
 
+def test_both_encoder_entry_points_share_one_implementation() -> None:
+    """The builder's bridge and the runtime backend must not drift apart again.
+
+    The defect this module guards against existed because the standalone
+    builder carried a fix the supported runtime backend never received.
+    """
+
+    from universal_research_mcp import semantic_backends
+    from universal_research_mcp.runtime import encoder_loading
+    from universal_research_mcp.tools import build_research_semantic_index as builder
+
+    assert semantic_backends._checkpoint_weights_guarded is encoder_loading.checkpoint_weights_guarded
+    assert builder.checkpoint_weights_guarded is encoder_loading.checkpoint_weights_guarded
+    assert semantic_backends.verify_encoder_checkpoint_weights is encoder_loading.verify_checkpoint_weights
+    assert builder.verify_checkpoint_weights is encoder_loading.verify_checkpoint_weights
+    assert semantic_backends._restore_gte_runtime_buffers is encoder_loading.restore_gte_runtime_buffers
+    assert builder.rebuild_gte_runtime_buffers is encoder_loading.rebuild_gte_runtime_buffers
+
+
 def test_guard_restores_the_transformers_hook() -> None:
     from transformers.modeling_utils import PreTrainedModel
 
     original = PreTrainedModel._initialize_weights
-    with _checkpoint_weights_guarded():
+    with checkpoint_weights_guarded():
         assert PreTrainedModel._initialize_weights is not original
     assert PreTrainedModel._initialize_weights is original
 
@@ -137,9 +156,9 @@ def test_guard_restores_the_transformers_hook() -> None:
 def test_verification_accepts_a_faithfully_loaded_encoder(tiny_snapshot) -> None:
     tiny_encoder, snapshot, _ = tiny_snapshot
 
-    with _checkpoint_weights_guarded():
+    with checkpoint_weights_guarded():
         loaded = tiny_encoder.load(snapshot)
-    report = verify_encoder_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), snapshot)
+    report = verify_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), snapshot)
 
     assert report["compared"] == 3
     assert report["checkpoints"] == 1
@@ -148,36 +167,36 @@ def test_verification_accepts_a_faithfully_loaded_encoder(tiny_snapshot) -> None
 def test_verification_refuses_reinitialized_weights(tiny_snapshot) -> None:
     tiny_encoder, snapshot, _ = tiny_snapshot
 
-    with _checkpoint_weights_guarded():
+    with checkpoint_weights_guarded():
         loaded = tiny_encoder.load(snapshot)
     with torch.no_grad():
         loaded.embeddings.weight.normal_(mean=0.0, std=0.5)
 
     with pytest.raises(RuntimeError, match="does not match its checkpoint"):
-        verify_encoder_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), snapshot)
+        verify_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), snapshot)
 
 
 def test_verification_refuses_a_parameter_absent_from_the_checkpoint(tiny_snapshot) -> None:
     tiny_encoder, snapshot, _ = tiny_snapshot
 
-    with _checkpoint_weights_guarded():
+    with checkpoint_weights_guarded():
         loaded = tiny_encoder.load(snapshot)
     loaded.register_parameter("unbacked", torch.nn.Parameter(torch.zeros(2)))
 
     with pytest.raises(RuntimeError, match="unverified="):
-        verify_encoder_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), snapshot)
+        verify_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), snapshot)
 
 
 def test_verification_refuses_a_snapshot_without_a_checkpoint(tiny_snapshot, tmp_path: Path) -> None:
     tiny_encoder, snapshot, _ = tiny_snapshot
 
-    with _checkpoint_weights_guarded():
+    with checkpoint_weights_guarded():
         loaded = tiny_encoder.load(snapshot)
     empty = tmp_path / "no-checkpoint"
     empty.mkdir()
 
     with pytest.raises(RuntimeError, match="no .safetensors checkpoint"):
-        verify_encoder_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), empty)
+        verify_checkpoint_weights(tiny_encoder.TinyEncoder(loaded), empty)
 
 
 CROSS_PROCESS_SCRIPT = '''
@@ -185,14 +204,14 @@ import json, sys
 sys.path.insert(0, sys.argv[1])
 sys.path.insert(0, sys.argv[2])
 import tiny_encoder
-from universal_research_mcp.semantic_backends import (
-    _checkpoint_weights_guarded, verify_encoder_checkpoint_weights,
+from universal_research_mcp.runtime.encoder_loading import (
+    checkpoint_weights_guarded, verify_checkpoint_weights,
 )
 
 snapshot = sys.argv[3]
-with _checkpoint_weights_guarded():
+with checkpoint_weights_guarded():
     model = tiny_encoder.load(snapshot)
-verify_encoder_checkpoint_weights(tiny_encoder.TinyEncoder(model), __import__("pathlib").Path(snapshot))
+verify_checkpoint_weights(tiny_encoder.TinyEncoder(model), __import__("pathlib").Path(snapshot))
 print("RESULT " + json.dumps(tiny_encoder.embed(model)))
 '''
 

@@ -381,6 +381,72 @@ def test_checkpoint_bridge_strictly_restores_prefixed_base_weights(
     assert torch.equal(base.linear.bias, expected_bias)
 
 
+def _prefixed_snapshot(tmp_path: Path, weight: "torch.Tensor", bias: "torch.Tensor") -> None:
+    from safetensors.torch import save_file
+
+    save_file(
+        {
+            "new.linear.weight": weight,
+            "new.linear.bias": bias,
+            "classifier.weight": torch.zeros((1, 2)),
+            "classifier.bias": torch.zeros(1),
+        },
+        str(tmp_path / "model.safetensors"),
+    )
+
+
+def _prefixed_base(weight: "torch.Tensor", bias: "torch.Tensor"):
+    class Prefixed(torch.nn.Module):
+        base_model_prefix = "new"
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.linear = torch.nn.Linear(2, 2)
+
+    base = Prefixed()
+    with torch.no_grad():
+        base.linear.weight.copy_(weight)
+        base.linear.bias.copy_(bias)
+    return base
+
+
+def test_compatibility_bridge_verifies_weights_instead_of_reloading_them(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Loading is guarded, so the bridge must confirm rather than repair."""
+
+    weight = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+    bias = torch.tensor([5.0, 6.0])
+    _prefixed_snapshot(tmp_path, weight, bias)
+    monkeypatch.setattr(semantic_builder, "repair_encoder_nonpersistent_buffers", lambda _m: 4)
+    monkeypatch.setattr(semantic_builder, "validate_encoder_model_card_oracle", lambda _m: 0.0)
+
+    report = semantic_builder.apply_encoder_compatibility_bridge(
+        _FakeSentenceModel(_prefixed_base(weight, bias)), tmp_path,
+    )
+
+    assert report["verified_tensor_count"] == 2
+    assert report["version"] == semantic_builder.ENCODER_COMPATIBILITY_BRIDGE_VERSION
+
+
+def test_compatibility_bridge_refuses_weights_that_left_the_checkpoint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    weight = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+    bias = torch.tensor([5.0, 6.0])
+    _prefixed_snapshot(tmp_path, weight, bias)
+    monkeypatch.setattr(semantic_builder, "repair_encoder_nonpersistent_buffers", lambda _m: 4)
+    monkeypatch.setattr(semantic_builder, "validate_encoder_model_card_oracle", lambda _m: 0.0)
+    drifted = _prefixed_base(weight, bias)
+    with torch.no_grad():
+        drifted.linear.weight.normal_(mean=0.0, std=0.5)
+
+    with pytest.raises(RuntimeError, match="does not match its checkpoint"):
+        semantic_builder.apply_encoder_compatibility_bridge(
+            _FakeSentenceModel(drifted), tmp_path,
+        )
+
+
 def test_checkpoint_bridge_rejects_changed_exclusions(tmp_path: Path) -> None:
     from safetensors.torch import save_file
 

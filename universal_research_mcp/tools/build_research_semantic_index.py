@@ -24,6 +24,12 @@ if __package__ in (None, ""):
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from universal_research_mcp.runtime.encoder_loading import (
+    checkpoint_weights_guarded,
+    encoder_base_model,
+    rebuild_gte_runtime_buffers,
+    verify_checkpoint_weights,
+)
 from universal_research_mcp.tools.research_device import DEVICE_CHOICES, resolve_torch_device
 from universal_research_mcp.tools.research_event_corrections import (
     apply_source_range_corrections,
@@ -38,7 +44,7 @@ from universal_research_mcp.core.indexing import index_document, index_document_
 SCHEMA_VERSION = "1.0"
 DEFAULT_MODEL = "Alibaba-NLP/gte-multilingual-base"
 ENCODER_DTYPE_CHOICES = ("float32", "float16", "bfloat16")
-ENCODER_COMPATIBILITY_BRIDGE_VERSION = "gte-transformers5-strict-reload-rope-v1"
+ENCODER_COMPATIBILITY_BRIDGE_VERSION = "gte-transformers5-guarded-load-verify-rope-v2"
 ENCODER_ORACLE_TOLERANCE = 1e-5
 ENCODER_ORACLE_TEXTS = (
     "what is the capital of China?",
@@ -513,14 +519,7 @@ def resolve_encoder_dtype(name: str):
 
 def sentence_transformer_base_model(model):
     """Return the pinned GTE AutoModel contained in SentenceTransformer."""
-    try:
-        transformer = model[0]
-    except Exception as exc:
-        raise ValueError("Encoder compatibility bridge requires transformer module 0") from exc
-    base_model = getattr(transformer, "auto_model", None)
-    if base_model is None:
-        raise ValueError("Encoder compatibility bridge could not find module 0 auto_model")
-    return base_model
+    return encoder_base_model(model)
 
 
 def checkpoint_bridge_layout(snapshot: Path) -> tuple[list[str], list[str]]:
@@ -575,46 +574,9 @@ def restore_encoder_checkpoint_weights(model, snapshot: Path) -> int:
 
 def repair_encoder_nonpersistent_buffers(model) -> int:
     """Rebuild GTE position and RoPE buffers destroyed by Transformers 5.1."""
-    import torch
-
-    base_model = sentence_transformer_base_model(model)
-    embeddings = getattr(base_model, "embeddings", None)
-    config = getattr(base_model, "config", None)
-    if embeddings is None or config is None:
-        raise ValueError("Pinned encoder base model lacks embeddings/config")
-    if not hasattr(embeddings, "_init_rope") or not hasattr(embeddings, "word_embeddings"):
-        raise ValueError("Pinned encoder embeddings lack deterministic RoPE initialization")
-
-    device = embeddings.word_embeddings.weight.device
-    position_ids = torch.arange(int(config.max_position_embeddings), device=device)
-    embeddings.register_buffer("position_ids", position_ids, persistent=False)
-    embeddings._init_rope(config)
-    embeddings.rotary_emb.to(device=device)
-
-    buffers = dict(base_model.named_buffers())
-    expected_names = {
-        "embeddings.position_ids",
-        "embeddings.rotary_emb.inv_freq",
-        "embeddings.rotary_emb.cos_cached",
-        "embeddings.rotary_emb.sin_cached",
-    }
-    missing = sorted(expected_names - buffers.keys())
-    if missing:
-        raise ValueError(f"Encoder compatibility bridge did not rebuild buffers: {missing}")
-    for name in expected_names:
-        value = buffers[name]
-        if value.is_floating_point() and not torch.isfinite(value).all():
-            raise ValueError(f"Encoder compatibility bridge produced non-finite buffer {name}")
-
-    if not torch.equal(buffers["embeddings.position_ids"], position_ids):
-        raise ValueError("Encoder position_ids reconstruction mismatch")
-    cosine_zero = buffers["embeddings.rotary_emb.cos_cached"][0]
-    sine_zero = buffers["embeddings.rotary_emb.sin_cached"][0]
-    if not torch.equal(cosine_zero, torch.ones_like(cosine_zero)):
-        raise ValueError("Encoder RoPE cosine zero-position invariant failed")
-    if not torch.equal(sine_zero, torch.zeros_like(sine_zero)):
-        raise ValueError("Encoder RoPE sine zero-position invariant failed")
-    return len(expected_names)
+    return rebuild_gte_runtime_buffers(
+        sentence_transformer_base_model(model), match_parameter_dtype=False,
+    )
 
 
 def validate_encoder_model_card_oracle(model) -> float:
@@ -641,12 +603,20 @@ def validate_encoder_model_card_oracle(model) -> float:
 
 
 def apply_encoder_compatibility_bridge(model, snapshot: Path) -> dict[str, object]:
-    restored_tensor_count = restore_encoder_checkpoint_weights(model, snapshot)
+    """Confirm the guarded load produced the pinned encoder, then repair buffers.
+
+    Loading now happens inside ``checkpoint_weights_guarded``, so the weights
+    are never overwritten and re-reading the checkpoint would only hide a
+    failure. Verify them instead, and keep the model-card oracle as the
+    stronger end-to-end check this builder can afford.
+    """
+    checkpoint_bridge_layout(snapshot)
+    verified_tensor_count = verify_checkpoint_weights(model, snapshot)["compared"]
     repaired_buffer_count = repair_encoder_nonpersistent_buffers(model)
     oracle_max_abs_delta = validate_encoder_model_card_oracle(model)
     return {
         "version": ENCODER_COMPATIBILITY_BRIDGE_VERSION,
-        "restored_tensor_count": restored_tensor_count,
+        "verified_tensor_count": verified_tensor_count,
         "repaired_buffer_count": repaired_buffer_count,
         "oracle_max_abs_delta": oracle_max_abs_delta,
     }
@@ -679,11 +649,12 @@ def encode_texts(
         raise RuntimeError("sentence-transformers is required; install the pinned package first") from exc
 
     requested_dtype = resolve_encoder_dtype(encoder_dtype)
-    model = SentenceTransformer(
-        str(snapshot), trust_remote_code=True, local_files_only=True, device=device,
-        config_kwargs=model_kwargs or {},
-        model_kwargs={**(model_kwargs or {}), "torch_dtype": requested_dtype},
-    )
+    with checkpoint_weights_guarded():
+        model = SentenceTransformer(
+            str(snapshot), trust_remote_code=True, local_files_only=True, device=device,
+            config_kwargs=model_kwargs or {},
+            model_kwargs={**(model_kwargs or {}), "torch_dtype": requested_dtype},
+        )
 
     loaded_dtype = next(model.parameters()).dtype
     if loaded_dtype != requested_dtype:
