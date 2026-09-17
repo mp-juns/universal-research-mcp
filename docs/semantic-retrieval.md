@@ -113,6 +113,13 @@ instead of being silently reused. See
 [the 0.10.1 release notes](releases/v0.10.1.md) for the affected versions and
 the reindexing procedure.
 
+Both loaders share one implementation, in
+`universal_research_mcp/runtime/encoder_loading.py`. The defect above existed
+because the standalone builder in `tools/` carried a checkpoint workaround that
+the supported runtime backend never received, so the two are now the same code:
+the runtime backend, the CLI and the MCP server load through it, and the builder
+adds only its model-card oracle on top.
+
 Verification compares the backbone against the checkpoint; it is not a claim
 about retrieval quality, and it does not certify that a model suits a corpus.
 
