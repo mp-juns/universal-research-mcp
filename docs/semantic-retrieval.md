@@ -78,6 +78,44 @@ locked (`dependency_environment_locked` is false), and device/software changes
 can still change numerical outputs. No model-quality or performance improvement
 is implied by these integrity checks.
 
+## Checkpoint verification and the loader generation
+
+Transformers 5 builds a model on the meta device, installs the checkpoint
+tensors, and only afterwards initializes whatever is still missing. Parameters
+that came from the checkpoint are flagged so that final pass skips them, but the
+flag only protects modules whose initializer either checks it or goes through
+Transformers' patched `torch.nn.init` helpers. Several pinned remote-code
+architectures instead mutate tensors directly (`module.weight.data.normal_()`,
+`.zero_()`, `.fill_()`). Nothing can intercept those calls, so the finalization
+pass overwrote every parameter with a fresh random distribution after a load
+that reported no missing keys.
+
+The result was a silent failure rather than a visible one. The load report was
+accurate about loading and still ended with success, the vectors stayed
+deterministic within one process, and index fingerprints matched, so repeating a
+query in the same session reproduced the same wrong answer. Only comparing
+against the checkpoint, or against another process, exposed it.
+
+Two independent measures now apply, and both run on the ordinary load path:
+
+- Weights loaded from the checkpoint are retained through the finalization pass.
+  Parameters genuinely absent from the checkpoint are still initialized normally.
+- Before first use, the loaded backbone is compared against the snapshot's own
+  `.safetensors` tensors. A mismatch, an unverifiable parameter or a snapshot
+  without a readable checkpoint raises instead of embedding. Verification costs
+  roughly ten milliseconds against a one-to-two second load.
+
+Embedding identity carries a loader generation (`!loader=<generation>`) next to
+the snapshot hash, dtype and maximum length. It changes only when a loader
+defect changed what the numbers mean. Because the identity is part of the index
+key, indexes written by an affected release are reported `stale` and rebuilt
+instead of being silently reused. See
+[the 0.10.1 release notes](releases/v0.10.1.md) for the affected versions and
+the reindexing procedure.
+
+Verification compares the backbone against the checkpoint; it is not a claim
+about retrieval quality, and it does not certify that a model suits a corpus.
+
 Semantic results remain candidates. A current semantic index does not replace
 exact source fetch, SHA-256 verification, evidence eligibility, or semantic
 relevance/conflict review.

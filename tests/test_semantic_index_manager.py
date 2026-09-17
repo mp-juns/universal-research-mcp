@@ -266,6 +266,71 @@ class SemanticIndexManagerTests(unittest.TestCase):
                 "stale",
             )
 
+    def test_reported_status_is_bound_to_the_configured_embedding_identity(self) -> None:
+        """Fingerprints alone cannot tell which embedder wrote an index."""
+
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        from universal_research_mcp import server
+
+        def report(root: Path, model: str) -> dict:
+            backend = SimpleNamespace(
+                embedder=None, provider_id="local", model=model, dimensions=3,
+                backend_class="local_trained_model", trained_embedding_model=True,
+                auto_refresh=False,
+            )
+            with patch(
+                "universal_research_mcp.semantic_runtime.configured_backend",
+                return_value=backend,
+            ):
+                tool = getattr(server.research_index_status, "fn", server.research_index_status)
+                prior = server.ROOT
+                server.ROOT = root
+                try:
+                    return tool()["current"]["semantic"]
+                finally:
+                    server.ROOT = prior
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _write_fixture(root)
+            indexed = "/models/pinned@sha256:abc!loader=checkpoint-verified-v1"
+            ensure_semantic_index(
+                root, FakeEmbedder(), provider_id="local", model=indexed, dimensions=3,
+            )
+
+            self.assertEqual(report(root, indexed)["status"], "current")
+            superseded = report(root, "/models/pinned@sha256:abc")
+            self.assertEqual(superseded["status"], "stale")
+            self.assertIn("model", superseded["failed_checks"])
+
+    def test_index_from_a_superseded_loader_generation_is_rebuilt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _write_fixture(root)
+            ensure_semantic_index(
+                root,
+                FakeEmbedder(),
+                provider_id="local",
+                model="/models/pinned@sha256:abc",
+                dimensions=3,
+            )
+
+            current = "/models/pinned@sha256:abc!loader=checkpoint-verified-v1"
+            self.assertEqual(
+                semantic_status(root, provider_id="local", model=current, dimensions=3)["status"],
+                "stale",
+            )
+            rebuilt = ensure_semantic_index(
+                root, FakeEmbedder(), provider_id="local", model=current, dimensions=3,
+            )
+            self.assertTrue(rebuilt["executed"])
+            self.assertEqual(
+                semantic_status(root, provider_id="local", model=current, dimensions=3)["status"],
+                "current",
+            )
+
     def test_failed_health_marks_search_stale_and_repairs_without_embedding(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

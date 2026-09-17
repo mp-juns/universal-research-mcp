@@ -12,7 +12,7 @@ from universal_research_mcp.runtime.model_snapshot import (
 from universal_research_mcp.runtime.semantic_config import (
     configure_demo, configure_local, load_semantic_config, write_semantic_config,
 )
-from universal_research_mcp.semantic_backends import Availability
+from universal_research_mcp.semantic_backends import LOADER_GENERATION, Availability
 from universal_research_mcp.semantic_runtime import _local_embedder, configured_backend
 
 
@@ -57,7 +57,28 @@ def test_managed_model_config_and_runtime_bind_manifest(tmp_path: Path, managed_
     first = configured_backend(tmp_path)
     second = configured_backend(tmp_path)
     assert first.embedder is second.embedder
-    assert first.model == f"{model}@sha256:{identity.manifest_sha256}"
+    assert first.model == (
+        f"{model}@sha256:{identity.manifest_sha256}!loader={LOADER_GENERATION}"
+    )
+
+
+def test_loader_generation_invalidates_indexes_from_affected_releases(
+    tmp_path: Path, managed_snapshot,
+) -> None:
+    """0.10.0 and earlier embedded with silently reinitialized local weights.
+
+    Those vectors are not comparable with correctly loaded ones, and no
+    fingerprint distinguishes them, so the loader generation is carried in the
+    embedding identity to force a rebuild.
+    """
+
+    model, identity = managed_snapshot
+    configure_local(tmp_path, model_path=model, snapshot=identity, device="cpu")
+    backend = configured_backend(tmp_path)
+
+    affected_release_identity = f"{model}@sha256:{identity.manifest_sha256}"
+    assert backend.model != affected_release_identity
+    assert backend.model == f"{affected_release_identity}!loader={LOADER_GENERATION}"
 
 
 def test_changed_manifest_identity_separates_resident_model_and_index_key(
@@ -130,11 +151,19 @@ def test_verified_encoder_stays_offline_and_is_loaded_once(
         return SimpleNamespace(encode=lambda texts, **_kwargs: [[1.0, 0.0] for _ in texts])
 
     monkeypatch.setitem(sys.modules, "sentence_transformers", SimpleNamespace(SentenceTransformer=fake_encoder))
+    # The fixture checkpoint is not a real tensor file, so record the call
+    # instead of running it; that the load path calls it at all is the point.
+    verifications: list[object] = []
+    monkeypatch.setattr(
+        "universal_research_mcp.semantic_backends.verify_encoder_checkpoint_weights",
+        lambda encoder, snapshot: verifications.append(snapshot),
+    )
     for _ in range(2):
         result = backend.embedder.embed(("fixture",), model=backend.model, dimensions=2)
         assert result.model == backend.model
         assert result.vectors == ((1.0, 0.0),)
     assert loads == [(str(model), {"device": "cpu", "local_files_only": True, "trust_remote_code": False})]
+    assert verifications == [model]
     with pytest.raises(ValueError, match="approved local snapshot"):
         backend.embedder.embed(("fixture",), model=str(model), dimensions=2)
 
@@ -150,7 +179,7 @@ def test_legacy_manual_local_config_remains_explicitly_unverified(tmp_path: Path
         "auto_refresh": False,
     })
     backend = configured_backend(tmp_path)
-    assert backend.model == str(model)
+    assert backend.model == f"{model}!loader={LOADER_GENERATION}"
     assert backend.embedder.snapshot is None
     report = configure_local(tmp_path, model_path=model)
     assert report["snapshot_verification"] == "unverified_manual_path"

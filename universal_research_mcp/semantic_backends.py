@@ -7,18 +7,37 @@ local SentenceTransformer path accepts only an already-present snapshot.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 import hashlib
 import importlib.util
 import math
 from pathlib import Path
 import re
-from typing import Sequence
+import threading
+from typing import Iterator, Sequence
 
 from universal_research_mcp.runtime.model_snapshot import SnapshotIdentity, verify_snapshot
 
 DEFAULT_DIMENSIONS = 256
 _TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+
+# Bumped whenever a loader defect changed the numeric meaning of local
+# embeddings.  It participates in the embedding identity so that indexes built
+# by an affected release are reported stale instead of silently reused.
+LOADER_GENERATION = "checkpoint-verified-v1"
+
+# A loaded encoder is compared against its own checkpoint before first use.
+# Sampling a few contiguous rows per tensor keeps the check cheap while still
+# separating checkpoint weights from any freshly initialized distribution.
+_CHECKPOINT_SAMPLE_ROWS = 4
+_CHECKPOINT_WHOLE_TENSOR_ELEMENTS = 1 << 16
+_CHECKPOINT_ABS_TOLERANCE = 1e-4
+_CHECKPOINT_REL_TOLERANCE = 1e-3
+
+# The reinitialization guard swaps a Transformers class attribute, so concurrent
+# loads in one process are serialized.
+_LOAD_LOCK = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -114,7 +133,7 @@ class LocalSentenceTransformerEmbedder:
         identity = f"{path}@sha256:{self.snapshot.manifest_sha256}" if self.snapshot is not None else path
         if self.encoder_dtype is not None or self.max_length is not None:
             identity += f"#dtype={self.encoder_dtype};max_length={self.max_length}"
-        return identity
+        return f"{identity}!loader={LOADER_GENERATION}"
 
     def preflight(self) -> Availability:
         snapshot = Path(self.model_path).expanduser().resolve()
@@ -172,10 +191,15 @@ class LocalSentenceTransformerEmbedder:
         from sentence_transformers import SentenceTransformer
 
         selected_device = None if self.device == "auto" else self.device
-        encoder = SentenceTransformer(
-            str(snapshot), device=selected_device, local_files_only=True,
-            trust_remote_code=self.trust_local_model_code,
-        )
+        with _LOAD_LOCK:
+            with _checkpoint_weights_guarded():
+                encoder = SentenceTransformer(
+                    str(snapshot), device=selected_device, local_files_only=True,
+                    trust_remote_code=self.trust_local_model_code,
+                )
+        # Verify before any dtype cast so the comparison stays in the
+        # checkpoint's own precision.
+        verify_encoder_checkpoint_weights(encoder, snapshot)
         if self.max_length is not None:
             encoder.max_seq_length = self.max_length
         if self.encoder_dtype is not None:
@@ -183,6 +207,182 @@ class LocalSentenceTransformerEmbedder:
             encoder.to(dtype=getattr(torch, self.encoder_dtype))
         _restore_gte_runtime_buffers(encoder)
         return encoder
+
+
+@contextmanager
+def _checkpoint_weights_guarded() -> Iterator[None]:
+    """Stop Transformers 5 from reinitializing weights it already loaded.
+
+    Transformers 5 builds the model on meta, installs the checkpoint tensors,
+    and only then calls ``initialize_weights`` to fill whatever is still
+    missing.  Parameters that came from the checkpoint are marked
+    ``_is_hf_initialized`` and are expected to be skipped, but that flag only
+    protects modules whose ``_init_weights`` either checks it or goes through
+    the patched ``torch.nn.init`` helpers.  Older remote-code architectures
+    instead mutate tensors directly (``module.weight.data.normal_()``,
+    ``.zero_()``, ``.fill_()``), which no guard can intercept, so every
+    parameter is overwritten with a fresh random distribution after a load that
+    reported no missing keys.
+
+    Skip modules whose tensors were all loaded, and restore the loaded ones for
+    partially populated modules; anything genuinely missing is still
+    initialized by the original implementation.
+    """
+
+    try:
+        from transformers.modeling_utils import PreTrainedModel
+    except ImportError:
+        yield
+        return
+    original = getattr(PreTrainedModel, "_initialize_weights", None)
+    if original is None:
+        # A Transformers release without this hook does not run the offending
+        # finalization step; verification still covers the result.
+        yield
+        return
+    import torch
+
+    def guarded(self: object, module: object) -> object:
+        present = [
+            tensor
+            for tensor in (*module._parameters.values(), *module._buffers.values())
+            if tensor is not None
+        ]
+        loaded = [tensor for tensor in present if getattr(tensor, "_is_hf_initialized", False)]
+        if not loaded:
+            return original(self, module)
+        if len(loaded) == len(present):
+            module._is_hf_initialized = True
+            return None
+        retained = [
+            (tensor, tensor.detach().clone())
+            for tensor in loaded
+            if tensor.device.type != "meta"
+        ]
+        try:
+            return original(self, module)
+        finally:
+            with torch.no_grad():
+                for tensor, value in retained:
+                    tensor.copy_(value)
+
+    PreTrainedModel._initialize_weights = guarded
+    try:
+        yield
+    finally:
+        PreTrainedModel._initialize_weights = original
+
+
+def _encoder_base_model(encoder: object) -> object:
+    """Return the Transformers backbone held by a SentenceTransformer."""
+
+    modules = getattr(encoder, "modules", None)
+    if callable(modules):
+        for module in modules():
+            base_model = getattr(module, "auto_model", None)
+            if base_model is not None and hasattr(base_model, "state_dict"):
+                return base_model
+    raise RuntimeError("local embedding encoder does not expose a Transformers backbone")
+
+
+def _checkpoint_files(snapshot: Path) -> list[Path]:
+    """Locate the backbone's safetensors shards inside a snapshot."""
+
+    files = sorted(snapshot.glob("*.safetensors"))
+    if not files:
+        # SentenceTransformer layouts may keep the backbone in a numbered
+        # module directory instead of the snapshot root.
+        files = sorted(
+            path
+            for directory in sorted(snapshot.iterdir())
+            if directory.is_dir()
+            for path in directory.glob("*.safetensors")
+        )
+    return files
+
+
+def _comparable_parts(stored: object, actual: object) -> list[tuple[object, object]]:
+    """Pair checkpoint and resident slices that are cheap to read and compare.
+
+    Small tensors are compared whole. Large ones would mean faulting in the
+    entire checkpoint, so a few rows spread across the first dimension stand in;
+    a reinitialized tensor differs from trained weights in essentially every
+    element, so a spread sample separates the two just as reliably.
+    """
+
+    if actual.ndim == 0 or actual.numel() <= _CHECKPOINT_WHOLE_TENSOR_ELEMENTS:
+        return [(stored[:], actual)]
+    count = int(actual.shape[0])
+    if count <= _CHECKPOINT_SAMPLE_ROWS:
+        rows = range(count)
+    else:
+        step = count // _CHECKPOINT_SAMPLE_ROWS
+        rows = (min(index * step, count - 1) for index in range(_CHECKPOINT_SAMPLE_ROWS))
+    return [(stored[row:row + 1], actual[row:row + 1]) for row in rows]
+
+
+def verify_encoder_checkpoint_weights(encoder: object, snapshot: Path) -> dict[str, int]:
+    """Fail closed unless the loaded backbone matches its own checkpoint.
+
+    A silently reinitialized encoder stays deterministic inside one process, so
+    neither a fingerprint nor a repeated call within a session can detect it.
+    Comparing the resident parameters against the snapshot's own tensors is the
+    only check that separates trained weights from a fresh distribution.
+    """
+
+    from safetensors import safe_open
+    import torch
+
+    base_model = _encoder_base_model(encoder)
+    checkpoints = _checkpoint_files(snapshot)
+    if not checkpoints:
+        raise RuntimeError(
+            "local embedding snapshot has no .safetensors checkpoint, so its loaded "
+            f"weights cannot be verified: {snapshot}"
+        )
+    resident = base_model.state_dict()
+    prefix = getattr(type(base_model), "base_model_prefix", "") or ""
+    # Every trained parameter must be accounted for. Buffers are derived rather
+    # than trained, and which of them a checkpoint carries varies by Transformers
+    # version, so they are compared when present but are not required.
+    unverified = {name for name, _ in base_model.named_parameters()}
+    compared = 0
+    mismatched: list[str] = []
+    for checkpoint in checkpoints:
+        with safe_open(checkpoint, framework="pt", device="cpu") as handle:
+            for key in handle.keys():
+                name = key
+                if name not in resident and prefix and name.startswith(f"{prefix}."):
+                    name = name[len(prefix) + 1:]
+                if name not in resident:
+                    # A head the backbone does not carry, e.g. a classifier.
+                    continue
+                actual = resident[name]
+                stored = handle.get_slice(key)
+                if tuple(stored.get_shape()) != tuple(actual.shape):
+                    mismatched.append(name)
+                    unverified.discard(name)
+                    continue
+                for expected_part, actual_part in _comparable_parts(stored, actual):
+                    if not torch.allclose(
+                        expected_part.to(torch.float32),
+                        actual_part.detach().to(device="cpu", dtype=torch.float32),
+                        rtol=_CHECKPOINT_REL_TOLERANCE,
+                        atol=_CHECKPOINT_ABS_TOLERANCE,
+                    ):
+                        mismatched.append(name)
+                        break
+                compared += 1
+                unverified.discard(name)
+    if mismatched or unverified or not compared:
+        raise RuntimeError(
+            "local embedding encoder does not match its checkpoint, so its vectors "
+            "would be meaningless; refusing to embed. "
+            f"snapshot={snapshot} compared={compared} "
+            f"mismatched={sorted(set(mismatched))[:8]} "
+            f"unverified={sorted(unverified)[:8]}"
+        )
+    return {"compared": compared, "checkpoints": len(checkpoints)}
 
 
 def _restore_gte_runtime_buffers(encoder: object) -> None:
@@ -214,7 +414,7 @@ def _restore_gte_runtime_buffers(encoder: object) -> None:
 
 
 __all__ = [
-    "DEFAULT_DIMENSIONS", "Availability", "EmbeddingResult",
+    "DEFAULT_DIMENSIONS", "LOADER_GENERATION", "Availability", "EmbeddingResult",
     "LocalSentenceTransformerEmbedder", "SignedHashingEmbedder",
-    "encode_signed_hashing",
+    "encode_signed_hashing", "verify_encoder_checkpoint_weights",
 ]
