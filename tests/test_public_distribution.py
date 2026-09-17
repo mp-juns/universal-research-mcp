@@ -206,6 +206,36 @@ class PublicDistributionTests(unittest.TestCase):
                 else:
                     self.assertTrue(context.startswith("Fresh or unverified session boundary:"))
 
+    def test_claude_desktop_bundle_tracks_the_release_it_installs(self) -> None:
+        """A stale pin would keep bundle users on the previous release.
+
+        The bundle ships no package code; it pins the published wheel and
+        launches it. Nothing in the host shows which version is actually
+        running, so a lagging pin is invisible to the user.
+        """
+
+        import shutil
+        import tempfile
+
+        from scripts.build_claude_desktop_bundle import BUNDLE_SOURCE, bundle_violations
+
+        self.assertEqual(bundle_violations(BUNDLE_SOURCE, __version__), [])
+
+        with tempfile.TemporaryDirectory() as temporary:
+            stale = Path(temporary) / "bundle"
+            shutil.copytree(BUNDLE_SOURCE, stale)
+            project = stale / "pyproject.toml"
+            project.write_text(
+                project.read_text(encoding="utf-8").replace(
+                    f"universal-research-mcp=={__version__}",
+                    "universal-research-mcp==0.0.1",
+                ),
+                encoding="utf-8",
+            )
+            violations = bundle_violations(stale, __version__)
+
+        self.assertTrue(any("does not pin" in violation for violation in violations), violations)
+
     def test_session_hook_never_turns_invalid_event_metadata_into_approval(self) -> None:
         hook = ROOT / "plugin/universal-research-memory/scripts/session_start.py"
         for payload in ("not-json", "null", "[]", "x" * 65_537):

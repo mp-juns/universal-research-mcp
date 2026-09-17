@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "universal-research-memory",
   "display_name": "Universal Research Memory",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Provenance-first research memory: hash-bound evidence fetch and a fail-closed eligibility gate over an append-only ledger.",
   "long_description": "Search returns candidates, never evidence. Before a material claim is released, the server re-reads the exact registered source range and checks its current SHA-256 revision; claims that silently omit evidence the session fetched and saw fail integrity are blocked. Safety properties are benchmarked, not assumed: https://github.com/mp-juns/universal-research-mcp#benchmarks",
   "author": {
