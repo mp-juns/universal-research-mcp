@@ -1757,8 +1757,24 @@ def research_index_status() -> dict[str, Any]:
 
     try:
         from universal_research_mcp.indexing import index_status, semantic_status
+        from universal_research_mcp.semantic_runtime import configured_backend
 
-        status = {"lexical": index_status(ROOT), "semantic": semantic_status(ROOT)}
+        # Bind the report to the configured embedding identity. A semantic index
+        # whose fingerprints still match can nonetheless have been written by a
+        # different or defective embedder, and that is not visible from the
+        # fingerprints alone.
+        backend = configured_backend(ROOT)
+        semantic = (
+            semantic_status(ROOT)
+            if backend is None
+            else semantic_status(
+                ROOT,
+                provider_id=backend.provider_id,
+                model=backend.model,
+                dimensions=backend.dimensions,
+            )
+        )
+        status = {"lexical": index_status(ROOT), "semantic": semantic}
     except (ImportError, OSError, RuntimeError, ValueError) as exc:
         status = {"status": "unavailable", "reason": str(exc)}
     return {"startup": INDEX_STARTUP_STATUS, "current": status}
