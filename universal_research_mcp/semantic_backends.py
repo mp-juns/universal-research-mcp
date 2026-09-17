@@ -15,7 +15,7 @@ import math
 from pathlib import Path
 import re
 import threading
-from typing import Iterator, Sequence
+from typing import Any, Iterator, Sequence
 
 from universal_research_mcp.runtime.model_snapshot import SnapshotIdentity, verify_snapshot
 
@@ -301,7 +301,7 @@ def _checkpoint_files(snapshot: Path) -> list[Path]:
     return files
 
 
-def _comparable_parts(stored: object, actual: object) -> list[tuple[object, object]]:
+def _comparable_parts(stored: Any, actual: Any) -> list[tuple[Any, Any]]:
     """Pair checkpoint and resident slices that are cheap to read and compare.
 
     Small tensors are compared whole. Large ones would mean faulting in the
